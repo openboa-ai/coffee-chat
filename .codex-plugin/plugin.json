@@ -1,0 +1,32 @@
+{
+  "name": "coffee-chat",
+  "version": "2026.8.9",
+  "description": "Turn public, attributed Taste into consent-gated Coffee without copying external Roasteries.",
+  "author": {
+    "name": "Openboa AI",
+    "email": "support@openboa.ai",
+    "url": "https://github.com/openboa-ai"
+  },
+  "homepage": "https://github.com/openboa-ai/coffee-chat",
+  "repository": "https://github.com/openboa-ai/coffee-chat",
+  "license": "MIT",
+  "keywords": ["coffee-chat", "taste", "skills", "roastery"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Coffee Chat",
+    "shortDescription": "Brew with public, attributed Taste.",
+    "longDescription": "Use consent-gated, commit-pinned public Roasteries as read-only Taste sources for attributed AI-generated Coffee.",
+    "developerName": "Openboa AI",
+    "category": "Productivity",
+    "capabilities": ["Skills"],
+    "websiteURL": "https://github.com/openboa-ai/coffee-chat",
+    "privacyPolicyURL": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/privacy.md",
+    "termsOfServiceURL": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/terms.md",
+    "defaultPrompt": [
+      "Initialize my public Coffee Chat Roastery.",
+      "Sync this public Roastery after showing what will be read.",
+      "Brew a response using the Taste I explicitly select."
+    ],
+    "brandColor": "#6F4E37"
+  }
+}

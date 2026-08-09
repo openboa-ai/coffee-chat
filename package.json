@@ -1,0 +1,35 @@
+{
+  "name": "@openboa-ai/coffee-chat",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "pretest": "npm run release:local",
+    "prebuild": "node scripts/build-runtime.mjs && node scripts/update-derived-submission.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:acceptance": "node --test tests/installed-package-acceptance.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "build": "node scripts/build-runtime.mjs && node scripts/build-package.mjs",
+    "ci:policy": "node .github/ci-policy.mjs",
+    "validate:plugin": "node scripts/validate-plugin.mjs",
+    "validate:submission": "node scripts/validate-submission.mjs",
+    "validate:contract-release": "node scripts/validate-plugin.mjs --release",
+    "migration:receipt": "node scripts/generate-migration-receipt.mjs",
+    "migration:check": "node scripts/check-migration-receipt.mjs",
+    "sbom": "node scripts/generate-sbom.mjs",
+    "release:local": "npm run build && npm run sbom",
+    "release:candidate": "node scripts/release-candidate.mjs",
+    "verify": "npm run format:check && npm run typecheck && npm run validate:plugin && npm run validate:submission && npm test && npm run ci:policy"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "ajv": "8.20.0",
+    "prettier": "3.9.6",
+    "typescript": "7.0.2",
+    "yaml": "2.9.0"
+  }
+}

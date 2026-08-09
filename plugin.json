@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "coffee-chat",
+  "version": "2026.8.9",
+  "description": "Turn public, attributed Taste into consent-gated Coffee without copying external Roasteries.",
+  "author": {
+    "name": "Openboa AI",
+    "email": "support@openboa.ai",
+    "url": "https://github.com/openboa-ai"
+  },
+  "homepage": "https://github.com/openboa-ai/coffee-chat",
+  "repository": "https://github.com/openboa-ai/coffee-chat",
+  "license": "MIT",
+  "keywords": ["coffee-chat", "taste", "skills", "roastery"]
+}

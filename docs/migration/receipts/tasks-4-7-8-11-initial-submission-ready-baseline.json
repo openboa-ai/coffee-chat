@@ -1,0 +1,488 @@
+{
+  "schema": "coffee-chat/migration-receipt",
+  "target_owner": "openboa-ai/coffee-chat",
+  "task": "tasks-4-7-8-11",
+  "objective": "initial-submission-ready-plugin-baseline",
+  "base_commit": "544a9c9a4067c7b69b58155c2fa54479116c2fda",
+  "empty_base_tree": "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+  "projection_sha256": "286d120e2bbd4747d2b5f5b518b853efa0a9c30bab6e75dc76bb83020c4f9a97",
+  "equality_receipt_sha256": "26f3b895a4aea60ed1af8faa8a6a32982efe76d5cab8c02a8be6a91a217b868b",
+  "changed_paths_sha256": "d6d776b68c5346b0b794e68e918d68533c3e0a27a8151a7081bcf40d28b4d914",
+  "package_digest": "sha256:0cee4666fe878cb0401eb3cf43dd91354b46016a1384ccfbc775fc9f9e675825",
+  "changed_paths": [
+    {
+      "path": ".agents/plugins/marketplace.json",
+      "surface": "plugin-manifests-and-marketplace"
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "surface": "plugin-manifests-and-marketplace"
+    },
+    {
+      "path": ".editorconfig",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": ".gitattributes",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": ".github/ci-policy.mjs",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/coverage-requirements.txt",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/merge-policy.json",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/migration-equality-receipt.schema.json",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": ".github/migration-receipt.schema.json",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": ".github/migration-selection.schema.json",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": ".github/PULL_REQUEST_TEMPLATE.md",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/workflows/github-coverage.yml",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/workflows/policy.yml",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/workflows/quality.yml",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "surface": "release-and-sbom-attestation"
+    },
+    {
+      "path": ".github/workflows/sbom-attestation.yml",
+      "surface": "release-and-sbom-attestation"
+    },
+    {
+      "path": ".gitignore",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "AGENTS.md",
+      "surface": "documentation-and-policy"
+    },
+    {
+      "path": "CODEOWNERS",
+      "surface": "governance-and-ci"
+    },
+    {
+      "path": "config/plugin-metadata.json",
+      "surface": "plugin-manifests-and-marketplace"
+    },
+    {
+      "path": "config/roastery-contract.json",
+      "surface": "runtime-and-product-contracts"
+    },
+    {
+      "path": "contract/roastery/contract.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/publication.md",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/bean-frontmatter.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/content-license.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/contract-refresh-evidence.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/contract-refresh-receipt.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/index.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/rights-semantics.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/schemas/roastery.schema.json",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/security.md",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "contract/roastery/templates/content-license.md",
+      "surface": "contract/roastery/**"
+    },
+    {
+      "path": "docs/migration/equality/tasks-4-7-8-11-initial-submission-ready-baseline.json",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": "docs/migration/receipts/tasks-4-7-8-11-initial-submission-ready-baseline.json",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": "docs/migration/selections/tasks-4-7-8-11-initial-submission-ready-baseline.json",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": "docs/privacy.md",
+      "surface": "public-policy-docs"
+    },
+    {
+      "path": "docs/quality-map.md",
+      "surface": "documentation-and-policy"
+    },
+    {
+      "path": "docs/support.md",
+      "surface": "public-policy-docs"
+    },
+    {
+      "path": "docs/terms.md",
+      "surface": "public-policy-docs"
+    },
+    {
+      "path": "LICENSE",
+      "surface": "official-license"
+    },
+    {
+      "path": "package-lock.json",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "package.json",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "plugin.json",
+      "surface": "plugin-manifests-and-marketplace"
+    },
+    {
+      "path": "prettier.config.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "README.md",
+      "surface": "documentation-and-policy"
+    },
+    {
+      "path": "runtime/coffee-chat.mjs",
+      "surface": "smallest-deterministic-runtime"
+    },
+    {
+      "path": "scripts/build-package.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/build-revision.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/build-runtime.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/check-migration-receipt.mjs",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": "scripts/contract-digest.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/generate-migration-receipt.mjs",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": "scripts/generate-sbom.mjs",
+      "surface": "release-and-sbom-attestation"
+    },
+    {
+      "path": "scripts/migration-receipt-lib.mjs",
+      "surface": "migration-policy-schemas-and-checker"
+    },
+    {
+      "path": "scripts/package-lib.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/release-candidate.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/update-derived-submission.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/validate-plugin.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "scripts/validate-submission.mjs",
+      "surface": "build-and-repository-tooling"
+    },
+    {
+      "path": "SECURITY.md",
+      "surface": "documentation-and-policy"
+    },
+    {
+      "path": "skills/brew/references/response-rights.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/brew/scripts/run.mjs",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/brew/SKILL.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/coffee-blend/references/blend-attribution.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/coffee-blend/scripts/run.mjs",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/coffee-blend/SKILL.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/coffee-chat/references/conversation-boundary.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/coffee-chat/scripts/run.mjs",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/coffee-chat/SKILL.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/init/references/fixed-license.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/init/scripts/run.mjs",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/init/SKILL.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/roast/references/publication-boundary.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/roast/scripts/run.mjs",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/roast/SKILL.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/sync/references/external-isolation.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/sync/scripts/run.mjs",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/sync/SKILL.md",
+      "surface": "skills"
+    },
+    {
+      "path": "skills/unsync/references/deletion-limits.md",
+      "surface": "skills/unsync/**"
+    },
+    {
+      "path": "skills/unsync/scripts/run.mjs",
+      "surface": "skills/unsync/**"
+    },
+    {
+      "path": "skills/unsync/SKILL.md",
+      "surface": "skills/unsync/**"
+    },
+    {
+      "path": "src/canonical.mjs",
+      "surface": "smallest-deterministic-runtime"
+    },
+    {
+      "path": "src/cli.mjs",
+      "surface": "smallest-deterministic-runtime"
+    },
+    {
+      "path": "src/contracts.mjs",
+      "surface": "runtime-and-product-contracts"
+    },
+    {
+      "path": "src/errors.mjs",
+      "surface": "smallest-deterministic-runtime"
+    },
+    {
+      "path": "src/index.mjs",
+      "surface": "smallest-deterministic-runtime"
+    },
+    {
+      "path": "src/release/package.ts",
+      "surface": "runtime-and-product-contracts"
+    },
+    {
+      "path": "src/release/project-manifests.ts",
+      "surface": "runtime-and-product-contracts"
+    },
+    {
+      "path": "src/verified-acquisition.mjs",
+      "surface": "smallest-deterministic-runtime"
+    },
+    {
+      "path": "submission/availability.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/compliance-mapping.md",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/evidence/codex-local-acceptance.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/listing.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/owner-handoff.md",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/policy-attestations.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/release-candidate.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/release-notes.md",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/starter-prompts.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/surface-support.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "submission/test-cases.json",
+      "surface": "submission/**"
+    },
+    {
+      "path": "tests/governance-policy.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tests/installed-package-acceptance.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tests/manifest-package.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tests/migration-evidence.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tests/product-behavior.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tests/release-revision.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tests/submission-package.test.mjs",
+      "surface": "objective-tests"
+    },
+    {
+      "path": "tsconfig.json",
+      "surface": "build-and-repository-tooling"
+    }
+  ],
+  "migrate_evidence": [
+    {
+      "source_repository": "SonSangjoon/coffee-chat",
+      "source_commit": "b0fbc9c4d8c6b38f6297fa36e359869c70e3c231",
+      "source_path": ".editorconfig",
+      "source_blob_oid": "1014ba78880c899e842b397cb89a878be4671f7d",
+      "source_sha256": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+      "target_path": ".editorconfig",
+      "target_sha256": "a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd",
+      "status": "passed"
+    },
+    {
+      "source_repository": "SonSangjoon/coffee-chat",
+      "source_commit": "b0fbc9c4d8c6b38f6297fa36e359869c70e3c231",
+      "source_path": ".gitattributes",
+      "source_blob_oid": "83a2e236b3ba3ecc606fd79c83a9c474257abfc3",
+      "source_sha256": "8a0f8488eb7c7da84260209230d7982c1f80d4c8745b84ccbe97c247df24c0a6",
+      "target_path": ".gitattributes",
+      "target_sha256": "8a0f8488eb7c7da84260209230d7982c1f80d4c8745b84ccbe97c247df24c0a6",
+      "status": "passed"
+    }
+  ],
+  "action_counts": {
+    "migrate": 2,
+    "rewrite": 118,
+    "exclude": 163
+  },
+  "verification": {
+    "local_deterministic": "passed",
+    "same_repository_ci": "pending",
+    "exact_head_review": "pending",
+    "squash_merge": "pending",
+    "control_plane": "pending"
+  }
+}
