@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { test } from "node:test";
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -74,15 +74,23 @@ test("the trusted Roastery commit is isolated while exact contract bytes remain 
     pin.bundleDigest,
     "sha256:6cc68d5ecff920235c093922a563e9297fc0e7f073f831070c822c0df56ca151",
   );
-  const result = spawnSync(
-    "rg",
-    ["-l", pendingToken, ".", "--glob", "!build/**"],
-    { encoding: "utf8" },
+  const repositoryPaths = [
+    ...new Set(
+      [
+        ["ls-files", "-z"],
+        ["ls-files", "--others", "--exclude-standard", "-z"],
+      ].flatMap((arguments_) =>
+        execFileSync("git", arguments_, { encoding: "buffer" })
+          .toString("utf8")
+          .split("\0")
+          .filter(Boolean),
+      ),
+    ),
+  ].filter((path) => !path.startsWith("build/"));
+  const matches = repositoryPaths.filter((path) =>
+    readFileSync(path, "utf8").includes(pendingToken),
   );
-  assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(result.stdout.trim().split("\n"), [
-    "./config/roastery-contract.json",
-  ]);
+  assert.deepEqual(matches, ["config/roastery-contract.json"]);
 });
 
 test("the release candidate command fails before rebuilding while the contract pin is pending", () => {
