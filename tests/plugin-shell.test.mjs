@@ -94,6 +94,7 @@ test("all seven capability Skills are discoverable and have fixed launchers", ()
     );
     assert.match(skill, new RegExp(`^---\\nname: ${capability}\\n`, "u"));
     assert.match(skill, /status: not_implemented/u);
+    assert.match(skill, /Run\s+`node scripts\/run\.mjs`/u);
     assert.match(skill, /later product implementation Goal/u);
     assert.doesNotThrow(() =>
       readFileSync(join(root, "skills", capability, "scripts/run.mjs"), "utf8"),
