@@ -1,0 +1,10 @@
+{
+  "merge_method": "squash",
+  "required_approvals": 0,
+  "required_code_owner_reviews": 0,
+  "required_last_push_approvals": 0,
+  "eligible_author_associations": ["OWNER", "MEMBER"],
+  "custom_merge_controller": false,
+  "required_checks": ["Coffee Chat required", "Coffee Chat dependency review"],
+  "codeql_enforcement": "native_code_scanning"
+}
