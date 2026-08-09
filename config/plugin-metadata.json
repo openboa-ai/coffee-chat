@@ -1,9 +1,8 @@
 {
   "name": "coffee-chat",
-  "displayName": "Coffee Chat",
   "version": "2026.8.9",
-  "description": "Turn public, attributed Taste into consent-gated Coffee without copying external Roasteries.",
-  "publisher": {
+  "description": "A Codex-first Coffee Chat capability shell for explicit public Roastery journeys.",
+  "author": {
     "name": "Openboa AI",
     "email": "support@openboa.ai",
     "url": "https://github.com/openboa-ai"

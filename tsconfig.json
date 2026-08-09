@@ -8,13 +8,13 @@
     "noImplicitAny": false,
     "strict": true,
     "target": "ES2024",
-    "types": ["node"],
-    "useUnknownInCatchVariables": false
+    "types": ["node"]
   },
   "include": [
     ".github/**/*.mjs",
+    "runtime/**/*.mjs",
     "scripts/**/*.mjs",
-    "src/**/*.mjs",
+    "skills/**/*.mjs",
     "tests/**/*.mjs"
   ]
 }

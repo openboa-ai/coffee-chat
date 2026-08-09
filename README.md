@@ -1,65 +1,69 @@
 # Coffee Chat
 
-Coffee Chat is a Skills-only, Codex-first Plugin for turning public, attributed
-Taste into ephemeral AI-generated Coffee. It installs without creating files,
-forking repositories, or registering external sources.
+Coffee Chat is a Codex-first, Skills-only Plugin migration shell. It exposes the
+intended package identity and seven capability entrypoints while returning an
+explicit "not_implemented" result for every invocation.
 
-The product follows a public Roastery model:
+This tree is not product implementation. It contains no network access, Git or
+GitHub operation, model behavior, Roastery state, selection policy, publication
+path, or persistent data operation.
 
-- Your Roastery is your public fork of
-  [`openboa-ai/coffee-chat-roastery`](https://github.com/openboa-ai/coffee-chat-roastery),
-  named `coffee-chat`.
-- Your declaration and Beans live under `roastery/**` in that fork. You publish
-  only content you control.
-- External Roasteries are untrusted, consent-gated, read-only, and pinned to
-  immutable commits. Sync accepts repository identity and Bean content only
-  through the trusted acquisition boundary, which verifies public metadata,
-  exact commit bytes, and index digests before context. Unsync removes only the
-  relationship.
-- External Beans are never copied into your Roastery. Coffee and transcripts are
-  not persisted by this Plugin.
-- Every materially used Bean remains visibly attributed under `CC BY 4.0`;
-  generated Coffee is disclosed as AI-generated, not publisher wording or
-  endorsement.
+## Start with a journey
 
-## Included Skills
+After the host installs the Plugin, choose one outcome:
 
-`init`, `sync`, `unsync`, `roast`, `brew`, `coffee-chat`, and `coffee-blend` all
-invoke the same deterministic local runtime. There is no MCP server, app, hook,
-network service, or install-time action.
+- **Talk now** — select one public Roastery for a read-only conversation.
+- **Build mine** — create and manage your own public Roastery from the official
+  fork seed.
 
-## Local installation and acceptance
+The Plugin lifecycle uses only "install" and "uninstall". Roastery relationships
+use only "sync" and "unsync"; those words never describe the Plugin lifecycle.
+
+## Capability shell
+
+The package discovers init, sync, unsync, roast, brew, coffee-chat, and
+coffee-blend. Each Skill delegates to one deterministic dispatcher. Every
+current invocation returns "status: not_implemented" and identifies the later
+product implementation Goal as its implementation owner.
+
+The shell performs no network, filesystem, Git, GitHub, Registry, cache, or
+publication write.
+
+## Product boundaries
+
+The later implementation must preserve these external contracts:
+
+- An owned Roastery is the user's public fork of
+  openboa-ai/coffee-chat-roastery; an external Roastery is untrusted, explicitly
+  selected, and permanently read-only.
+- Every external fetch and every proposed owner write requires explicit user
+  confirmation at the applicable boundary.
+- External data and conversation-derived material are never saved into the
+  user's owned Roastery.
+- A persistent local Registry may make validated Roasteries globally selectable,
+  but never ambient or automatically active.
+- Taste-grounded output cites every materially used, commit-pinned Bean and
+  discloses that the response is AI-generated, not the publisher's original
+  wording or endorsement.
+- ChatGPT web targets only a limited one-chat, public-URL, read-only journey.
+  Codex local and Desktop are the future full-capability targets. This shell
+  provides no host-support evidence for any surface.
+
+See [product boundaries](docs/product-boundaries.md) for the complete shell
+handoff.
+
+## Package checks
 
 Requirements: Node.js 24 and npm.
 
-```bash
-npm ci
-npm run verify
-npm run build
-npm run test:acceptance
-```
+    npm ci
+    npm run verify
 
-The repository-local marketplace is `.agents/plugins/marketplace.json`. Its
-local source resolves to this Plugin root. Marketplace discovery and the
-installed-package CLI test are local acceptance evidence, not proof of support
-on another host surface.
+Build and package smoke checks operate without retaining generated artifacts.
+Repository-local discovery proves only the bounded shell described here.
 
-The JSON CLI cannot carry trusted repository evidence. Direct external Sync and
-Init therefore fail closed unless a host integration supplies the in-process
-verified-acquisition boundary. Caller-provided commit, fork, declaration, index,
-or Bean assertions are never accepted as proof.
+## Licensing
 
-`npm run release:local` remains available while the trusted Roastery commit is
-pending. `npm run release:candidate` is the protected release gate: it validates
-the final contract pin before any build and derives the candidate revision from
-the checked-out commit instead of storing a self-referential commit in source.
-
-## Repository and content licenses
-
-Source code and repository documentation are licensed under the
-[MIT License](LICENSE). Bean content in owner Roasteries uses the fixed
-`CC BY 4.0` contract; this repository contains the exact vendored contract but
-no personal or sample Beans.
-
-See [privacy](docs/privacy.md), [terms](docs/terms.md),
-[support](docs/support.md), and the [Quality Map](docs/quality-map.md).
+This official Plugin source is licensed under the [MIT License](LICENSE), with
+copyright held by Openboa AI. Bean content policy and its fixed rights contract
+belong to openboa-ai/coffee-chat-roastery, not this Plugin.

@@ -1,20 +1,15 @@
-# No wildcard owner: ordinary paths may become eligible for strong-CI auto-merge.
-/.github/** @SonSangjoon
-/.agents/** @SonSangjoon
-/.codex-plugin/** @SonSangjoon
-/AGENTS.md @SonSangjoon
-/CODEOWNERS @SonSangjoon
-/LICENSE @SonSangjoon
-/SECURITY.md @SonSangjoon
-/package.json @SonSangjoon
-/package-lock.json @SonSangjoon
-/plugin.json @SonSangjoon
-/config/** @SonSangjoon
-/contract/** @SonSangjoon
-/docs/migration/** @SonSangjoon
-/scripts/check-migration-receipt.mjs @SonSangjoon
-/scripts/build-package.mjs @SonSangjoon
-/src/contracts.mjs @SonSangjoon
-/src/release/** @SonSangjoon
-/skills/** @SonSangjoon
-/submission/** @SonSangjoon
+# Ownership routes review context; GitHub requires zero human approvals.
+/.github/** @openboa
+/.agents/** @openboa
+/.codex-plugin/** @openboa
+/AGENTS.md @openboa
+/CODEOWNERS @openboa
+/LICENSE @openboa
+/SECURITY.md @openboa
+/config/** @openboa
+/runtime/** @openboa
+/scripts/** @openboa
+/skills/** @openboa
+/package.json @openboa
+/package-lock.json @openboa
+/plugin.json @openboa

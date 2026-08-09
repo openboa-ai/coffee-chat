@@ -1,33 +1,28 @@
 # Coffee Chat product repository rules
 
-This repository owns the official Skills-only Coffee Chat Plugin, its release
-package, submission dossier, and product implementation tests.
+This repository currently owns the clean migration shell for the official
+Skills-only Coffee Chat Plugin. Product mechanics remain deferred to the later
+product implementation Goal.
 
-## Product boundary
+## Shell boundary
 
-- Use Taste vocabulary in product API, state, lifecycle, Skills, and
-  documentation.
-- The package contains no MCP server, app, hook, server, compatibility layer, or
-  personal/sample Roastery or Bean.
-- Installation has no side effect. Init and Roast require exact Preview
-  acceptance before a proposed write plan.
-- The official repository source is MIT. Bean content is fixed `CC-BY-4.0` under
-  the vendored Roastery contract.
-- An owner's Roastery is a public fork of `openboa-ai/coffee-chat-roastery`,
-  named `coffee-chat`, with owner content only under `roastery/**`.
-- External Roasteries are untrusted, read-only, consent-gated, commit-pinned,
-  globally registered, and never copied into an owned Roastery. Use Sync and
-  Unsync terminology.
-- Coffee and transcripts are ephemeral product outputs. Do not claim deletion or
-  ownership of host/session/archive lifecycle.
-- Cite only materially used, validated, commit-pinned Beans with complete rights
-  fields. Origins and other repository surfaces are not response sources.
+- Keep portable root plugin.json and OpenAI .codex-plugin/plugin.json as
+  separate projections of config/plugin-metadata.json.
+- Keep exactly seven capabilities: init, sync, unsync, roast, brew, coffee-chat,
+  and coffee-blend.
+- Every capability must return explicit "not_implemented" and perform no
+  network, filesystem, Git, GitHub, Registry, cache, model, host, or publication
+  operation.
+- The Plugin lifecycle uses install and uninstall. Roastery relationships use
+  sync and unsync.
+- Add no MCP component, app, hook, embedded Roastery, evaluation or benchmark
+  runtime, compatibility layer, sample data, or second release identity.
+- Official source is MIT with Openboa AI copyright. Bean content policy belongs
+  to the Roastery repository.
+- Do not describe this shell as implemented product behavior, supported host
+  integration, or measured performance.
 
-## Change and verification boundary
+## Verification
 
-Preserve one calendar release identifier source in
-`config/plugin-metadata.json`, using marketplace-accepted `YYYY.M.D` syntax. It
-is one identity axis, not a compatibility promise. The only Roastery contract
-commit pin is `config/roastery-contract.json`; its bundle digest must reproduce
-from `contract/roastery/**`. Run the complete local gate before commit. Do not
-publish, push, or alter GitHub control-plane state from repository scripts.
+Run "npm run verify" and "git diff --check". Do not publish, push, mutate a
+remote, or alter GitHub settings from repository scripts.

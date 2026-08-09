@@ -1,7 +1,7 @@
 {
   "name": "coffee-chat",
   "version": "2026.8.9",
-  "description": "Turn public, attributed Taste into consent-gated Coffee without copying external Roasteries.",
+  "description": "A Codex-first Coffee Chat capability shell for explicit public Roastery journeys.",
   "author": {
     "name": "Openboa AI",
     "email": "support@openboa.ai",
@@ -14,18 +14,17 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Coffee Chat",
-    "shortDescription": "Brew with public, attributed Taste.",
-    "longDescription": "Use consent-gated, commit-pinned public Roasteries as read-only Taste sources for attributed AI-generated Coffee.",
+    "shortDescription": "Choose a public Roastery journey.",
+    "longDescription": "Discover the Talk now and Build mine journeys while Coffee Chat product mechanics remain explicitly deferred.",
     "developerName": "Openboa AI",
     "category": "Productivity",
     "capabilities": ["Skills"],
     "websiteURL": "https://github.com/openboa-ai/coffee-chat",
-    "privacyPolicyURL": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/privacy.md",
-    "termsOfServiceURL": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/terms.md",
+    "privacyPolicyURL": "https://github.com/openboa-ai/coffee-chat/blob/main/README.md",
+    "termsOfServiceURL": "https://github.com/openboa-ai/coffee-chat/blob/main/README.md",
     "defaultPrompt": [
-      "Initialize my public Coffee Chat Roastery.",
-      "Sync this public Roastery after showing what will be read.",
-      "Brew a response using the Taste I explicitly select."
+      "Talk now with a public Roastery.",
+      "Build mine from the official public fork seed."
     ],
     "brandColor": "#6F4E37"
   }

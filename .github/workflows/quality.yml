@@ -8,15 +8,29 @@ permissions: {}
 
 jobs:
   quality:
-    name: Coffee Chat deterministic quality
+    name: Coffee Chat shell quality
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
+      - name: Verify trusted pull request author
+        if: github.event_name == 'pull_request'
+        env:
+          AUTHOR_ASSOCIATION:
+            ${{ github.event.pull_request.author_association }}
+        run: |
+          case "$AUTHOR_ASSOCIATION" in
+            OWNER|MEMBER)
+              printf '%s\n' 'author=trusted_maintainer'
+              ;;
+            *)
+              printf '%s\n' 'author=untrusted' >&2
+              exit 1
+              ;;
+          esac
       - name: Check out repository without persisted credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          fetch-depth: 0
           persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -29,16 +43,19 @@ jobs:
         run: npm run format:check
       - name: Check types
         run: npm run typecheck
-      - name: Run deterministic tests
+      - name: Run shell tests
         run: npm test
-      - name: Verify CI and migration policy
-        run: npm run ci:policy
+      - name: Build package
+        run: npm run build
+      - name: Run package smoke
+        run: npm run package:smoke
+      - name: Check repository policy
+        run: npm run policy
 
   aggregate:
     name: Coffee Chat required
     if: always()
-    needs:
-      - quality
+    needs: quality
     runs-on: ubuntu-24.04
     permissions:
       contents: read

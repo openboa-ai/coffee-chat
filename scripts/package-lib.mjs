@@ -1,20 +1,15 @@
 import { createHash } from "node:crypto";
 import { lstat, readdir, readFile } from "node:fs/promises";
-import { join, relative, sep } from "node:path";
+import { join, sep } from "node:path";
 
 export const packageRoots = Object.freeze([
   ".agents",
   ".codex-plugin",
-  "config",
-  "contract",
-  "docs/privacy.md",
+  "config/plugin-metadata.json",
+  "docs/product-boundaries.md",
   "docs/quality-map.md",
-  "docs/support.md",
-  "docs/terms.md",
   "runtime",
   "skills",
-  "src",
-  "submission",
   "AGENTS.md",
   "LICENSE",
   "README.md",
@@ -31,21 +26,22 @@ export async function collectFiles(root, entries = packageRoots) {
   async function visit(path) {
     const absolute = join(root, path);
     const information = await lstat(absolute);
-    if (information.isSymbolicLink())
+    if (information.isSymbolicLink()) {
       throw new Error(`Package symlink is forbidden: ${path}`);
+    }
     if (information.isDirectory()) {
-      for (const child of (await readdir(absolute)).sort((a, b) =>
-        a.localeCompare(b, "en"),
-      )) {
+      for (const child of (await readdir(absolute)).sort()) {
         await visit(join(path, child));
       }
       return;
     }
-    if (!information.isFile())
+    if (!information.isFile()) {
       throw new Error(`Unsupported package entry: ${path}`);
+    }
     const normalized = path.split(sep).join("/");
-    if (normalized.startsWith("../") || normalized.includes("/../"))
+    if (normalized.startsWith("../") || normalized.includes("/../")) {
       throw new Error(`Escaped package path: ${normalized}`);
+    }
     found.push({ path: normalized, bytes: await readFile(absolute) });
   }
   for (const entry of entries) await visit(entry);
@@ -54,35 +50,18 @@ export async function collectFiles(root, entries = packageRoots) {
   );
 }
 
-export function packageBundle(files) {
-  const parts = [];
-  const count = Buffer.alloc(4);
-  count.writeUInt32BE(files.length);
-  parts.push(count);
-  for (const file of files) {
-    const path = Buffer.from(file.path, "utf8");
-    const pathLength = Buffer.alloc(4);
-    pathLength.writeUInt32BE(path.length);
-    const contentLength = Buffer.alloc(8);
-    contentLength.writeBigUInt64BE(BigInt(file.bytes.length));
-    parts.push(pathLength, path, contentLength, file.bytes);
-  }
-  return Buffer.concat(parts);
-}
-
 function crc32(bytes) {
   let crc = 0xffffffff;
   for (const byte of bytes) {
     crc ^= byte;
-    for (let bit = 0; bit < 8; bit += 1)
+    for (let bit = 0; bit < 8; bit += 1) {
       crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+    }
   }
   return (crc ^ 0xffffffff) >>> 0;
 }
 
 export function packageZip(files, rootName = "coffee-chat") {
-  if (files.length > 65_535)
-    throw new Error("ZIP64 is intentionally unsupported.");
   const localParts = [];
   const centralParts = [];
   let offset = 0;
@@ -100,7 +79,6 @@ export function packageZip(files, rootName = "coffee-chat") {
     local.writeUInt32LE(file.bytes.length, 18);
     local.writeUInt32LE(file.bytes.length, 22);
     local.writeUInt16LE(name.length, 26);
-    local.writeUInt16LE(0, 28);
     localParts.push(local, name, file.bytes);
 
     const central = Buffer.alloc(46);
@@ -115,36 +93,16 @@ export function packageZip(files, rootName = "coffee-chat") {
     central.writeUInt32LE(file.bytes.length, 20);
     central.writeUInt32LE(file.bytes.length, 24);
     central.writeUInt16LE(name.length, 28);
-    central.writeUInt16LE(0, 30);
-    central.writeUInt16LE(0, 32);
-    central.writeUInt16LE(0, 34);
-    central.writeUInt16LE(0, 36);
-    central.writeUInt32LE(0, 38);
     central.writeUInt32LE(offset, 42);
     centralParts.push(central, name);
     offset += local.length + name.length + file.bytes.length;
   }
-  const centralDirectory = Buffer.concat(centralParts);
+  const directory = Buffer.concat(centralParts);
   const end = Buffer.alloc(22);
   end.writeUInt32LE(0x06054b50, 0);
-  end.writeUInt16LE(0, 4);
-  end.writeUInt16LE(0, 6);
   end.writeUInt16LE(files.length, 8);
   end.writeUInt16LE(files.length, 10);
-  end.writeUInt32LE(centralDirectory.length, 12);
+  end.writeUInt32LE(directory.length, 12);
   end.writeUInt32LE(offset, 16);
-  end.writeUInt16LE(0, 20);
-  return Buffer.concat([...localParts, centralDirectory, end]);
-}
-
-export function inventory(files) {
-  return files.map((file) => ({
-    path: file.path,
-    bytes: file.bytes.length,
-    sha256: sha256(file.bytes),
-  }));
-}
-
-export function relativePackagePath(root, absolute) {
-  return relative(root, absolute).split(sep).join("/");
+  return Buffer.concat([...localParts, directory, end]);
 }

@@ -1,23 +1,17 @@
 ## Objective
 
-<!-- State one coherent external objective. -->
+Describe the one product-shell or governance objective.
 
-## Acceptance and evidence
+## Evidence
 
-<!-- List observable acceptance criteria, their oracle, and commands run. -->
+List the exact local commands and results.
 
-## Failure modes and forbidden side effects
+## Boundaries
 
-<!-- Name the important failures this change prevents or preserves. -->
-
-## Scope and risk
-
-- Repository role: `coffee-chat`
-- Cross-repository impact:
-- Risk class: <!-- ordinary | protected -->
-- Agent-assisted: <!-- yes | no -->
-- Migration or provenance consequence:
-
-## Verification
-
-<!-- Record each command and its result. Do not report planned behavior as implemented. -->
+- [ ] No capability is reported as implemented or measured.
+- [ ] No network, external write, personal data, evaluation, or benchmark
+      runtime was added.
+- [ ] Plugin install/uninstall and Roastery sync/unsync terminology remain
+      separate.
+- [ ] The change is eligible for GitHub-native squash with zero approvals after
+      required checks pass.

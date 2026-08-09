@@ -1,35 +1,20 @@
 ---
 name: unsync
 description:
-  Unsync one exact external Roastery relationship without claiming deletion of
-  remote or host history. Use when the user asks to remove, disconnect, forget,
-  or Unsync a registered Roastery.
+  Declare removal of one exact local Roastery relationship. Use when the user
+  asks to remove one Roastery relationship.
 ---
 
 # Unsync
 
-Remove only one exact global Registry relationship.
+status: not_implemented
 
-## Input
+This Skill is a discoverable migration-shell entrypoint only. Run
+scripts/run.mjs to receive the closed machine-readable status.
 
-Require the exact registered relationship ID. If the request is ambiguous, list
-candidates without removing any.
+The later product implementation Goal owns every capability mechanic. This shell
+performs no network, filesystem, Git, GitHub, Registry, cache, model, host, or
+publication operation.
 
-## Steps
-
-1. Resolve exactly one ID from the global Registry.
-2. Run `scripts/run.mjs` with the current Registry and that ID.
-3. Apply only the returned Registry deletion on a surface where the user
-   approves that local write.
-
-## Output
-
-Return the removed relationship and the remaining Registry.
-
-## Failure boundary
-
-Unsync does not delete a remote, clone, host conversation history, archived
-chat, or prior CC BY grant. Do not promise session-end cleanup or remove by a
-partial URL/name match.
-
-See [deletion-limits.md](references/deletion-limits.md).
+Do not infer success, support, persistence, selection, confirmation, citation,
+disclosure, or write authority from discovery of this Skill.

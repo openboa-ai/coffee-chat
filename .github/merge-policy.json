@@ -1,42 +1,10 @@
 {
-  "repository_role": "plugin-product",
   "merge_method": "squash",
-  "required_events": ["merge_group", "pull_request"],
-  "auto_merge": {
-    "ordinary": true,
-    "protected_after_code_owner_approval": true
-  },
-  "required_checks": [
-    { "context": "Coffee Chat required", "integration_id": 15368 },
-    { "context": "Coffee Chat dependency review", "integration_id": 15368 },
-    {
-      "context": "Coffee Chat CodeQL JavaScript-TypeScript",
-      "integration_id": 15368
-    }
-  ],
-  "protected_paths": [
-    "/.github/**",
-    "/.agents/**",
-    "/.codex-plugin/**",
-    "/AGENTS.md",
-    "/CODEOWNERS",
-    "/LICENSE",
-    "/SECURITY.md",
-    "/package.json",
-    "/package-lock.json",
-    "/plugin.json",
-    "/config/**",
-    "/contract/**",
-    "/docs/migration/**",
-    "/scripts/check-migration-receipt.mjs",
-    "/skills/**",
-    "/submission/**"
-  ],
-  "migration": {
-    "base_commit": "544a9c9a4067c7b69b58155c2fa54479116c2fda",
-    "checker": "scripts/check-migration-receipt.mjs",
-    "selection": "docs/migration/selections/tasks-4-7-8-11-initial-submission-ready-baseline.json",
-    "equality": "docs/migration/equality/tasks-4-7-8-11-initial-submission-ready-baseline.json",
-    "receipt": "docs/migration/receipts/tasks-4-7-8-11-initial-submission-ready-baseline.json"
-  }
+  "required_approvals": 0,
+  "required_code_owner_reviews": 0,
+  "required_last_push_approvals": 0,
+  "eligible_author_associations": ["OWNER", "MEMBER"],
+  "custom_merge_controller": false,
+  "required_checks": ["Coffee Chat required", "Coffee Chat dependency review"],
+  "codeql_enforcement": "native_code_scanning"
 }
