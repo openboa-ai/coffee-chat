@@ -1,0 +1,20 @@
+{
+  "name": "coffee-chat",
+  "displayName": "Coffee Chat",
+  "version": "2026.8.9",
+  "shortDescription": "Brew with public, attributed Taste.",
+  "longDescription": "Coffee Chat uses consent-gated, commit-pinned public Roasteries as read-only Taste sources for ephemeral, attributed AI-generated Coffee. External Beans are never copied into an owned Roastery.",
+  "developerName": "Openboa AI",
+  "category": "Productivity",
+  "capabilities": ["Skills"],
+  "submissionType": "skills-only",
+  "skillBundleDigest": "sha256:3e14575ab45d64a5c3b0ac4c7d3993c0d3791deee3b738310938b4a997e39c1f",
+  "websiteUrl": "https://github.com/openboa-ai/coffee-chat",
+  "privacyUrl": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/privacy.md",
+  "termsUrl": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/terms.md",
+  "supportUrl": "https://github.com/openboa-ai/coffee-chat/blob/main/docs/support.md",
+  "assets": {
+    "status": "pending_provenance_approval",
+    "screenshots": "not_applicable_no_ui"
+  }
+}

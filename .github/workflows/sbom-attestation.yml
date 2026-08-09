@@ -1,0 +1,54 @@
+name: Coffee Chat SBOM and attestation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  attest-release-candidate:
+    name: Attest protected-main release candidate
+    if: github.ref == 'refs/heads/main'
+    environment: release-attestation
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Check out protected source without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Fail closed unless the trusted contract is release-ready
+        run: npm run validate:contract-release
+      - name: Run the full deterministic gate
+        run: npm run verify
+      - name: Reproduce revision-bound package and SBOM
+        run: npm run release:candidate
+        env:
+          COFFEE_CHAT_BUILD_REVISION: ${{ github.sha }}
+      - name: Attest the reproducible package bundle
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a
+        with:
+          subject-path: build/coffee-chat-plugin.zip
+      - name: Upload candidate, SBOM, and receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coffee-chat-attested-candidate
+          path: |
+            build/coffee-chat-plugin.bundle
+            build/coffee-chat-plugin.zip
+            build/package-receipt.json
+            build/sbom.cdx.json
+          if-no-files-found: error
