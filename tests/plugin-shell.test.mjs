@@ -93,19 +93,40 @@ test("all seven capability Skills are discoverable and have fixed launchers", ()
       "utf8",
     );
     assert.match(skill, new RegExp(`^---\\nname: ${capability}\\n`, "u"));
-    assert.match(skill, /status: not_implemented/u);
-    assert.match(skill, /Run\s+`node scripts\/run\.mjs`/u);
-    assert.match(skill, /later product implementation Goal/u);
+    if (capability === "init") {
+      assert.match(skill, /status: available/u);
+      assert.match(skill, /preview --owner/u);
+      assert.match(skill, /apply --owner/u);
+    } else {
+      assert.match(skill, /status: not_implemented/u);
+      assert.match(skill, /Run\s+`node scripts\/run\.mjs`/u);
+      assert.match(skill, /later capability Goal/u);
+    }
     assert.doesNotThrow(() =>
       readFileSync(join(root, "skills", capability, "scripts/run.mjs"), "utf8"),
     );
   }
 });
 
-test("every capability returns one deterministic closed not_implemented result", () => {
+test("Init is available while the other six capabilities remain explicitly deferred", () => {
   const scratch = mkdtempSync(join(tmpdir(), "coffee-chat-shell-"));
   try {
-    for (const capability of capabilities) {
+    const init = invoke("runtime/coffee-chat.mjs", "init", scratch);
+    assert.deepEqual(init, {
+      exitCode: 0,
+      stderr: "",
+      stdout: {
+        schema: "coffee-chat-capability-result",
+        calver: "2026.8.10",
+        capability: "init",
+        status: "available",
+        workflow: "preview_then_explicit_apply",
+        entrypoint: "skills/init/scripts/run.mjs",
+        writesOnlyAfterAcceptedPreview: true,
+      },
+    });
+
+    for (const capability of capabilities.filter((name) => name !== "init")) {
       const first = invoke("runtime/coffee-chat.mjs", capability, scratch);
       const second = invoke("runtime/coffee-chat.mjs", capability, scratch);
       assert.equal(first.exitCode, 3, capability);
@@ -113,10 +134,10 @@ test("every capability returns one deterministic closed not_implemented result",
       assert.deepEqual(first, second, capability);
       assert.deepEqual(first.stdout, {
         schema: "coffee-chat-capability-result",
-        calver: "2026.8.9",
+        calver: "2026.8.10",
         capability,
         status: "not_implemented",
-        implementationOwner: "later product implementation Goal",
+        implementationOwner: "later capability Goal",
         sideEffects: {
           network: false,
           filesystem: false,
@@ -141,9 +162,8 @@ test("every capability returns one deterministic closed not_implemented result",
   }
 });
 
-test("the shipped shell contains no forbidden component, data, or write surface", () => {
-  const forbiddenPaths = [
-    "contract",
+test("the shipped Plugin contains no undeclared component or authority", () => {
+  const forbiddenTopLevel = [
     "mcp.json",
     ".mcp.json",
     ".app.json",
@@ -153,12 +173,12 @@ test("the shipped shell contains no forbidden component, data, or write surface"
     "benchmark",
     "engine",
     "cache",
-    "registry",
   ];
   const shippedRoots = [
     ".agents",
     ".codex-plugin",
     "config",
+    "contract",
     "docs",
     "runtime",
     "skills",
@@ -168,22 +188,33 @@ test("the shipped shell contains no forbidden component, data, or write surface"
     "plugin.json",
   ];
   const paths = shippedRoots.flatMap(files);
-  for (const path of paths) {
-    const lowered = path.toLowerCase();
-    assert.equal(
-      forbiddenPaths.some((segment) => lowered.split("/").includes(segment)),
-      false,
-      path,
-    );
+  const topLevel = readdirSync(root);
+  for (const path of forbiddenTopLevel) {
+    assert.equal(topLevel.includes(path), false, path);
   }
 
   const productText = paths
-    .filter((path) => /\.(?:json|md|mjs)$/u.test(path))
+    .filter(
+      (path) =>
+        /\.(?:json|md|mjs)$/u.test(path) &&
+        !path.startsWith("contract/roastery/"),
+    )
     .map((path) => readFileSync(join(root, path), "utf8"))
     .join("\n");
   assert.doesNotMatch(
     productText,
     /\b(?:persona|Green Bean|Harvest|Pairing|SemVer|v1)\b/u,
   );
-  assert.doesNotMatch(productText, /node:(?:fs|http|https|net|child_process)/u);
+  assert.doesNotMatch(productText, /node:(?:http|https|net)/u);
+  assert.deepEqual(
+    paths.filter(
+      (path) =>
+        path.endsWith(".mjs") &&
+        readFileSync(join(root, path), "utf8").includes("node:child_process"),
+    ),
+    ["runtime/github.mjs"],
+  );
+  const github = readFileSync(join(root, "runtime/github.mjs"), "utf8");
+  assert.match(github, /execFileSync/u);
+  assert.doesNotMatch(github, /\bexec(?:Sync)?\s*\(/u);
 });

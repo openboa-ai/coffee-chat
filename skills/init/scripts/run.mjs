@@ -1,4 +1,4 @@
 #!/usr/bin/env node
-import { runCapabilityCli } from "../../../runtime/coffee-chat.mjs";
+import { runInitCli } from "../../../runtime/init-cli.mjs";
 
-process.exitCode = runCapabilityCli("init");
+process.exitCode = await runInitCli(process.argv.slice(2));

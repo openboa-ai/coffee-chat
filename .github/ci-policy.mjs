@@ -77,7 +77,6 @@ assert.equal("eligible_author_logins" in mergePolicy, false);
 assert.equal(mergePolicy.custom_merge_controller, false);
 
 for (const path of [
-  "contract",
   "src",
   "roastery",
   "evaluation",

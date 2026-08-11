@@ -25,7 +25,30 @@ try {
   const files = await collectFiles(plugin);
   await writeFile(join(temporaryRoot, "coffee-chat.zip"), packageZip(files));
 
-  for (const capability of capabilities) {
+  const init = spawnSync(
+    process.execPath,
+    [
+      join(plugin, "skills", "init", "scripts/run.mjs"),
+      "preview",
+      "--owner",
+      "example",
+      "--attribution",
+      "Example Owner",
+    ],
+    {
+      encoding: "utf8",
+      cwd: temporaryRoot,
+      env: {
+        ...process.env,
+        COFFEE_CHAT_STATE_DIR: join(temporaryRoot, "state"),
+      },
+    },
+  );
+  assert.equal(init.status, 0, init.stderr);
+  assert.equal(init.stderr, "");
+  assert.equal(JSON.parse(init.stdout).status, "preview");
+
+  for (const capability of capabilities.filter((name) => name !== "init")) {
     const result = spawnSync(
       process.execPath,
       [join(plugin, "skills", capability, "scripts/run.mjs")],

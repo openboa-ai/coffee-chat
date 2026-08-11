@@ -9,10 +9,10 @@ description:
 
 status: not_implemented
 
-This Skill is a discoverable migration-shell entrypoint only. Run
+This Skill is a discoverable deferred capability entrypoint only. Run
 `node scripts/run.mjs` to receive the closed machine-readable status.
 
-The later product implementation Goal owns every capability mechanic. This shell
+The later capability Goal owns every Coffee Blend mechanic. This entrypoint
 performs no network, filesystem, Git, GitHub, Registry, cache, model, host, or
 publication operation.
 

@@ -6,6 +6,7 @@ export const packageRoots = Object.freeze([
   ".agents",
   ".codex-plugin",
   "config/plugin-metadata.json",
+  "contract",
   "docs/product-boundaries.md",
   "docs/quality-map.md",
   "runtime",
