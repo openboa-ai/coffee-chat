@@ -1,40 +1,24 @@
 # Coffee Chat Quality Map
 
-## Objective: discoverable Plugin shell
+| Objective                                     | Acceptance criteria and oracle                                                                                                                                                                      | Representative evidence                                                 | Gate                         |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------- |
+| Keep one discoverable Plugin identity         | Portable and OpenAI manifests project one CalVer; exactly seven Skills have contained launchers; no MCP/app/hook appears                                                                            | `plugin-shell.test.mjs`                                                 | PR                           |
+| Consume one immutable Roastery authority      | Every vendored package byte matches the closed hash manifest; the canonical bundle digest, contract squash, and later seed squash match their frozen identities                                     | `contract-bundle.test.mjs`                                              | PR                           |
+| Make consent observable before Init writes    | Preview deterministically binds the public target, declaration, digest, seven notices, rights attestation, publication path, local state, and recovery boundary                                     | `init-acceptance.test.mjs`, `init-cli-acceptance.test.mjs`              | PR                           |
+| Preserve zero writes for non-authorized paths | Rejection, cancellation, invalid attribution/owner/license input, stale Preview, Registry conflict, and GitHub preflight failure cause no fork, protection, branch, pull request, or Registry write | `init-acceptance.test.mjs`, `init-cli-acceptance.test.mjs`              | PR                           |
+| Initialize through protected public state     | Only the frozen official seed is forked; protection precedes the two-file proposal; exact head merges through required CI; public main is reverified before owned registration                      | `github-boundary-acceptance.test.mjs`                                   | PR; isolated live gate later |
+| Keep local owned state atomic and non-ambient | Preflight is read-only; one mode-0600 record is atomically created after verification; existing or malformed state fails closed                                                                     | `registry-acceptance.test.mjs`                                          | PR                           |
+| Keep unimplemented capability claims honest   | Sync, Unsync, Roast, Brew, Coffee Chat, and Coffee Blend return deterministic `not_implemented` and preserve an empty workspace                                                                     | `plugin-shell.test.mjs`                                                 | PR                           |
+| Keep package and CI evidence lean             | Isolated packaged Preview loads the vendored authority; package leaves no worktree artifact; quality, dependency review, and CodeQL remain required                                                 | `package-archive.test.mjs`, `workflow-policy.test.mjs`, `package:smoke` | PR                           |
 
-| Field                 | Entry                                                                                                        |
-| --------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Objective             | Expose one CalVer identity through separate portable and OpenAI manifests and seven discoverable Skills.     |
-| Acceptance criteria   | Shared identity fields match; both manifest projections remain distinct; every Skill has one fixed launcher. |
-| Failure modes         | Identity drift, missing capability, alias surface, or undeclared package component.                          |
-| Oracle                | Parsed manifests and discovered package paths.                                                               |
-| Evidence tier         | Contract                                                                                                     |
-| Representative suites | tests/plugin-shell.test.mjs                                                                                  |
-| Gate/cost             | Local and pull request; fast                                                                                 |
-| Owner                 | openboa-ai/coffee-chat                                                                                       |
+The fake GitHub transport proves ordering, data boundaries, and failure
+classification, not live provider availability. A real personal fork, real Codex
+host, marketplace submission, Coffee output quality, evaluation report, and
+benchmark result require separate gates and are not inferred from these tests.
 
-## Objective: honest deferred behavior
+## Verification commands
 
-| Field                 | Entry                                                                                                            |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Objective             | Keep all seven capabilities explicitly deferred and side-effect-free.                                            |
-| Acceptance criteria   | Every command returns the same closed machine-readable status and leaves an empty temporary directory unchanged. |
-| Failure modes         | False success, nondeterminism, network or write authority, or hidden product mechanics.                          |
-| Oracle                | Process result, exact structured output, and filesystem observation.                                             |
-| Evidence tier         | Behavior                                                                                                         |
-| Representative suites | tests/plugin-shell.test.mjs                                                                                      |
-| Gate/cost             | Local and pull request; fast                                                                                     |
-| Owner                 | openboa-ai/coffee-chat                                                                                           |
-
-## Objective: isolated package check and lean CI
-
-| Field                 | Entry                                                                                                                        |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Objective             | Check the shell package in temporary storage and retain no generated artifact.                                               |
-| Acceptance criteria   | Package smoke leaves the worktree unchanged; quality, dependency review, and CodeQL workflows satisfy policy.                |
-| Failure modes         | Forbidden package content, false readiness, unpinned Actions, privileged candidate execution, or non-squash merge authority. |
-| Oracle                | Worktree status, package smoke execution, and parsed workflow policy.                                                        |
-| Evidence tier         | Acceptance                                                                                                                   |
-| Representative suites | tests/package-archive.test.mjs, tests/workflow-policy.test.mjs                                                               |
-| Gate/cost             | Local and pull request; fast                                                                                                 |
-| Owner                 | openboa-ai/coffee-chat                                                                                                       |
+```sh
+npm run verify
+git diff --check
+```

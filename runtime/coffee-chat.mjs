@@ -17,19 +17,31 @@ export function dispatch(capability) {
   if (!capabilitySet.has(capability)) {
     return {
       schema: "coffee-chat-capability-result",
-      calver: "2026.8.9",
+      calver: "2026.8.10",
       capability,
       status: "invalid_capability",
       allowedCapabilities: capabilities,
     };
   }
 
+  if (capability === "init") {
+    return {
+      schema: "coffee-chat-capability-result",
+      calver: "2026.8.10",
+      capability,
+      status: "available",
+      workflow: "preview_then_explicit_apply",
+      entrypoint: "skills/init/scripts/run.mjs",
+      writesOnlyAfterAcceptedPreview: true,
+    };
+  }
+
   return {
     schema: "coffee-chat-capability-result",
-    calver: "2026.8.9",
+    calver: "2026.8.10",
     capability,
     status: "not_implemented",
-    implementationOwner: "later product implementation Goal",
+    implementationOwner: "later capability Goal",
     sideEffects: {
       network: false,
       filesystem: false,
@@ -48,9 +60,9 @@ export function runCapabilityCli(
 ) {
   const result = dispatch(capability);
   const output = `${JSON.stringify(result)}\n`;
-  if (result.status === "not_implemented") {
+  if (result.status === "not_implemented" || result.status === "available") {
     stdout.write(output);
-    return 3;
+    return result.status === "available" ? 0 : 3;
   }
   stderr.write(output);
   return 64;

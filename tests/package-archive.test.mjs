@@ -14,7 +14,7 @@ const capabilities = [
   "coffee-blend",
 ];
 
-test("package smoke is isolated and contains only the declared shell", () => {
+test("package smoke is isolated and contains only the declared Plugin", () => {
   const before = spawnSync(
     "git",
     ["status", "--porcelain=v1", "--untracked-files=all"],

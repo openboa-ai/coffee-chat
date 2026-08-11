@@ -1,28 +1,42 @@
 # Coffee Chat product repository rules
 
-This repository currently owns the clean migration shell for the official
-Skills-only Coffee Chat Plugin. Product mechanics remain deferred to the later
-product implementation Goal.
+This repository owns the official Codex-first, Skills-only Coffee Chat Plugin.
+The current bounded product implementation is Build mine / Init. Sync, Unsync,
+Roast, Brew, Coffee Chat, and Coffee Blend remain explicit deferred surfaces.
 
-## Shell boundary
+## Product boundary
 
-- Keep portable root plugin.json and OpenAI .codex-plugin/plugin.json as
-  separate projections of config/plugin-metadata.json.
-- Keep exactly seven capabilities: init, sync, unsync, roast, brew, coffee-chat,
-  and coffee-blend.
-- Every capability must return explicit "not_implemented" and perform no
-  network, filesystem, Git, GitHub, Registry, cache, model, host, or publication
-  operation.
-- The Plugin lifecycle uses install and uninstall. Roastery relationships use
-  sync and unsync.
-- Add no MCP component, app, hook, embedded Roastery, evaluation or benchmark
-  runtime, compatibility layer, sample data, or second release identity.
-- Official source is MIT with Openboa AI copyright. Bean content policy belongs
-  to the Roastery repository.
-- Do not describe this shell as implemented product behavior, supported host
-  integration, or measured performance.
+- Keep exactly seven Skills: init, sync, unsync, roast, brew, coffee-chat, and
+  coffee-blend. Init is available; the other six must return `not_implemented`
+  without side effects.
+- Keep portable root `plugin.json` and OpenAI `.codex-plugin/plugin.json` as
+  separate projections of `config/plugin-metadata.json` under one CalVer.
+- Plugin installation and discovery perform no fork, fetch, Registry, target, or
+  publication operation.
+- Init uses the vendored immutable Standard Roastery authority. Runtime must not
+  import a sibling checkout, accept an alternate contract, or introduce a second
+  executable pin.
+- Before any external write, Init shows one digest-bound Preview containing the
+  public target, exact declaration, seven notices, and rights attestation.
+  Rejection, cancellation, invalid attribution, stale Preview, and failed
+  preflight preserve zero GitHub and Registry writes.
+- Accepted Init may fork only the frozen official public seed to
+  `<owner>/coffee-chat`. Identity and `roastery/CONTENT_LICENSE.md` enter only
+  through a protected branch and pull request. Register owned state only after
+  the public default branch is reverified.
+- The local GitHub adapter invokes `gh` without a shell. It never reads or emits
+  credential material. Development tests use fake boundaries and never create a
+  personal production fork.
+- Add no MCP component, app, hook, embedded personal Roastery, external cache,
+  evaluator, benchmark runtime, compatibility layer, sample Bean, or second
+  release identity.
+- Product vocabulary uses Taste, not persona. Official source is MIT with
+  Openboa AI copyright; Bean content rights belong to the Roastery contract.
+- Do not describe synthetic acceptance evidence as live host support, measured
+  value, marketplace acceptance, or real-user performance.
 
 ## Verification
 
-Run "npm run verify" and "git diff --check". Do not publish, push, mutate a
-remote, or alter GitHub settings from repository scripts.
+Run `npm run verify` and `git diff --check`. Package, build, smoke, and CI
+scripts must not mutate a remote. Only the explicitly accepted Init Skill may
+perform its documented user-scoped GitHub and Registry writes.

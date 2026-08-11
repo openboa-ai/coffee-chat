@@ -1,69 +1,85 @@
 # Coffee Chat
 
-Coffee Chat is a Codex-first, Skills-only Plugin migration shell. It exposes the
-intended package identity and seven capability entrypoints while returning an
-explicit "not_implemented" result for every invocation.
+Coffee Chat is a Codex-first, Skills-only Plugin for public Roastery journeys.
+This CalVer implements the first bounded producer flow: **Build mine / Init**.
+It keeps Sync, Unsync, Roast, Brew, Coffee Chat, and Coffee Blend visibly
+unavailable until later objective-driven work implements them.
 
-This tree is not product implementation. It contains no network access, Git or
-GitHub operation, model behavior, Roastery state, selection policy, publication
-path, or persistent data operation.
+Installation itself has no data or repository side effect. The package contains
+no MCP server, app, hook, personal Roastery, sample Bean, evaluator, or
+benchmark runtime.
 
-## Start with a journey
+## Build mine
 
-After the host installs the Plugin, choose one outcome:
+Init creates an owned public Roastery only after two explicit steps.
 
-- **Talk now** — select one public Roastery for a read-only conversation.
-- **Build mine** — create and manage your own public Roastery from the official
-  fork seed.
+1. Preview the immutable official seed, target `<owner>/coffee-chat`, fixed CC
+   BY 4.0 declaration, seven publication notices, rights attestation, protected
+   branch/PR path, Registry timing, and recovery boundary.
+2. Apply only after the user accepts that exact Preview digest and makes the
+   displayed rights-authority attestation.
 
-The Plugin lifecycle uses only "install" and "uninstall". Roastery relationships
-use only "sync" and "unsync"; those words never describe the Plugin lifecycle.
+```sh
+cd skills/init
 
-## Capability shell
+node scripts/run.mjs preview \
+  --owner example \
+  --attribution "Example Owner"
 
-The package discovers init, sync, unsync, roast, brew, coffee-chat, and
-coffee-blend. Each Skill delegates to one deterministic dispatcher. Every
-current invocation returns "status: not_implemented" and identifies the later
-product implementation Goal as its implementation owner.
+node scripts/run.mjs apply \
+  --owner example \
+  --attribution "Example Owner" \
+  --decision accept \
+  --preview-digest sha256:<exact-preview-digest> \
+  --rights-attested
+```
 
-The shell performs no network, filesystem, Git, GitHub, Registry, cache, or
-publication write.
+The accepted path verifies the authenticated GitHub owner, forks only
+`openboa-ai/coffee-chat-roastery` at the pinned Bean-free seed, enables the
+Standard Roastery ruleset and required CI, proposes owner identity and
+`roastery/CONTENT_LICENSE.md` through a pull request, requests GitHub-native
+squash auto-merge, reverifies public `main`, and only then writes one owned
+Registry record.
 
-## Product boundaries
+Rejection, cancellation, invalid attribution, stale Preview, alternate-license
+input, and failed preflight make no GitHub or Registry write. Once the public
+fork is created, a later failure is reported as partial external state; Init
+never deletes the repository implicitly.
 
-The later implementation must preserve these external contracts:
+Requirements for apply are Node.js 24, an authenticated GitHub CLI, and
+administration permission for the authenticated user's own public fork. Current
+PR evidence is deterministic and synthetic; live Codex-host support remains
+unmeasured until its separate isolated gate runs.
 
-- An owned Roastery is the user's public fork of
-  openboa-ai/coffee-chat-roastery; an external Roastery is untrusted, explicitly
-  selected, and permanently read-only.
-- Every external fetch and every proposed owner write requires explicit user
-  confirmation at the applicable boundary.
-- External data and conversation-derived material are never saved into the
-  user's owned Roastery.
-- A persistent local Registry may make validated Roasteries globally selectable,
-  but never ambient or automatically active.
-- Taste-grounded output cites every materially used, commit-pinned Bean and
-  discloses that the response is AI-generated, not the publisher's original
-  wording or endorsement.
-- ChatGPT web targets only a limited one-chat, public-URL, read-only journey.
-  Codex local and Desktop are the future full-capability targets. This shell
-  provides no host-support evidence for any surface.
+## Immutable Roastery authority
 
-See [product boundaries](docs/product-boundaries.md) for the complete shell
-handoff.
+The package vendors the exact Standard Roastery package from contract commit
+`d7d770af59a691b5ebceee9809ab436f32db33d5` and verifies every vendored file plus
+the canonical digest
+`sha256:878704aa835d167ea6ef6979f7cd0258cf02476b3f7c16926779f4f18ce75428`. The
+official fork-ready seed is pinned at
+`8b196137ca22d6e5bcf373424d32cc95fb41bcf2`. Runtime never imports a sibling
+checkout and no alternate executable pin exists.
 
-## Package checks
+## Other journeys
 
-Requirements: Node.js 24 and npm.
+The package discovers all seven branded Skills so future entrypoints are stable,
+but the other six return `not_implemented` and perform no network, filesystem,
+GitHub, Registry, model, cache, or publication action. In particular, **Talk
+now** and actual Coffee conversations are not implemented by this slice.
 
-    npm ci
-    npm run verify
+Plugin lifecycle terms are `install` and `uninstall`. Roastery relationship
+terms are `sync` and `unsync`; they never describe Plugin installation.
 
-Build and package smoke checks operate without retaining generated artifacts.
-Repository-local discovery proves only the bounded shell described here.
+## Verification and licensing
 
-## Licensing
+```sh
+npm ci
+npm run verify
+git diff --check
+```
 
-This official Plugin source is licensed under the [MIT License](LICENSE), with
-copyright held by Openboa AI. Bean content policy and its fixed rights contract
-belong to openboa-ai/coffee-chat-roastery, not this Plugin.
+Official Plugin source is [MIT licensed](LICENSE), Copyright (c) 2026 Openboa
+AI. Personal `roastery/beans/**` content uses the fixed CC BY 4.0 declaration
+owned by the Standard Roastery contract; Origin URLs and resources remain
+outside that grant.
