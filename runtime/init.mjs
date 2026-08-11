@@ -1,10 +1,27 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 
-import authority from "../contract/roastery-authority.json" with { type: "json" };
 import {
   ContentLicenseError,
   renderContentLicense,
 } from "../contract/roastery/dist/content-license.js";
+
+function deepFreeze(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) {
+    return value;
+  }
+  for (const nested of Object.values(value)) deepFreeze(nested);
+  return Object.freeze(value);
+}
+
+const authority = deepFreeze(
+  JSON.parse(
+    readFileSync(
+      new URL("../contract/roastery-authority.json", import.meta.url),
+      "utf8",
+    ),
+  ),
+);
 
 const CALVER = "2026.8.10";
 const OWNER = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/iu;

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { createInitPreview, executeInit, InitError } from "../runtime/init.mjs";
 
@@ -149,6 +151,43 @@ test("Init Preview binds the exact public fork and fixed publication contract", 
     createInitPreview({ owner: OWNER, attribution: ATTRIBUTION }),
     preview,
   );
+});
+
+test("Init snapshots authority bytes instead of trusting a shared JSON export", () => {
+  const script = `
+    const shared = (await import(
+      "./contract/roastery-authority.json",
+      { with: { type: "json" } }
+    )).default;
+    shared.contract.commit = "${"f".repeat(40)}";
+    shared.contract.digest = "sha256:${"f".repeat(64)}";
+    shared.seed.commit = "${"e".repeat(40)}";
+    shared.seed.tree = "${"e".repeat(40)}";
+    const { createInitPreview } = await import("./runtime/init.mjs");
+    process.stdout.write(JSON.stringify(createInitPreview({
+      owner: "example",
+      attribution: "Example Owner"
+    })));
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--eval", script],
+    {
+      cwd: fileURLToPath(new URL("..", import.meta.url)),
+      encoding: "utf8",
+    },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  const preview = JSON.parse(result.stdout);
+  assert.equal(
+    preview.contract.commit,
+    "d7d770af59a691b5ebceee9809ab436f32db33d5",
+  );
+  assert.equal(
+    preview.source.commit,
+    "8b196137ca22d6e5bcf373424d32cc95fb41bcf2",
+  );
+  assert.equal(preview.source.tree, "0b70253937bb21e461d459e04336995ee01f5a13");
 });
 
 test("accepted Init publishes only approved identity bytes and registers after verification", async () => {
