@@ -1,10 +1,31 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import { createInitPreview, executeInit, InitError } from "../runtime/init.mjs";
 
 const OWNER = "example";
 const ATTRIBUTION = "Example Owner";
+
+function canonicalValue(value) {
+  if (Array.isArray(value)) return value.map(canonicalValue);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalValue(value[key])]),
+    );
+  }
+  return value;
+}
+
+function previewDigest(preview) {
+  const { previewDigest: ignored, ...body } = preview;
+  assert.ok(ignored);
+  return `sha256:${createHash("sha256")
+    .update(JSON.stringify(canonicalValue(body)))
+    .digest("hex")}`;
+}
 
 function boundaries({ preflight = "ready", registryPreflight = "ready" } = {}) {
   const events = [];
@@ -218,6 +239,26 @@ test("refusal, cancellation, invalid input, stale Preview, and failed preflight 
     assert.deepEqual(boundary.events, []);
     assert.deepEqual(boundary.writes, []);
   }
+
+  const tampered = structuredClone(preview);
+  tampered.source.commit = "f".repeat(40);
+  tampered.previewDigest = previewDigest(tampered);
+  const tamperedBoundary = boundaries();
+  assert.deepEqual(
+    await executeInit({
+      preview: tampered,
+      acceptance: {
+        decision: "accept",
+        previewDigest: tampered.previewDigest,
+        rightsAttested: true,
+      },
+      github: tamperedBoundary.github,
+      registry: tamperedBoundary.registry,
+    }),
+    { status: "stale_preview" },
+  );
+  assert.deepEqual(tamperedBoundary.events, []);
+  assert.deepEqual(tamperedBoundary.writes, []);
 
   for (const input of [
     { owner: OWNER, attribution: "" },

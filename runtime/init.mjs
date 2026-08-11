@@ -103,12 +103,25 @@ function contractPin() {
   };
 }
 
-function currentPreviewDigest(preview) {
+function bindPreview(preview) {
   if (!preview || typeof preview !== "object" || Array.isArray(preview)) {
     return undefined;
   }
-  const { previewDigest: ignored, ...body } = preview;
-  return ignored && digest(body);
+  const owner = preview.target?.owner;
+  const attribution = preview.declaration?.attribution;
+  if (typeof owner !== "string" || typeof attribution !== "string") {
+    return undefined;
+  }
+  let expected;
+  try {
+    expected = createInitPreview({ owner, attribution });
+  } catch {
+    return undefined;
+  }
+  return JSON.stringify(canonicalValue(preview)) ===
+    JSON.stringify(canonicalValue(expected))
+    ? expected
+    : undefined;
 }
 
 export function createInitPreview(input) {
@@ -187,17 +200,22 @@ function failed(stage, error) {
   };
 }
 
-export async function executeInit({ preview, acceptance, github, registry }) {
+export async function executeInit({
+  preview: suppliedPreview,
+  acceptance,
+  github,
+  registry,
+}) {
   if (acceptance?.decision === "reject") return { status: "rejected" };
   if (acceptance?.decision === "cancel") return { status: "cancelled" };
   if (acceptance?.decision !== "accept") {
     return { status: "invalid_acceptance" };
   }
-  const computed = currentPreviewDigest(preview);
+  const preview = bindPreview(suppliedPreview);
   if (
+    !preview ||
     !DIGEST.test(acceptance.previewDigest ?? "") ||
-    computed !== preview?.previewDigest ||
-    acceptance.previewDigest !== preview?.previewDigest
+    acceptance.previewDigest !== preview.previewDigest
   ) {
     return { status: "stale_preview" };
   }
