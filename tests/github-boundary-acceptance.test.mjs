@@ -101,10 +101,12 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   let forked = false;
   let protectedMain = false;
   let activeRuleset;
+  let autoMergeEnabled = false;
   let merged = false;
   let blobSequence = 0;
   const head = "c".repeat(40);
   const mergeCommit = "d".repeat(40);
+  let forkHead = "e".repeat(40);
 
   const transport = {
     async api({ method, path, body, allowNotFound = false }) {
@@ -147,8 +149,17 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (method === "GET" && path === `repos/${TARGET}/git/ref/heads/main`) {
         return {
-          object: { sha: merged ? mergeCommit : preview.source.commit },
+          object: { sha: merged ? mergeCommit : forkHead },
         };
+      }
+      if (
+        method === "PATCH" &&
+        path === `repos/${TARGET}/git/refs/heads/main`
+      ) {
+        writes.push("anchor-seed");
+        assert.deepEqual(body, { sha: preview.source.commit, force: true });
+        forkHead = preview.source.commit;
+        return { object: { sha: forkHead } };
       }
       if (method === "PATCH" && path === `repos/${TARGET}`) {
         writes.push("repository-settings");
@@ -223,6 +234,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         return {
           number: 17,
           merged,
+          state: merged ? "closed" : "open",
           merged_at: merged ? "2026-08-10T00:00:00Z" : null,
           merge_commit_sha: merged ? mergeCommit : null,
           head: { sha: head },
@@ -265,13 +277,16 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       assert.equal(number, 17);
       assert.equal(expectedHead, head);
       assert.equal(protectedMain, true);
-      merged = true;
+      autoMergeEnabled = true;
     },
   };
   const github = createGitHubBoundary({
     transport,
-    pause: async () => {},
-    attempts: 2,
+    pause: async () => {
+      assert.equal(autoMergeEnabled, true);
+      merged = true;
+    },
+    attempts: 1,
   });
   const registry = {
     async preflightOwned() {
@@ -301,6 +316,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   });
   assert.deepEqual(writes, [
     "fork",
+    "anchor-seed",
     "repository-settings",
     "actions",
     "ruleset",

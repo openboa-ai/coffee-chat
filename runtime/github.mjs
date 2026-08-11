@@ -175,10 +175,12 @@ function protectedActions(value) {
 }
 
 async function poll({ attempts, pause, read, accept, code }) {
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
+  let attempt = 0;
+  while (attempts === undefined || attempt < attempts) {
     const value = await read();
     if (accept(value)) return value;
-    if (attempt + 1 < attempts) await pause();
+    attempt += 1;
+    if (attempts === undefined || attempt < attempts) await pause();
   }
   throw new GitHubBoundaryError(code);
 }
@@ -214,6 +216,7 @@ export function createGitHubBoundary({
   transport = createGhTransport(),
   pause = () => new Promise((resolve) => setTimeout(resolve, 2_000)),
   attempts = 90,
+  mergeAttempts = undefined,
 } = {}) {
   return {
     async preflight(preview) {
@@ -303,6 +306,23 @@ export function createGitHubBoundary({
           value.default_branch === preview.source.defaultBranch,
       });
       if (!repository) throw new GitHubBoundaryError("fork_mismatch");
+      await poll({
+        attempts,
+        pause,
+        code: "fork_ref_not_ready",
+        read: () =>
+          transport.api({
+            method: "GET",
+            path: `repos/${target}/git/ref/heads/${preview.source.defaultBranch}`,
+            allowNotFound: true,
+          }),
+        accept: (value) => typeof value?.object?.sha === "string",
+      });
+      await transport.api({
+        method: "PATCH",
+        path: `repos/${target}/git/refs/heads/${preview.source.defaultBranch}`,
+        body: { sha: preview.source.commit, force: true },
+      });
       const reference = await poll({
         attempts,
         pause,
@@ -315,6 +335,13 @@ export function createGitHubBoundary({
           }),
         accept: (value) => value?.object?.sha === preview.source.commit,
       });
+      const commit = await transport.api({
+        method: "GET",
+        path: `repos/${target}/git/commits/${preview.source.commit}`,
+      });
+      if (commit?.tree?.sha !== preview.source.tree) {
+        throw new GitHubBoundaryError("fork_seed_tree_mismatch");
+      }
       return {
         status: "forked",
         repository: preview.target.repository,
@@ -450,7 +477,7 @@ export function createGitHubBoundary({
         expectedHead: proposal.head,
       });
       const merged = await poll({
-        attempts,
+        attempts: mergeAttempts,
         pause,
         code: "protected_merge_timeout",
         read: () =>
@@ -461,6 +488,9 @@ export function createGitHubBoundary({
         accept: (value) => {
           if (value?.head?.sha !== proposal.head) {
             throw new GitHubBoundaryError("stale_proposal");
+          }
+          if (value?.state === "closed" && value.merged !== true) {
+            throw new GitHubBoundaryError("protected_merge_closed");
           }
           return (
             value.merged === true &&
