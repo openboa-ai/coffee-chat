@@ -75,9 +75,15 @@ terms are `sync` and `unsync`; they never describe Plugin installation.
 
 ```sh
 npm ci
+npm run hooks:install
 npm run verify
+npm run security:scan
 git diff --check
 ```
+
+Gitleaks must be installed before enabling the repository-managed pre-commit
+hook. The hook scans staged changes and fails closed when Gitleaks is missing;
+required CI independently scans the complete Git history.
 
 Official Plugin source is [MIT licensed](LICENSE), Copyright (c) 2026 Openboa
 AI. Personal `roastery/beans/**` content uses the fixed CC BY 4.0 declaration
