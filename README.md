@@ -1,91 +1,112 @@
+> [!IMPORTANT] **WIP** — Coffee Chat is under active development. The README
+> below describes the complete first release.
+
 # Coffee Chat
 
-Coffee Chat is a Codex-first, Skills-only Plugin for public Roastery journeys.
-This CalVer implements the first bounded producer flow: **Build mine / Init**.
-It keeps Sync, Unsync, Roast, Brew, Coffee Chat, and Coffee Blend visibly
-unavailable until later objective-driven work implements them.
+![Two illustrated coffee cups facing each other across an open table in the OpenBoa color palette.](docs/assets/readme/coffee-chat-hero.png)
 
-Installation itself has no data or repository side effect. The package contains
-no MCP server, app, hook, personal Roastery, sample Bean, evaluator, or
-benchmark runtime.
+## Knowledge is easy to store. Judgment is still trapped in your head.
 
-## Build mine
+Two people can read the same article and make different decisions. The
+difference is often not what they know. It is what they notice, value, and
+choose to do.
 
-Init creates an owned public Roastery only after two explicit steps.
+Coffee Chat is an Agent Plugin that turns what you make of things into
+**owner-reviewed records**—so people can talk with them and Agents can use them
+at work.
 
-1. Preview the immutable official seed, target `<owner>/coffee-chat`, fixed CC
-   BY 4.0 declaration, seven publication notices, rights attestation, protected
-   branch/PR path, Registry timing, and recovery boundary.
-2. Apply only after the user accepts that exact Preview digest and makes the
-   displayed rights-authority attestation.
+![An unroasted coffee bean passes through Roast and becomes an owner-reviewed Bean.](docs/assets/readme/coffee-chat-judgment.png)
 
-```sh
-cd skills/init
+## What makes Coffee Chat different
 
-node scripts/run.mjs preview \
-  --owner example \
-  --attribution "Example Owner"
+Knowledge systems, memory systems, and digital selves can all hold rich context.
+Coffee Chat is distinguished by the job it is built to do.
 
-node scripts/run.mjs apply \
-  --owner example \
-  --attribution "Example Owner" \
-  --decision accept \
-  --preview-digest sha256:<exact-preview-digest> \
-  --rights-attested
-```
+| Category                    | Its primary job                                                 |
+| --------------------------- | --------------------------------------------------------------- |
+| **LLM wiki / second brain** | Keep knowledge organized, connected, and retrievable            |
+| **Agent memory**            | Help an Agent remember users, conversations, and prior activity |
+| **Digital self**            | Let an AI represent or act on behalf of a person                |
+| **Coffee Chat**             | Make a person's reviewed judgments usable for Talk and Work     |
 
-The accepted path verifies the authenticated GitHub owner, forks only
-`openboa-ai/coffee-chat-roastery` at the pinned Bean-free seed, enables the
-Standard Roastery ruleset and required CI, proposes owner identity and
-`roastery/CONTENT_LICENSE.md` through a pull request, requests GitHub-native
-squash auto-merge, reverifies public `main`, and only then writes one owned
-Registry record.
+Coffee Chat's one-of-one design is the complete loop:
 
-Rejection, cancellation, invalid attribution, stale Preview, alternate-license
-input, and failed preflight make no GitHub or Registry write. Once the public
-fork is created, a later failure is reported as partial external state; Init
-never deletes the repository implicitly.
+> **You review the judgment → you own the record → people can Talk with it →
+> Agents can Work with it.**
 
-Requirements for apply are Node.js 24, an authenticated GitHub CLI, and
-administration permission for the authenticated user's own public fork. Current
-PR evidence is deterministic and synthetic; live Codex-host support remains
-unmeasured until its separate isolated gate runs.
+- **Reviewed, not inferred.** An AI cannot silently decide what you believe.
+- **Owned, not hidden.** Your records are attributable, inspectable, and
+  versioned.
+- **Disclosed, not impersonated.** The AI uses your records without pretending
+  to be you.
+- **Useful beyond recall.** The same records power both Talk and Work.
 
-## Immutable Roastery authority
+## One record. Two uses.
 
-The package vendors the exact Standard Roastery package from contract commit
-`d7d770af59a691b5ebceee9809ab436f32db33d5` and verifies every vendored file plus
-the canonical digest
-`sha256:878704aa835d167ea6ef6979f7cd0258cf02476b3f7c16926779f4f18ce75428`. The
-official fork-ready seed is pinned at
-`8b196137ca22d6e5bcf373424d32cc95fb41bcf2`. Runtime never imports a sibling
-checkout and no alternate executable pin exists.
+| **Talk**                                                        | **Work**                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Understand how someone sees a subject and what they prioritize. | Give your Agent those priorities when it evaluates or creates.     |
+| Ask what mattered, why, and what they would do.                 | Review plans, compare options, surface risks, and make trade-offs. |
 
-## Other journeys
+Talk is an AI conversation grounded in the owner's records. Work uses those
+records as visible context. Neither one claims to reproduce the whole person or
+replace their final decision.
 
-The package discovers all seven branded Skills so future entrypoints are stable,
-but the other six return `not_implemented` and perform no network, filesystem,
-GitHub, Registry, model, cache, or publication action. In particular, **Talk
-now** and actual Coffee conversations are not implemented by this slice.
+![Reviewed Beans pass through Brew to ground conversation and Agent work.](docs/assets/readme/coffee-chat-talk-work.png)
 
-Plugin lifecycle terms are `install` and `uninstall`. Roastery relationship
-terms are `sync` and `unsync`; they never describe Plugin installation.
+## Origin. Bean. Coffee.
 
-## Verification and licensing
+**Origin → Bean → Coffee**
 
-```sh
-npm ci
-npm run hooks:install
-npm run verify
-npm run security:scan
-git diff --check
-```
+- **Origin** — what you responded to, linked when there is a public source.
+- **Bean** — what you made of it, reviewed by you.
+- **Coffee** — what the Agent makes with the relevant Beans for this task.
 
-Gitleaks must be installed before enabling the repository-managed pre-commit
-hook. The hook scans staged changes and fails closed when Gitleaks is missing;
-required CI independently scans the complete Git history.
+Your **Roastery** is the public, versioned home for your Beans. Across many
+Beans, recurring priorities become visible. Coffee Chat calls this **Taste**. It
+comes from reviewed records, not a hidden profile.
 
-Official Plugin source is [MIT licensed](LICENSE), Copyright (c) 2026 Openboa
-AI. Personal `roastery/beans/**` content uses the fixed CC BY 4.0 declaration
-owned by the Standard Roastery contract; Origin URLs and resources remain
-outside that grant.
+## Install
+
+Install **Coffee Chat** from the Plugins Directory and enable it in a new
+conversation.
+
+## Skills
+
+Use the Skill that matches what you want to do.
+
+| Skill                | Use it to                 |
+| -------------------- | ------------------------- |
+| **`$coffee-init`**   | Build your Roastery       |
+| **`$coffee-sync`**   | Connect a Roastery        |
+| **`$coffee-roast`**  | Save a judgment as a Bean |
+| **`$coffee-brew`**   | Use Beans in Agent work   |
+| **`$coffee-chat`**   | Talk with one Roastery    |
+| **`$coffee-unsync`** | Disconnect a Roastery     |
+
+`$coffee-init` and `$coffee-roast` show the exact public change before asking
+for approval. `$coffee-brew` and `$coffee-chat` use reviewed Beans without
+rewriting the Roastery.
+
+## Designed for trust
+
+- You approve every Bean before it becomes public.
+- Your Roastery stays owner-controlled and versioned on GitHub.
+- Other people's Roasteries remain read-only.
+- AI output is disclosed and cited. It never silently becomes a new Bean.
+
+## Documentation
+
+Technical and governance details live in their owning documents:
+
+- [Product and release boundaries](docs/product-boundaries.md)
+- [Roastery contract, storage, and rights](contract/roastery/README.md)
+- [Quality map](docs/quality-map.md)
+- [Security policy](SECURITY.md)
+
+## License
+
+The official Coffee Chat Plugin is [MIT licensed](LICENSE), Copyright © 2026
+Openboa AI. Personal Bean content uses the fixed CC BY 4.0 declaration accepted
+by its owner; Origin URLs and the resources they identify remain outside that
+grant.

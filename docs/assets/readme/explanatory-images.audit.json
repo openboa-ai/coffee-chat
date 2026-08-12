@@ -1,0 +1,256 @@
+{
+  "images": [
+    {
+      "kind": "judgment",
+      "source": "coffee-chat-judgment-illustration.png",
+      "output": "docs/assets/readme/coffee-chat-judgment.png",
+      "canvas": [1576, 998],
+      "font": "MartianGrotesk-wdth-wght.ttf",
+      "font_sha256": "f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912",
+      "openboa_source_commit": "315c64015135aa477e7e791b877b83bae8628a52",
+      "copy": [
+        "ORIGIN",
+        "ROAST",
+        "BEAN",
+        "What you received",
+        "Review what it means to you",
+        "Your judgment, on record",
+        "The same source can mean something different to each person."
+      ],
+      "records": [
+        {
+          "text": "ORIGIN",
+          "role": "overline",
+          "token": "ref.typography.styles.overline",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 42,
+          "axes": {
+            "wght": 650,
+            "wdth": 100
+          },
+          "tracking_em": 0.08,
+          "shaping": "custom-tracked-glyphs",
+          "paint": "#111820",
+          "bounds": [179, 615, 365, 651]
+        },
+        {
+          "text": "ROAST",
+          "role": "overline",
+          "token": "ref.typography.styles.overline",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 42,
+          "axes": {
+            "wght": 650,
+            "wdth": 100
+          },
+          "tracking_em": 0.08,
+          "shaping": "custom-tracked-glyphs",
+          "paint": "#111820",
+          "bounds": [700, 615, 876, 651]
+        },
+        {
+          "text": "BEAN",
+          "role": "overline",
+          "token": "ref.typography.styles.overline",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 42,
+          "axes": {
+            "wght": 650,
+            "wdth": 100
+          },
+          "tracking_em": 0.08,
+          "shaping": "custom-tracked-glyphs",
+          "paint": "#111820",
+          "bounds": [1229, 615, 1371, 650]
+        },
+        {
+          "text": "What you received",
+          "role": "body",
+          "token": "ref.typography.styles.body.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 32,
+          "axes": {
+            "wght": 450,
+            "wdth": 100
+          },
+          "tracking_em": 0.0,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [100, 697, 444, 731]
+        },
+        {
+          "text": "Review what it means to you",
+          "role": "body",
+          "token": "ref.typography.styles.body.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 23,
+          "axes": {
+            "wght": 450,
+            "wdth": 100
+          },
+          "tracking_em": 0.0,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [600, 697, 977, 721]
+        },
+        {
+          "text": "Your judgment, on record",
+          "role": "body",
+          "token": "ref.typography.styles.body.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 27,
+          "axes": {
+            "wght": 450,
+            "wdth": 100
+          },
+          "tracking_em": 0.0,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [1105, 697, 1495, 725]
+        },
+        {
+          "text": "The same source can mean something different to each person.",
+          "role": "heading",
+          "token": "ref.typography.styles.heading.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 37,
+          "axes": {
+            "wght": 550,
+            "wdth": 96
+          },
+          "tracking_em": -0.012,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [110, 850, 1467, 890]
+        }
+      ],
+      "output_sha256": "cc7b665a793ba246c99d529524a43cc0bf257d46cc0d14869b37aa7b0ddbc516"
+    },
+    {
+      "kind": "talk-work",
+      "source": "coffee-chat-talk-work-illustration.png",
+      "output": "docs/assets/readme/coffee-chat-talk-work.png",
+      "canvas": [1576, 998],
+      "font": "MartianGrotesk-wdth-wght.ttf",
+      "font_sha256": "f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912",
+      "openboa_source_commit": "315c64015135aa477e7e791b877b83bae8628a52",
+      "copy": [
+        "BEANS",
+        "BREW",
+        "COFFEE",
+        "Your reviewed judgments",
+        "Select and apply what matters",
+        "Talk and Work, grounded in them",
+        "Your priorities can now travel into conversation and Agent work."
+      ],
+      "records": [
+        {
+          "text": "BEANS",
+          "role": "overline",
+          "token": "ref.typography.styles.overline",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 42,
+          "axes": {
+            "wght": 650,
+            "wdth": 100
+          },
+          "tracking_em": 0.08,
+          "shaping": "custom-tracked-glyphs",
+          "paint": "#111820",
+          "bounds": [183, 615, 361, 651]
+        },
+        {
+          "text": "BREW",
+          "role": "overline",
+          "token": "ref.typography.styles.overline",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 42,
+          "axes": {
+            "wght": 650,
+            "wdth": 100
+          },
+          "tracking_em": 0.08,
+          "shaping": "custom-tracked-glyphs",
+          "paint": "#111820",
+          "bounds": [711, 615, 865, 650]
+        },
+        {
+          "text": "COFFEE",
+          "role": "overline",
+          "token": "ref.typography.styles.overline",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 42,
+          "axes": {
+            "wght": 650,
+            "wdth": 100
+          },
+          "tracking_em": 0.08,
+          "shaping": "custom-tracked-glyphs",
+          "paint": "#111820",
+          "bounds": [1198, 615, 1402, 651]
+        },
+        {
+          "text": "Your reviewed judgments",
+          "role": "body",
+          "token": "ref.typography.styles.body.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 27,
+          "axes": {
+            "wght": 450,
+            "wdth": 100
+          },
+          "tracking_em": 0.0,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [77, 697, 467, 725]
+        },
+        {
+          "text": "Select and apply what matters",
+          "role": "body",
+          "token": "ref.typography.styles.body.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 21,
+          "axes": {
+            "wght": 450,
+            "wdth": 100
+          },
+          "tracking_em": 0.0,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [598, 697, 977, 719]
+        },
+        {
+          "text": "Talk and Work, grounded in them",
+          "role": "body",
+          "token": "ref.typography.styles.body.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 20,
+          "axes": {
+            "wght": 450,
+            "wdth": 100
+          },
+          "tracking_em": 0.0,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [1111, 697, 1489, 719]
+        },
+        {
+          "text": "Your priorities can now travel into conversation and Agent work.",
+          "role": "heading",
+          "token": "ref.typography.styles.heading.lg",
+          "font": "MartianGrotesk-wdth-wght.ttf",
+          "font_size": 36,
+          "axes": {
+            "wght": 550,
+            "wdth": 96
+          },
+          "tracking_em": -0.012,
+          "shaping": "native-whole-string",
+          "paint": "#111820",
+          "bounds": [116, 850, 1460, 890]
+        }
+      ],
+      "output_sha256": "c9ccdcfc5be2a0e6ce9c4ff625a714d5982839f4c9c7995293a7c818e55a51a6"
+    }
+  ]
+}
