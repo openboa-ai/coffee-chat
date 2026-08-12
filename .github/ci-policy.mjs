@@ -90,6 +90,7 @@ assert.equal(mergePolicy.required_approvals, 0);
 assert.deepEqual(mergePolicy.eligible_author_associations, ["OWNER", "MEMBER"]);
 assert.equal("eligible_author_logins" in mergePolicy, false);
 assert.equal(mergePolicy.custom_merge_controller, false);
+assert.ok(mergePolicy.required_checks.includes("Secret boundary"));
 
 for (const path of [
   "src",

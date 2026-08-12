@@ -94,4 +94,5 @@ test("merge policy is GitHub-native squash with zero approvals", () => {
   assert.deepEqual(policy.eligible_author_associations, ["OWNER", "MEMBER"]);
   assert.equal("eligible_author_logins" in policy, false);
   assert.equal(policy.custom_merge_controller, false);
+  assert.ok(policy.required_checks.includes("Secret boundary"));
 });
