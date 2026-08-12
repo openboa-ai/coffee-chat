@@ -44,8 +44,9 @@ python3.12 -m venv .readme-image-venv
 The two `*-illustration.png` files are approved text-free ImageGen layers. The
 composer does not alter their pixels beyond adding the deterministic copy.
 `npm run readme:assets:verify` regenerates both images and their audit in a
-temporary directory, then requires byte-for-byte equality with the committed
-artifacts.
+temporary directory, then requires the same typography audit and decoded RGB
+pixels as the committed artifacts. PNG compression bytes may differ across
+operating systems while the rendered image remains identical.
 
 ## Brand basis
 

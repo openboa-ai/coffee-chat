@@ -12,6 +12,24 @@ const temporaryRoot = await mkdtemp(
   join(tmpdir(), "coffee-chat-readme-assets-"),
 );
 
+function decodePng(path) {
+  const script = [
+    "from hashlib import sha256",
+    "from PIL import Image",
+    `image = Image.open(${JSON.stringify(path)}).convert('RGB')`,
+    "print(sha256(image.tobytes()).hexdigest())",
+  ].join("\n");
+  const result = spawnSync(process.env.PYTHON ?? "python3", ["-c", script], {
+    encoding: "utf8",
+  });
+  assert.equal(
+    result.status,
+    0,
+    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  );
+  return result.stdout.trim();
+}
+
 try {
   const result = spawnSync(
     process.env.PYTHON ?? "python3",
@@ -34,26 +52,28 @@ try {
     [result.stdout, result.stderr].filter(Boolean).join("\n"),
   );
 
-  for (const filename of [
-    "coffee-chat-judgment.png",
-    "coffee-chat-talk-work.png",
-  ]) {
-    const [expected, actual] = await Promise.all([
-      readFile(join(assetRoot, filename)),
-      readFile(join(temporaryRoot, filename)),
-    ]);
-    assert.deepEqual(actual, expected, `${filename} is not reproducible`);
-  }
-
   const [expectedAudit, actualAudit] = await Promise.all([
     readFile(join(assetRoot, "explanatory-images.audit.json"), "utf8"),
     readFile(join(temporaryRoot, "explanatory-images.audit.json"), "utf8"),
   ]);
   assert.deepEqual(
-    JSON.parse(actualAudit),
-    JSON.parse(expectedAudit),
-    "explanatory-images.audit.json is not reproducible",
+    JSON.parse(actualAudit).images.map(({ output_sha256, ...image }) => image),
+    JSON.parse(expectedAudit).images.map(
+      ({ output_sha256, ...image }) => image,
+    ),
+    "README image typography audit is not reproducible",
   );
+
+  for (const filename of [
+    "coffee-chat-judgment.png",
+    "coffee-chat-talk-work.png",
+  ]) {
+    const [expected, actual] = await Promise.all([
+      decodePng(join(assetRoot, filename)),
+      decodePng(join(temporaryRoot, filename)),
+    ]);
+    assert.equal(actual, expected, `${filename} pixels are not reproducible`);
+  }
 
   process.stdout.write(
     `${JSON.stringify({ status: "readme_assets_reproduced" })}\n`,
