@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { delimiter, dirname, join } from "node:path";
+import { delimiter, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -13,8 +13,10 @@ const candidates = [
 ].filter((candidate) => typeof candidate === "string");
 
 for (const python of candidates) {
+  const selectedPython =
+    python.includes("/") && !isAbsolute(python) ? resolve(python) : python;
   const probe = spawnSync(
-    python,
+    selectedPython,
     ["-c", 'import PIL; assert PIL.__version__ == "12.3.0"'],
     { encoding: "utf8" },
   );
@@ -26,8 +28,8 @@ for (const python of candidates) {
     {
       env: {
         ...process.env,
-        PATH: `${dirname(python)}${delimiter}${process.env.PATH ?? ""}`,
-        PYTHON: python,
+        PATH: `${dirname(selectedPython)}${delimiter}${process.env.PATH ?? ""}`,
+        PYTHON: selectedPython,
       },
       stdio: "inherit",
     },
