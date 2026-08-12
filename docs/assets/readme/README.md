@@ -63,7 +63,7 @@ operating systems while the rendered image remains identical.
   size across both 1576 × 998 images, custom tracking applies only to stage
   labels, and full sentences retain native whole-string kerning
 - Rendering environment: Pillow 12.3.0 installed from a hash-locked requirements
-  file
+  file on CPython 3.12 (CI pins 3.12.7)
 - Font license: OFL-1.1, stored next to the physical source file
 - Production format: deterministic self-contained PNG
 
