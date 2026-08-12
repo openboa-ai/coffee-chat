@@ -150,24 +150,39 @@ test("the explanatory images use deterministic canonical OpenBoa type", async ()
   }
 });
 
-test("README image verification uses one digest-pinned renderer", async () => {
-  const [packageText, verifier, workflow, assetGuide] = await Promise.all([
-    readFile(join(root, "package.json"), "utf8"),
-    readFile(join(root, "scripts", "verify-readme-assets.mjs"), "utf8"),
-    readFile(join(root, ".github", "workflows", "quality.yml"), "utf8"),
-    readFile(join(root, "docs", "assets", "readme", "README.md"), "utf8"),
-  ]);
+test("README image verification is offline and reproduction is pinned", async () => {
+  const [packageText, verifier, reproducer, workflow, assetGuide] =
+    await Promise.all([
+      readFile(join(root, "package.json"), "utf8"),
+      readFile(join(root, "scripts", "verify-readme-assets.mjs"), "utf8"),
+      readFile(join(root, "scripts", "reproduce-readme-assets.mjs"), "utf8"),
+      readFile(join(root, ".github", "workflows", "quality.yml"), "utf8"),
+      readFile(join(root, "docs", "assets", "readme", "README.md"), "utf8"),
+    ]);
   const packageJson = JSON.parse(packageText);
 
   assert.equal(
     packageJson.scripts["readme:assets:verify"],
     "node scripts/verify-readme-assets.mjs",
   );
-  assert.ok(verifier.includes(canonicalRenderer));
-  assert.match(verifier, /spawnSync\(\s*"docker"/u);
+  assert.equal(
+    packageJson.scripts["readme:assets:reproduce"],
+    "node scripts/reproduce-readme-assets.mjs",
+  );
+  assert.doesNotMatch(verifier, /docker|https?:|pip install|spawnSync/iu);
+  assert.ok(reproducer.includes(canonicalRenderer));
+  assert.match(reproducer, /spawnSync\(\s*"docker"/u);
+  assert.match(reproducer, /node_modules[\s\S]*prettier[\s\S]*prettier\.cjs/u);
+  assert.match(reproducer, /mkdtemp\(\s*join\(tmpdir\(\)/u);
+  assert.doesNotMatch(reproducer, /mkdtemp\(join\(root/u);
+  assert.match(
+    reproducer,
+    /assert\.deepEqual\(\s*actualAudit,\s*expectedAudit/u,
+  );
   assert.ok(assetGuide.includes(canonicalRenderer));
   assert.doesNotMatch(workflow, /setup-python/u);
   assert.doesNotMatch(workflow, /pip install/u);
+  assert.doesNotMatch(workflow, /readme:assets:reproduce/u);
 });
 
 test("the README presents the complete first Coffee Chat release", async () => {
@@ -209,6 +224,7 @@ test("every local README target exists", async () => {
     "docs/assets/readme/source/MartianGrotesk-wdth-wght.ttf",
     "docs/assets/readme/source/LICENSE-MartianGrotesk-OFL.txt",
     "docs/assets/readme/source/requirements.txt",
+    "scripts/reproduce-readme-assets.mjs",
     "scripts/verify-readme-assets.mjs",
     "docs/product-boundaries.md",
     "contract/roastery/README.md",

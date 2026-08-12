@@ -47,9 +47,12 @@ docker run --rm --platform linux/amd64 \
 
 The two `*-illustration.png` files are approved text-free ImageGen layers. The
 composer does not alter their pixels beyond adding the deterministic copy.
-`npm run readme:assets:verify` regenerates both images and their audit in the
-same digest-pinned renderer, then requires exact committed bytes and audit
-records. Host font libraries and PNG encoders cannot silently change the result.
+`npm run readme:assets:verify` is the offline PR gate: it checks each committed
+PNG's format, dimensions, and SHA-256 against the reviewed audit without a
+network call. `npm run readme:assets:reproduce` is the explicit maintainer
+check: it regenerates both images in the digest-pinned renderer and requires
+exact PNG and audit bytes. Host font libraries and PNG encoders cannot silently
+change the result.
 
 ## Brand basis
 

@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "readme:assets:verify": "node scripts/verify-readme-assets.mjs",
+    "readme:assets:reproduce": "node scripts/reproduce-readme-assets.mjs",
     "build": "node scripts/build-package.mjs",
     "package:smoke": "node scripts/package-smoke.mjs",
     "hooks:install": "git config core.hooksPath .githooks",

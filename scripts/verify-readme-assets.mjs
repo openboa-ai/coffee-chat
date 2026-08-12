@@ -1,80 +1,42 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const assetRoot = join(root, "docs", "assets", "readme");
-const temporaryRoot = await mkdtemp(join(root, ".readme-assets-"));
-const canonicalRenderer =
-  "python:3.12.7-slim-bookworm@sha256:1c44018d7eb40488f29e7c6ad4991d3200507e14dca71b94fe61011815e98155";
+const audit = JSON.parse(
+  await readFile(join(assetRoot, "explanatory-images.audit.json"), "utf8"),
+);
+const expected = new Map(
+  audit.images.map(({ kind, output_sha256 }) => [kind, output_sha256]),
+);
 
-try {
-  const result = spawnSync(
-    "docker",
-    [
-      "run",
-      "--rm",
-      "--platform",
-      "linux/amd64",
-      "--mount",
-      `type=bind,src=${root},dst=/repo,readonly`,
-      "--mount",
-      `type=bind,src=${temporaryRoot},dst=/out`,
-      "--workdir",
-      "/repo",
-      canonicalRenderer,
-      "sh",
-      "-euc",
-      [
-        "PIP_ROOT_USER_ACTION=ignore python -m pip install",
-        "--disable-pip-version-check --no-cache-dir",
-        "--require-hashes -r docs/assets/readme/source/requirements.txt >/dev/null",
-        "&& python docs/assets/readme/source/compose_explanatory_images.py",
-        "--judgment-source docs/assets/readme/source/coffee-chat-judgment-illustration.png",
-        "--talk-work-source docs/assets/readme/source/coffee-chat-talk-work-illustration.png",
-        "--output-dir /out",
-        "--audit /out/explanatory-images.audit.json",
-      ].join(" "),
-    ],
-    { cwd: root, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 },
-  );
-  assert.equal(
-    result.status,
-    0,
-    [result.error?.message, result.stdout, result.stderr]
-      .filter(Boolean)
-      .join("\n"),
-  );
+assert.deepEqual(
+  [...expected.keys()],
+  ["judgment", "talk-work"],
+  "README image audit must describe exactly the two production images",
+);
 
-  const [expectedAudit, actualAudit] = await Promise.all([
-    readFile(join(assetRoot, "explanatory-images.audit.json"), "utf8"),
-    readFile(join(temporaryRoot, "explanatory-images.audit.json"), "utf8"),
-  ]);
+for (const [kind, digest] of expected) {
+  const filename =
+    kind === "judgment"
+      ? "coffee-chat-judgment.png"
+      : "coffee-chat-talk-work.png";
+  const image = await readFile(join(assetRoot, filename));
   assert.deepEqual(
-    JSON.parse(actualAudit),
-    JSON.parse(expectedAudit),
-    "README image audit is not reproducible",
+    image.subarray(0, 8),
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    `${filename} must remain a PNG`,
   );
-
-  for (const filename of [
-    "coffee-chat-judgment.png",
-    "coffee-chat-talk-work.png",
-  ]) {
-    const [expected, actual] = await Promise.all([
-      readFile(join(assetRoot, filename)),
-      readFile(join(temporaryRoot, filename)),
-    ]);
-    assert.deepEqual(actual, expected, `${filename} is not reproducible`);
-  }
-
-  process.stdout.write(
-    `${JSON.stringify({
-      renderer: canonicalRenderer,
-      status: "readme_assets_reproduced",
-    })}\n`,
+  assert.equal(image.readUInt32BE(16), 1576, `${filename} width`);
+  assert.equal(image.readUInt32BE(20), 998, `${filename} height`);
+  assert.equal(
+    createHash("sha256").update(image).digest("hex"),
+    digest,
+    `${filename} does not match its reviewed audit digest`,
   );
-} finally {
-  await rm(temporaryRoot, { recursive: true, force: true });
 }
+
+process.stdout.write(`${JSON.stringify({ status: "readme_assets_valid" })}\n`);

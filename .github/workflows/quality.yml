@@ -58,7 +58,7 @@ jobs:
         run: npm run typecheck
       - name: Run shell tests
         run: npm test
-      - name: Reproduce README explanatory images
+      - name: Verify README explanatory images offline
         run: npm run readme:assets:verify
       - name: Build package
         run: npm run build
