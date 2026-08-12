@@ -1,9 +1,8 @@
 # Coffee Chat README core narrative design
 
-**Status:** Confirmed design unit  
-**Date:** 2026-08-12  
-**Owner:** `openboa-ai/coffee-chat`  
-**Scope:** Public README branding and information architecture only
+**Status:** Confirmed design unit **Date:** 2026-08-12 **Owner:**
+`openboa-ai/coffee-chat` **Scope:** Public README branding and information
+architecture only
 
 ## Purpose
 
@@ -255,11 +254,11 @@ a deterministic raster-composition pass using the canonical physical
 labels use the `overline` token (`wght 650`, `wdth 100`, tracking `0.08`),
 supporting descriptions use the `body/lg` token (`wght 450`, `wdth 100`,
 tracking `0`), and the closing sentence uses the `heading/lg` token (`wght 550`,
-`wdth 96`, tracking `-0.012`). Sizes are scaled uniformly for the `1576 x 998`
-raster while preserving those token ratios. Full sentences are shaped as native
-whole strings so the font's own kerning remains intact; custom tracking applies
-only to stage labels. Generated lettering, font substitution, and visually
-similar fallback fonts are not acceptable.
+`wdth 96`, tracking `0`). Each token uses one fixed size across both
+`1576 x 998` images; copy may not shrink independently to fit. Full sentences
+are shaped as native whole strings so the font's own kerning remains intact;
+custom tracking applies only to stage labels. Generated lettering, font
+substitution, and visually similar fallback fonts are not acceptable.
 
 ### README integration checkpoint
 

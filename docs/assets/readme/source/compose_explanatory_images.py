@@ -9,12 +9,13 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, PngImagePlugin
+from PIL import Image, ImageDraw, ImageFont, PngImagePlugin, __version__ as PILLOW_VERSION
 
 
 CANVAS = (1576, 998)
 CARBON = "#111820"
 FONT_SHA256 = "f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912"
+EXPECTED_PILLOW_VERSION = "12.3.0"
 SOURCE_COMMIT = "315c64015135aa477e7e791b877b83bae8628a52"
 SCALE = CANVAS[0] / 1200
 
@@ -33,10 +34,10 @@ STYLES = {
         "ref.typography.styles.overline", round(32 * SCALE), 650, 100, 0.08
     ),
     "body": TypeStyle(
-        "ref.typography.styles.body.lg", round(24 * SCALE), 450, 100, 0.0
+        "ref.typography.styles.body.lg", round(15 * SCALE), 450, 100, 0.0
     ),
     "heading": TypeStyle(
-        "ref.typography.styles.heading.lg", round(32 * SCALE), 550, 96, -0.012
+        "ref.typography.styles.heading.lg", round(27 * SCALE), 550, 96, 0.0
     ),
 }
 
@@ -127,27 +128,6 @@ def draw_centered(
     return draw.textbbox((x, top), value, font=selected, anchor="lt")
 
 
-def draw_fit_centered(
-    draw: ImageDraw.ImageDraw,
-    value: str,
-    center_x: int,
-    top: int,
-    max_width: int,
-    font_path: Path,
-    style: TypeStyle,
-) -> tuple[tuple[int, int, int, int], int]:
-    size = style.size
-    while size >= 18:
-        candidate_style = TypeStyle(style.token, size, style.weight, style.width, style.tracking)
-        selected = font(font_path, candidate_style)
-        box = draw.textbbox((0, 0), value, font=selected, anchor="lt")
-        width = draw.textlength(value, font=selected)
-        if width <= max_width:
-            return draw_centered(draw, value, center_x, top, selected), size
-        size -= 1
-    raise OverflowError(f"copy does not fit: {value}")
-
-
 def validate_box(box: tuple[int, int, int, int], role: str) -> None:
     left, top, right, bottom = box
     if left < 48 or right > CANVAS[0] - 48 or top < 0 or bottom > CANVAS[1]:
@@ -166,12 +146,13 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
         selected = font(font_path, style)
         if style.tracking and max_width is None:
             box = draw_tracked(draw, value, center, top, selected, style)
-            actual_size = style.size
-        elif max_width is not None:
-            box, actual_size = draw_fit_centered(draw, value, center, top, max_width, font_path, style)
         else:
             box = draw_centered(draw, value, center, top, selected)
-            actual_size = style.size
+        if max_width is not None and box[2] - box[0] > max_width:
+            raise OverflowError(
+                f"{style_name} copy exceeds {max_width}px at canonical size "
+                f"{style.size}: {value} ({box[2] - box[0]}px)"
+            )
         validate_box(box, value)
         records.append(
             {
@@ -179,7 +160,7 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
                 "role": style_name,
                 "token": style.token,
                 "font": font_path.name,
-                "font_size": actual_size,
+                "font_size": style.size,
                 "axes": {"wght": style.weight, "wdth": style.width},
                 "tracking_em": style.tracking,
                 "shaping": (
@@ -256,10 +237,11 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
     return {
         "kind": kind,
         "source": source.name,
-        "output": str(output),
+        "output": f"docs/assets/readme/{output.name}",
         "canvas": list(CANVAS),
         "font": font_path.name,
         "font_sha256": sha256(font_path),
+        "pillow_version": PILLOW_VERSION,
         "openboa_source_commit": SOURCE_COMMIT,
         "copy": actual_copy,
         "records": records,
@@ -274,6 +256,11 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--audit", required=True, type=Path)
     args = parser.parse_args()
+
+    if PILLOW_VERSION != EXPECTED_PILLOW_VERSION:
+        raise RuntimeError(
+            f"Pillow {EXPECTED_PILLOW_VERSION} is required; found {PILLOW_VERSION}"
+        )
 
     font_path = Path(__file__).with_name("MartianGrotesk-wdth-wght.ttf")
     if sha256(font_path) != FONT_SHA256:

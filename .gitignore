@@ -3,6 +3,7 @@ build/
 coverage/
 __pycache__/
 *.py[cod]
+.readme-image-venv/
 *.log
 .DS_Store
 

@@ -50,14 +50,24 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Set up Python for README asset verification
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
       - name: Install locked dependencies
         run: npm ci
+      - name: Install hash-locked README image dependency
+        run: >-
+          python -m pip install --require-hashes -r
+          docs/assets/readme/source/requirements.txt
       - name: Check formatting
         run: npm run format:check
       - name: Check types
         run: npm run typecheck
       - name: Run shell tests
         run: npm test
+      - name: Reproduce README explanatory images
+        run: npm run readme:assets:verify
       - name: Build package
         run: npm run build
       - name: Run package smoke

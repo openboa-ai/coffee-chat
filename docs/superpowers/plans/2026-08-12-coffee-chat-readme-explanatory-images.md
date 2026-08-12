@@ -34,7 +34,8 @@ tests.
 - ImageGen must not render final copy. Add all final copy deterministically with
   `MartianGrotesk-wdth-wght.ttf` from the pinned OpenBoa source commit.
 - Stage labels use the OpenBoa `overline` token, descriptions use `body/lg`, and
-  the closing sentence uses `heading/lg`, scaled uniformly for the final raster.
+  the closing sentence uses `heading/lg`; each token uses one fixed size across
+  both final rasters.
 - Neither image has a headline. Full sentences use native whole-string shaping;
   custom tracking applies only to stage labels.
 
@@ -123,8 +124,8 @@ Verify the physical font SHA-256 is
 
 Use the physical variable font at the approved weight and width axes. Render
 stage labels from `overline`, descriptions from `body/lg`, and closing copy from
-`heading/lg`, scaling the token sizes uniformly for `1576 x 998`. Shape every
-sentence in one native text call so the font's kerning is preserved.
+`heading/lg`, using one fixed size per token across both `1576 x 998` images.
+Shape every sentence in one native text call so the font's kerning is preserved.
 
 Store the two approved text-free illustration layers beside the composer and
 invoke it only with repository-relative source and output paths so the audit is

@@ -75,6 +75,7 @@ for (const command of [
   "npm run format:check",
   "npm run typecheck",
   "npm test",
+  "npm run readme:assets:verify",
   "npm run build",
   "npm run package:smoke",
   "npm run policy",

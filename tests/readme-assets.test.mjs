@@ -39,6 +39,7 @@ const fontPath = join(
 );
 const expectedDigest =
   "cb8211087ff8998119ac08a46e477c02d1c61b99e71fa1aadd63c62d78d21bfc";
+const expectedPillowVersion = "12.3.0";
 const expectedFontDigest =
   "f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912";
 const removedBrewHeadline =
@@ -51,12 +52,12 @@ const explanatoryAssets = [
   {
     path: judgmentPath,
     reference: "docs/assets/readme/coffee-chat-judgment.png",
-    digest: "cc7b665a793ba246c99d529524a43cc0bf257d46cc0d14869b37aa7b0ddbc516",
+    digest: "cbed16b176522ba59e26f737f7f53856bc85e79329ecb575a8a7063172cfb165",
   },
   {
     path: talkWorkPath,
     reference: "docs/assets/readme/coffee-chat-talk-work.png",
-    digest: "c9ccdcfc5be2a0e6ce9c4ff625a714d5982839f4c9c7995293a7c818e55a51a6",
+    digest: "484484c8deda13d9c5ea426b4a4e417687584502364f618b02f306a80b67d5e8",
   },
 ];
 
@@ -107,6 +108,7 @@ test("the explanatory images use deterministic canonical OpenBoa type", async ()
   for (const image of audit.images) {
     assert.equal(image.font, "MartianGrotesk-wdth-wght.ttf");
     assert.equal(image.font_sha256, expectedFontDigest);
+    assert.equal(image.pillow_version, expectedPillowVersion);
     assert.deepEqual(image.canvas, [1576, 998]);
     assert.ok(expectedIllustrationSources.has(image.source));
     assert.ok(!image.source.includes("/"));
@@ -132,11 +134,16 @@ test("the explanatory images use deterministic canonical OpenBoa type", async ()
     ),
   );
   for (const image of audit.images) {
-    for (const record of image.records.filter(
-      ({ role }) => role === "heading",
-    )) {
-      assert.equal(record.tracking_em, -0.012);
-      assert.equal(record.shaping, "native-whole-string");
+    const expectedSizes = { overline: 42, body: 20, heading: 35 };
+    for (const record of image.records) {
+      assert.equal(record.font_size, expectedSizes[record.role]);
+      assert.equal(
+        record.shaping,
+        record.role === "overline"
+          ? "custom-tracked-glyphs"
+          : "native-whole-string",
+      );
+      assert.equal(record.tracking_em, record.role === "overline" ? 0.08 : 0);
     }
   }
 });
@@ -179,6 +186,9 @@ test("every local README target exists", async () => {
     "docs/assets/readme/source/coffee-chat-talk-work-illustration.png",
     "docs/assets/readme/source/MartianGrotesk-wdth-wght.ttf",
     "docs/assets/readme/source/LICENSE-MartianGrotesk-OFL.txt",
+    "docs/assets/readme/source/requirements.txt",
+    "scripts/verify-readme-assets.mjs",
+    "scripts/run-readme-assets-verify.mjs",
     "docs/product-boundaries.md",
     "contract/roastery/README.md",
     "docs/quality-map.md",

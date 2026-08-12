@@ -17,8 +17,8 @@ photography and flat geometric minimalism.
 
 | File                        | Size       | SHA-256                                                            |
 | --------------------------- | ---------- | ------------------------------------------------------------------ |
-| `coffee-chat-judgment.png`  | 1576 × 998 | `cc7b665a793ba246c99d529524a43cc0bf257d46cc0d14869b37aa7b0ddbc516` |
-| `coffee-chat-talk-work.png` | 1576 × 998 | `c9ccdcfc5be2a0e6ce9c4ff625a714d5982839f4c9c7995293a7c818e55a51a6` |
+| `coffee-chat-judgment.png`  | 1576 × 998 | `cbed16b176522ba59e26f737f7f53856bc85e79329ecb575a8a7063172cfb165` |
+| `coffee-chat-talk-work.png` | 1576 × 998 | `484484c8deda13d9c5ea426b4a4e417687584502364f618b02f306a80b67d5e8` |
 
 The images separate generated illustration from deterministic typography. The
 illustration layer provides only coffee objects, arrows, texture, and color.
@@ -30,7 +30,11 @@ records the applied OpenBoa type tokens in
 Regenerate both explanatory PNGs from the repository root:
 
 ```sh
-python3 docs/assets/readme/source/compose_explanatory_images.py \
+python3.12 -m venv .readme-image-venv
+.readme-image-venv/bin/python -m pip install \
+  --require-hashes -r docs/assets/readme/source/requirements.txt
+.readme-image-venv/bin/python \
+  docs/assets/readme/source/compose_explanatory_images.py \
   --judgment-source docs/assets/readme/source/coffee-chat-judgment-illustration.png \
   --talk-work-source docs/assets/readme/source/coffee-chat-talk-work-illustration.png \
   --output-dir docs/assets/readme \
@@ -39,6 +43,9 @@ python3 docs/assets/readme/source/compose_explanatory_images.py \
 
 The two `*-illustration.png` files are approved text-free ImageGen layers. The
 composer does not alter their pixels beyond adding the deterministic copy.
+`npm run readme:assets:verify` regenerates both images and their audit in a
+temporary directory, then requires byte-for-byte equality with the committed
+artifacts.
 
 ## Brand basis
 
@@ -51,9 +58,11 @@ composer does not alter their pixels beyond adding the deterministic copy.
   `MartianGrotesk-wdth-wght.ttf` release file
 - Font SHA-256:
   `f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912`
-- Type tokens: `overline`, `body/lg`, and `heading/lg`, scaled uniformly for the
-  1576 × 998 raster; custom tracking applies only to stage labels and full
-  sentences retain native whole-string kerning
+- Type tokens: `overline`, `body/lg`, and `heading/lg`; each token has one fixed
+  size across both 1576 × 998 images, custom tracking applies only to stage
+  labels, and full sentences retain native whole-string kerning
+- Rendering environment: Pillow 12.3.0 installed from a hash-locked requirements
+  file
 - Font license: OFL-1.1, stored next to the physical source file
 - Production format: deterministic self-contained PNG
 
