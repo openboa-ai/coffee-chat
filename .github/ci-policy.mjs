@@ -7,6 +7,7 @@ const expectedWorkflows = [
   "codeql.yml",
   "dependency-review.yml",
   "quality.yml",
+  "secret-boundary.yml",
 ];
 assert.deepEqual(readdirSync(workflowRoot).sort(), expectedWorkflows);
 
@@ -17,6 +18,7 @@ const parsed = new Map(
   ]),
 );
 for (const [name, workflow] of parsed) {
+  if (name === "secret-boundary.yml") continue;
   assert.equal(
     Object.hasOwn(workflow.on, "pull_request"),
     true,
@@ -39,6 +41,19 @@ for (const [name, workflow] of parsed) {
     }
   }
 }
+
+const boundarySource = readFileSync(
+  `${workflowRoot}/secret-boundary.yml`,
+  "utf8",
+);
+const boundary = parsed.get("secret-boundary.yml");
+assert.equal(Object.hasOwn(boundary.on, "pull_request_target"), true);
+assert.deepEqual(boundary.permissions, { contents: "read" });
+assert.match(boundarySource, /path: trusted/u);
+assert.match(boundarySource, /path: candidate/u);
+assert.match(boundarySource, /gitleaks git/u);
+assert.match(boundarySource, /gitleaks dir/u);
+assert.doesNotMatch(boundarySource, /npm |node |secrets\./u);
 
 const quality = parsed.get("quality.yml").jobs.quality;
 assert.deepEqual(quality.permissions, { contents: "read" });
