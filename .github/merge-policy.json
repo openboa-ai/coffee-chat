@@ -5,6 +5,10 @@
   "required_last_push_approvals": 0,
   "eligible_author_associations": ["OWNER", "MEMBER"],
   "custom_merge_controller": false,
-  "required_checks": ["Coffee Chat required", "Coffee Chat dependency review"],
+  "required_checks": [
+    "Coffee Chat required",
+    "Coffee Chat dependency review",
+    "Secret boundary"
+  ],
   "codeql_enforcement": "native_code_scanning"
 }

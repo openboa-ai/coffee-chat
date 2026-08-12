@@ -14,14 +14,16 @@ function pinned(value) {
   return /^[-\w]+\/[-\w]+(?:\/[-\w]+)?@[0-9a-f]{40}$/u.test(value);
 }
 
-test("CI contains only quality, dependency review, and CodeQL workflows", () => {
+test("CI contains lean quality and an immutable secret boundary", () => {
   assert.deepEqual(workflows, [
     "codeql.yml",
     "dependency-review.yml",
     "quality.yml",
+    "secret-boundary.yml",
   ]);
   for (const name of workflows) {
     const source = readFileSync(`${workflowRoot}/${name}`, "utf8");
+    if (name === "secret-boundary.yml") continue;
     assert.doesNotMatch(source, /pull_request_target/u);
     const parsed = workflow(name);
     assert.equal(
@@ -40,6 +42,18 @@ test("CI contains only quality, dependency review, and CodeQL workflows", () => 
       }
     }
   }
+});
+
+test("secret scanning executes only trusted controls against candidate data", () => {
+  const source = readFileSync(`${workflowRoot}/secret-boundary.yml`, "utf8");
+  const parsed = workflow("secret-boundary.yml");
+  assert.equal(Object.hasOwn(parsed.on, "pull_request_target"), true);
+  assert.deepEqual(parsed.permissions, { contents: "read" });
+  assert.match(source, /path: trusted/u);
+  assert.match(source, /path: candidate/u);
+  assert.match(source, /gitleaks git/u);
+  assert.match(source, /gitleaks dir/u);
+  assert.doesNotMatch(source, /npm |node |secrets\./u);
 });
 
 test("candidate execution is member-gated before read-only checkout", () => {
@@ -80,4 +94,5 @@ test("merge policy is GitHub-native squash with zero approvals", () => {
   assert.deepEqual(policy.eligible_author_associations, ["OWNER", "MEMBER"]);
   assert.equal("eligible_author_logins" in policy, false);
   assert.equal(policy.custom_merge_controller, false);
+  assert.ok(policy.required_checks.includes("Secret boundary"));
 });
