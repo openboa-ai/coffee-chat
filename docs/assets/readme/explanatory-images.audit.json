@@ -125,7 +125,7 @@
           "bounds": [152, 850, 1423, 889]
         }
       ],
-      "output_sha256": "cbed16b176522ba59e26f737f7f53856bc85e79329ecb575a8a7063172cfb165"
+      "output_sha256": "be2f5ae2709a073d3f015b49038a19fbba54a17b2dd068c604f9e89251aaad25"
     },
     {
       "kind": "talk-work",
@@ -252,7 +252,7 @@
           "bounds": [142, 850, 1435, 889]
         }
       ],
-      "output_sha256": "484484c8deda13d9c5ea426b4a4e417687584502364f618b02f306a80b67d5e8"
+      "output_sha256": "0dc479d63b074797c7f7a006c9c8766caf868fec313990f04165f378161fd4d8"
     }
   ]
 }

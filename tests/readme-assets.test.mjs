@@ -40,6 +40,8 @@ const fontPath = join(
 const expectedDigest =
   "cb8211087ff8998119ac08a46e477c02d1c61b99e71fa1aadd63c62d78d21bfc";
 const expectedPillowVersion = "12.3.0";
+const canonicalRenderer =
+  "python:3.12.7-slim-bookworm@sha256:1c44018d7eb40488f29e7c6ad4991d3200507e14dca71b94fe61011815e98155";
 const expectedFontDigest =
   "f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912";
 const removedBrewHeadline =
@@ -52,12 +54,12 @@ const explanatoryAssets = [
   {
     path: judgmentPath,
     reference: "docs/assets/readme/coffee-chat-judgment.png",
-    digest: "cbed16b176522ba59e26f737f7f53856bc85e79329ecb575a8a7063172cfb165",
+    digest: "be2f5ae2709a073d3f015b49038a19fbba54a17b2dd068c604f9e89251aaad25",
   },
   {
     path: talkWorkPath,
     reference: "docs/assets/readme/coffee-chat-talk-work.png",
-    digest: "484484c8deda13d9c5ea426b4a4e417687584502364f618b02f306a80b67d5e8",
+    digest: "0dc479d63b074797c7f7a006c9c8766caf868fec313990f04165f378161fd4d8",
   },
 ];
 
@@ -148,6 +150,26 @@ test("the explanatory images use deterministic canonical OpenBoa type", async ()
   }
 });
 
+test("README image verification uses one digest-pinned renderer", async () => {
+  const [packageText, verifier, workflow, assetGuide] = await Promise.all([
+    readFile(join(root, "package.json"), "utf8"),
+    readFile(join(root, "scripts", "verify-readme-assets.mjs"), "utf8"),
+    readFile(join(root, ".github", "workflows", "quality.yml"), "utf8"),
+    readFile(join(root, "docs", "assets", "readme", "README.md"), "utf8"),
+  ]);
+  const packageJson = JSON.parse(packageText);
+
+  assert.equal(
+    packageJson.scripts["readme:assets:verify"],
+    "node scripts/verify-readme-assets.mjs",
+  );
+  assert.ok(verifier.includes(canonicalRenderer));
+  assert.match(verifier, /spawnSync\(\s*"docker"/u);
+  assert.ok(assetGuide.includes(canonicalRenderer));
+  assert.doesNotMatch(workflow, /setup-python/u);
+  assert.doesNotMatch(workflow, /pip install/u);
+});
+
 test("the README presents the complete first Coffee Chat release", async () => {
   const readme = await readFile(readmePath, "utf8");
 
@@ -188,7 +210,6 @@ test("every local README target exists", async () => {
     "docs/assets/readme/source/LICENSE-MartianGrotesk-OFL.txt",
     "docs/assets/readme/source/requirements.txt",
     "scripts/verify-readme-assets.mjs",
-    "scripts/run-readme-assets-verify.mjs",
     "docs/product-boundaries.md",
     "contract/roastery/README.md",
     "docs/quality-map.md",

@@ -17,8 +17,8 @@ photography and flat geometric minimalism.
 
 | File                        | Size       | SHA-256                                                            |
 | --------------------------- | ---------- | ------------------------------------------------------------------ |
-| `coffee-chat-judgment.png`  | 1576 × 998 | `cbed16b176522ba59e26f737f7f53856bc85e79329ecb575a8a7063172cfb165` |
-| `coffee-chat-talk-work.png` | 1576 × 998 | `484484c8deda13d9c5ea426b4a4e417687584502364f618b02f306a80b67d5e8` |
+| `coffee-chat-judgment.png`  | 1576 × 998 | `be2f5ae2709a073d3f015b49038a19fbba54a17b2dd068c604f9e89251aaad25` |
+| `coffee-chat-talk-work.png` | 1576 × 998 | `0dc479d63b074797c7f7a006c9c8766caf868fec313990f04165f378161fd4d8` |
 
 The images separate generated illustration from deterministic typography. The
 illustration layer provides only coffee objects, arrows, texture, and color.
@@ -27,26 +27,29 @@ adds every final label with the canonical physical Martian Grotesk font and
 records the applied OpenBoa type tokens in
 [`explanatory-images.audit.json`](explanatory-images.audit.json).
 
-Regenerate both explanatory PNGs from the repository root:
+Regenerate both explanatory PNGs from the repository root with the canonical
+Linux renderer:
 
 ```sh
-python3.12 -m venv .readme-image-venv
-.readme-image-venv/bin/python -m pip install \
-  --require-hashes -r docs/assets/readme/source/requirements.txt
-.readme-image-venv/bin/python \
-  docs/assets/readme/source/compose_explanatory_images.py \
-  --judgment-source docs/assets/readme/source/coffee-chat-judgment-illustration.png \
-  --talk-work-source docs/assets/readme/source/coffee-chat-talk-work-illustration.png \
-  --output-dir docs/assets/readme \
-  --audit docs/assets/readme/explanatory-images.audit.json
+docker run --rm --platform linux/amd64 \
+  --mount type=bind,src="$PWD",dst=/repo,readonly \
+  --mount type=bind,src="$PWD/docs/assets/readme",dst=/out \
+  --workdir /repo \
+  python:3.12.7-slim-bookworm@sha256:1c44018d7eb40488f29e7c6ad4991d3200507e14dca71b94fe61011815e98155 \
+  sh -euc 'PIP_ROOT_USER_ACTION=ignore python -m pip install \
+    --disable-pip-version-check --no-cache-dir \
+    --require-hashes -r docs/assets/readme/source/requirements.txt >/dev/null && \
+    python docs/assets/readme/source/compose_explanatory_images.py \
+      --judgment-source docs/assets/readme/source/coffee-chat-judgment-illustration.png \
+      --talk-work-source docs/assets/readme/source/coffee-chat-talk-work-illustration.png \
+      --output-dir /out --audit /out/explanatory-images.audit.json'
 ```
 
 The two `*-illustration.png` files are approved text-free ImageGen layers. The
 composer does not alter their pixels beyond adding the deterministic copy.
-`npm run readme:assets:verify` regenerates both images and their audit in a
-temporary directory, then requires the same typography audit and decoded RGB
-pixels as the committed artifacts. PNG compression bytes may differ across
-operating systems while the rendered image remains identical.
+`npm run readme:assets:verify` regenerates both images and their audit in the
+same digest-pinned renderer, then requires exact committed bytes and audit
+records. Host font libraries and PNG encoders cannot silently change the result.
 
 ## Brand basis
 
@@ -62,8 +65,8 @@ operating systems while the rendered image remains identical.
 - Type tokens: `overline`, `body/lg`, and `heading/lg`; each token has one fixed
   size across both 1576 × 998 images, custom tracking applies only to stage
   labels, and full sentences retain native whole-string kerning
-- Rendering environment: Pillow 12.3.0 installed from a hash-locked requirements
-  file on CPython 3.12 (CI pins 3.12.7)
+- Rendering environment: Pillow 12.3.0 installed from a hash-locked wheel in the
+  digest-pinned `python:3.12.7-slim-bookworm` Linux image
 - Font license: OFL-1.1, stored next to the physical source file
 - Production format: deterministic self-contained PNG
 
