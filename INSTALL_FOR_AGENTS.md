@@ -96,12 +96,17 @@ acceptance before any external write.
 
 Route later requests by intent:
 
+These are Coffee Chat's portable Skill names. A Plugin host may display them
+under Coffee Chat's component namespace; use the installed host's discovered
+identifier for that named Skill instead of inventing an alias.
+
 - `$coffee-init` — create the user's Roastery;
 - `$coffee-roast` — turn an Origin into a reviewed Bean;
 - `$coffee-chat` — explore one explicitly selected Roastery through Talk;
 - `$coffee-brew` — use relevant Beans in Agent Work;
 - `$coffee-sync` — connect or refresh one public Roastery;
-- `$coffee-unsync` — disconnect one exact Roastery.
+- `$coffee-unsync` — disconnect one exact Roastery;
+- `$coffee-blend` — use several explicitly selected Roasteries together.
 
 Until those Skills are implemented, do not simulate their behavior. State that
 the requested Skill is not yet available in the current WIP.

@@ -1,18 +1,18 @@
 ---
-name: brew
+name: coffee-roast
 description:
-  Declare ephemeral Coffee preparation from selected Beans. Use when the user
-  asks to apply selected Taste to a response.
+  Declare the owner publication entrypoint for one Bean. Use when the user asks
+  to propose owner-approved Taste.
 ---
 
-# Brew
+# Roast
 
 status: not_implemented
 
 This Skill is a discoverable deferred capability entrypoint only. Run
 `node scripts/run.mjs` to receive the closed machine-readable status.
 
-The later capability Goal owns every Brew mechanic. This entrypoint performs no
+The later capability Goal owns every Roast mechanic. This entrypoint performs no
 network, filesystem, Git, GitHub, Registry, cache, model, host, or publication
 operation.
 

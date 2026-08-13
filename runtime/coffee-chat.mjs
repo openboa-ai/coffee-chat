@@ -11,6 +11,16 @@ export const capabilities = Object.freeze([
   "coffee-blend",
 ]);
 
+export const skillNames = Object.freeze({
+  init: "coffee-init",
+  sync: "coffee-sync",
+  unsync: "coffee-unsync",
+  roast: "coffee-roast",
+  brew: "coffee-brew",
+  "coffee-chat": "coffee-chat",
+  "coffee-blend": "coffee-blend",
+});
+
 const capabilitySet = new Set(capabilities);
 
 export function dispatch(capability) {
@@ -31,7 +41,7 @@ export function dispatch(capability) {
       capability,
       status: "available",
       workflow: "preview_then_explicit_apply",
-      entrypoint: "skills/init/scripts/run.mjs",
+      entrypoint: "skills/coffee-init/scripts/run.mjs",
       writesOnlyAfterAcceptedPreview: true,
     };
   }

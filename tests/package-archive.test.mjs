@@ -9,12 +9,12 @@ import { collectFiles, packageRoots } from "../scripts/package-lib.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
-const capabilities = [
-  "init",
-  "sync",
-  "unsync",
-  "roast",
-  "brew",
+const skillNames = [
+  "coffee-init",
+  "coffee-sync",
+  "coffee-unsync",
+  "coffee-roast",
+  "coffee-brew",
   "coffee-chat",
   "coffee-blend",
 ];
@@ -46,12 +46,12 @@ test("package smoke is isolated and contains only the declared Plugin", () => {
     packageRoots.some((path) => path.startsWith("submission/")),
     false,
   );
-  assert.deepEqual(capabilities, [
-    "init",
-    "sync",
-    "unsync",
-    "roast",
-    "brew",
+  assert.deepEqual(skillNames, [
+    "coffee-init",
+    "coffee-sync",
+    "coffee-unsync",
+    "coffee-roast",
+    "coffee-brew",
     "coffee-chat",
     "coffee-blend",
   ]);

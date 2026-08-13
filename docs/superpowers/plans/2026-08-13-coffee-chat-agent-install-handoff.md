@@ -28,6 +28,9 @@ package collector.
   only; it must not create, fork, sync, activate, or publish a Roastery.
 - Only `$coffee-init` is implemented today. The other five public first-release
   Skills are not yet available.
+- All seven packaged Skill names and parent directories use the `coffee-*`
+  prefix. `$coffee-blend` remains discoverable and deferred outside the six
+  first-release public journeys.
 - Do not install from a personal fork, clone Plugin files by hand, or improvise
   an unsupported host path.
 - Keep exactly one WIP notice in the public README.
@@ -39,6 +42,7 @@ package collector.
 **Files:**
 
 - Modify: `tests/readme-assets.test.mjs`
+- Create: `tests/install-for-agents.test.mjs`
 - Modify: `tests/package-archive.test.mjs`
 
 **Interfaces:**
@@ -51,9 +55,12 @@ package collector.
 - [ ] **Step 1: Write the failing README contract test**
 
 Add assertions that require the exact raw GitHub URL between the mental-model
-and distinct-data sections, require `INSTALL_FOR_AGENTS.md`, require the
-official marketplace and Plugin add commands, require all six public Skill
-names, and forbid clone-based installation.
+and distinct-data sections. In the dedicated Agent-install contract test,
+require `INSTALL_FOR_AGENTS.md`, the official marketplace and Plugin add
+commands, inspect-before-mutate ordering, the no-clone and side-effect-free
+boundaries, explicit Init acceptance, and intent routing for all seven packaged
+Skill names. Cross-check every Skill frontmatter name against its matching
+`coffee-*` parent directory.
 
 - [ ] **Step 2: Write the failing package contract test**
 

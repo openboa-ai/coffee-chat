@@ -257,6 +257,13 @@ The complete first release exposes these user-visible Skill names:
 The six first-release Skill names and their intent routing live in
 `INSTALL_FOR_AGENTS.md`. The README does not duplicate that usage guide.
 
+Each portable Skill `name` and parent directory uses the exact `coffee-*`
+identifier above. Coffee Blend remains a seventh discoverable deferred Skill,
+`coffee-blend`, but stays outside the first-release public narrative. OpenAI
+hosts use the Plugin name as a component namespace, so the Agent install guide
+must resolve the installed host's discovered identifier rather than inventing an
+unqualified alias.
+
 ## Selected visual system
 
 ### Hero

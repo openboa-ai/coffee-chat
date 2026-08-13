@@ -6,9 +6,11 @@ Roast, Brew, Coffee Chat, and Coffee Blend remain explicit deferred surfaces.
 
 ## Product boundary
 
-- Keep exactly seven Skills: init, sync, unsync, roast, brew, coffee-chat, and
-  coffee-blend. Init is available; the other six must return `not_implemented`
-  without side effects.
+- Keep exactly seven public Skill names and matching directories: coffee-init,
+  coffee-sync, coffee-unsync, coffee-roast, coffee-brew, coffee-chat, and
+  coffee-blend. Coffee Init is available; the other six must return
+  `not_implemented` without side effects. Internal machine-readable capability
+  values remain init, sync, unsync, roast, brew, coffee-chat, and coffee-blend.
 - Keep portable root `plugin.json` and OpenAI `.codex-plugin/plugin.json` as
   separate projections of `config/plugin-metadata.json` under one CalVer.
 - Plugin installation and discovery perform no fork, fetch, Registry, target, or
