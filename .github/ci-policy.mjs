@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { isAlias, isMap, isSeq, parseDocument, visit } from "yaml";
+
+import { loadPolicyParser } from "./policy-bootstrap.mjs";
 
 const root = process.env.CI_POLICY_ROOT ?? ".";
+const { isAlias, isMap, isSeq, parseDocument, visit } = loadPolicyParser(root);
 const pathAt = (path) => `${root}/${path}`;
 const workflowRoot = pathAt(".github/workflows");
 const expectedWorkflows = [
@@ -333,6 +335,14 @@ assert.deepEqual(setupNode, {
 });
 const commandSteps = [
   [
+    "Authenticate isolated policy parser lock",
+    "node .github/policy-bootstrap.mjs",
+  ],
+  [
+    "Install authenticated policy parser",
+    "npm ci --ignore-scripts --prefix .github/policy-parser",
+  ],
+  [
     "Install locked dependencies without lifecycle scripts",
     "npm ci --ignore-scripts",
   ],
@@ -506,27 +516,60 @@ assert.doesNotMatch(
 );
 
 const packageJson = JSON.parse(read("package.json"));
+const packageLock = JSON.parse(read("package-lock.json"));
 assert.equal(
   packageJson.scripts.policy,
-  "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
+  "npm run policy:install && node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
 );
 assert.deepEqual(packageJson.scripts, {
   "format:check": "prettier --check .",
   format: "prettier --write .",
   typecheck: "tsc --noEmit",
-  test: "node --test tests/*.test.mjs",
+  test: "npm run policy:install && node --test tests/*.test.mjs",
   "readme:assets:verify": "node scripts/verify-readme-assets.mjs",
   "readme:assets:reproduce": "node scripts/reproduce-readme-assets.mjs",
   build: "node scripts/build-package.mjs",
   "package:smoke": "node scripts/package-smoke.mjs",
   "hooks:install": "git config core.hooksPath .githooks",
+  "policy:install":
+    "node .github/policy-bootstrap.mjs && npm ci --ignore-scripts --prefix .github/policy-parser",
   policy:
-    "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
+    "npm run policy:install && node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
   "security:scan": "gitleaks git --redact --no-banner .",
   verify:
     "npm run format:check && npm run typecheck && npm test && npm run readme:assets:verify && npm run build && npm run package:smoke && npm run policy",
 });
-assert.equal(packageJson.devDependencies.yaml, "2.9.0");
+assert.deepEqual(Object.keys(packageJson.devDependencies).sort(), [
+  "@types/node",
+  "prettier",
+  "typescript",
+]);
+assert.equal(packageLock.lockfileVersion, 3);
+assert.equal(packageLock.requires, true);
+assert.equal(packageLock.name, packageJson.name);
+assert.deepEqual(
+  packageLock.packages[""].devDependencies,
+  packageJson.devDependencies,
+);
+assert.deepEqual(packageLock.packages[""].engines, packageJson.engines);
+for (const [lockPath, entry] of Object.entries(packageLock.packages)) {
+  if (lockPath === "") continue;
+  const marker = "node_modules/";
+  const markerIndex = lockPath.lastIndexOf(marker);
+  assert.notEqual(markerIndex, -1, `${lockPath}: package identity`);
+  const name = lockPath.slice(markerIndex + marker.length);
+  const version = entry.version;
+  assert.match(version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u);
+  const tarballName = name.slice(name.lastIndexOf("/") + 1);
+  assert.equal(
+    entry.resolved,
+    `https://registry.npmjs.org/${name}/-/${tarballName}-${version}.tgz`,
+    `${name}: registry identity`,
+  );
+  assert.match(entry.integrity, /^sha512-[A-Za-z0-9+/]+={0,2}$/u);
+  assert.notEqual(entry.link, true, `${name}: linked dependency`);
+  assert.notEqual(entry.hasInstallScript, true, `${name}: install script`);
+}
 
 const dependabot = loadYaml(".github/dependabot.yml");
 assert.equal(dependabot.version, 2);
