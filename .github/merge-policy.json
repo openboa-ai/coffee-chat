@@ -31,7 +31,7 @@
     "/scripts/**",
     "/skills/**"
   ],
-  "codeql_enforcement": "native_code_scanning",
+  "codeql_enforcement": "trusted_central_aggregate",
   "sensitive_review": {
     "enforcement": "github_environment",
     "environment": "coffee-security",

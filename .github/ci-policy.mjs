@@ -303,7 +303,7 @@ assert.deepEqual(mergePolicy.protected_paths, [
   "/scripts/**",
   "/skills/**",
 ]);
-assert.equal(mergePolicy.codeql_enforcement, "native_code_scanning");
+assert.equal(mergePolicy.codeql_enforcement, "trusted_central_aggregate");
 assert.deepEqual(mergePolicy.sensitive_review, {
   enforcement: "github_environment",
   environment: "coffee-security",

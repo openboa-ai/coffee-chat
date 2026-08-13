@@ -101,6 +101,7 @@ test("merge policy binds the trusted aggregate and protected Environment", async
     required_approvals: 1,
     prevent_self_review: false,
   });
+  assert.equal(mergePolicy.codeql_enforcement, "trusted_central_aggregate");
 });
 
 test("target repository exposes only the exact trusted wrapper", async () => {
