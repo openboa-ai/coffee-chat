@@ -12,12 +12,14 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, PngImagePlugin, __version__ as PILLOW_VERSION
 
 
-CANVAS = (1576, 998)
+EXPLANATORY_CANVAS = (1576, 998)
+HERO_CANVAS = (1774, 887)
 CARBON = "#111820"
 FONT_SHA256 = "f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912"
 EXPECTED_PILLOW_VERSION = "12.3.0"
 SOURCE_COMMIT = "315c64015135aa477e7e791b877b83bae8628a52"
-SCALE = CANVAS[0] / 1200
+SCALE = EXPLANATORY_CANVAS[0] / 1200
+HERO_SCALE = HERO_CANVAS[0] / 1200
 
 
 @dataclass(frozen=True)
@@ -30,6 +32,9 @@ class TypeStyle:
 
 
 STYLES = {
+    "hero-title": TypeStyle(
+        "ref.typography.styles.display.2xl", round(104 * HERO_SCALE), 550, 96, -0.025
+    ),
     "overline": TypeStyle(
         "ref.typography.styles.overline", round(32 * SCALE), 650, 100, 0.08
     ),
@@ -42,23 +47,24 @@ STYLES = {
 }
 
 EXPECTED_COPY = {
+    "hero": ["COFFEE CHAT"],
     "judgment": [
         "ORIGIN",
-        "What you received",
         "ROAST",
-        "Review what it means to you",
         "BEAN",
-        "Your judgment, on record",
-        "The same source can mean something different to each person.",
+        "The source",
+        "Meaning · Priority · Next move",
+        "Your reviewed judgment",
+        "Same source. Different meaning. Different next move.",
     ],
     "talk-work": [
         "BEANS",
-        "Your reviewed judgments",
         "BREW",
-        "Select and apply what matters",
         "COFFEE",
-        "Talk and Work, grounded in them",
-        "Your priorities can now travel into conversation and Agent work.",
+        "Reviewed judgments",
+        "Select what matters now",
+        "Talk · Work",
+        "The same Beans ground Talk and Work.",
     ],
 }
 
@@ -98,12 +104,13 @@ def draw_tracked(
     top: int,
     selected: ImageFont.FreeTypeFont,
     style: TypeStyle,
+    paint: str = CARBON,
 ) -> tuple[int, int, int, int]:
     width = tracked_width(draw, value, selected, style.tracking, style.size)
     cursor = center_x - width / 2
     boxes = []
     for character in value:
-        draw.text((round(cursor), top), character, font=selected, fill=CARBON, anchor="lt")
+        draw.text((round(cursor), top), character, font=selected, fill=paint, anchor="lt")
         box = draw.textbbox((round(cursor), top), character or " ", font=selected, anchor="lt")
         boxes.append(box)
         cursor += draw.textlength(character, font=selected) + style.tracking * style.size
@@ -121,22 +128,96 @@ def draw_centered(
     center_x: int,
     top: int,
     selected: ImageFont.FreeTypeFont,
+    paint: str = CARBON,
 ) -> tuple[int, int, int, int]:
     box = draw.textbbox((0, 0), value, font=selected, anchor="lt")
     x = round(center_x - (box[2] - box[0]) / 2)
-    draw.text((x, top), value, font=selected, fill=CARBON, anchor="lt")
+    draw.text((x, top), value, font=selected, fill=paint, anchor="lt")
     return draw.textbbox((x, top), value, font=selected, anchor="lt")
 
 
-def validate_box(box: tuple[int, int, int, int], role: str) -> None:
+def validate_box(
+    box: tuple[int, int, int, int], role: str, canvas: tuple[int, int]
+) -> None:
     left, top, right, bottom = box
-    if left < 48 or right > CANVAS[0] - 48 or top < 0 or bottom > CANVAS[1]:
+    if left < 48 or right > canvas[0] - 48 or top < 0 or bottom > canvas[1]:
         raise OverflowError(f"{role} outside safe area: {box}")
+
+
+def compose_hero(source: Path, output: Path, font_path: Path) -> dict[str, object]:
+    image = Image.open(source).convert("RGB")
+    if image.size != HERO_CANVAS:
+        raise ValueError(f"unexpected source size for {source}: {image.size}")
+    draw = ImageDraw.Draw(image)
+    style = STYLES["hero-title"]
+    selected = font(font_path, style)
+    line_height = round(style.size * 68 / 64)
+    first_top = round((HERO_CANVAS[1] - line_height * 2) / 2)
+    boxes = [
+        draw_tracked(
+            draw,
+            "COFFEE",
+            HERO_CANVAS[0] // 2,
+            first_top,
+            selected,
+            style,
+        ),
+        draw_tracked(
+            draw,
+            "CHAT",
+            HERO_CANVAS[0] // 2,
+            first_top + line_height,
+            selected,
+            style,
+        ),
+    ]
+    box = (
+        min(item[0] for item in boxes),
+        min(item[1] for item in boxes),
+        max(item[2] for item in boxes),
+        max(item[3] for item in boxes),
+    )
+    validate_box(box, "COFFEE CHAT", HERO_CANVAS)
+    records = [
+        {
+            "text": "COFFEE CHAT",
+            "role": "hero-title",
+            "token": style.token,
+            "font": font_path.name,
+            "font_size": style.size,
+            "axes": {"wght": style.weight, "wdth": style.width},
+            "tracking_em": style.tracking,
+            "shaping": "custom-tracked-glyphs",
+            "paint": CARBON,
+            "layout": "stacked-center",
+            "bounds": list(box),
+        }
+    ]
+
+    metadata = PngImagePlugin.PngInfo()
+    metadata.add_text("Software", "Coffee Chat deterministic README composer")
+    metadata.add_text("Font", font_path.name)
+    metadata.add_text("Font-SHA256", FONT_SHA256)
+    metadata.add_text("OpenBoa-Source-Commit", SOURCE_COMMIT)
+    image.save(output, format="PNG", optimize=False, pnginfo=metadata)
+    return {
+        "kind": "hero",
+        "source": source.name,
+        "output": f"docs/assets/readme/{output.name}",
+        "canvas": list(HERO_CANVAS),
+        "font": font_path.name,
+        "font_sha256": sha256(font_path),
+        "pillow_version": PILLOW_VERSION,
+        "openboa_source_commit": SOURCE_COMMIT,
+        "copy": EXPECTED_COPY["hero"],
+        "records": records,
+        "output_sha256": sha256(output),
+    }
 
 
 def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str, object]:
     image = Image.open(source).convert("RGB")
-    if image.size != CANVAS:
+    if image.size != EXPLANATORY_CANVAS:
         raise ValueError(f"unexpected source size for {source}: {image.size}")
     draw = ImageDraw.Draw(image)
     records: list[dict[str, object]] = []
@@ -153,7 +234,7 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
                 f"{style_name} copy exceeds {max_width}px at canonical size "
                 f"{style.size}: {value} ({box[2] - box[0]}px)"
             )
-        validate_box(box, value)
+        validate_box(box, value, EXPLANATORY_CANVAS)
         records.append(
             {
                 "text": value,
@@ -179,52 +260,44 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
             add(value, center, 615, "overline")
         for value, center in zip(
             (
-                "What you received",
-                "Review what it means to you",
-                "Your judgment, on record",
+                "The source",
+                "Meaning · Priority · Next move",
+                "Your reviewed judgment",
             ),
             centers,
         ):
             add(value, center, 697, "body", 390)
-        add(EXPECTED_COPY[kind][-1], CANVAS[0] // 2, 850, "heading", 1370)
+        add(
+            EXPECTED_COPY[kind][-1],
+            EXPLANATORY_CANVAS[0] // 2,
+            850,
+            "heading",
+            1370,
+        )
     elif kind == "talk-work":
         for value, center in zip(("BEANS", "BREW", "COFFEE"), centers):
             add(value, center, 615, "overline")
         for value, center in zip(
             (
-                "Your reviewed judgments",
-                "Select and apply what matters",
-                "Talk and Work, grounded in them",
+                "Reviewed judgments",
+                "Select what matters now",
+                "Talk · Work",
             ),
             centers,
         ):
             add(value, center, 697, "body", 390)
-        add(EXPECTED_COPY[kind][-1], CANVAS[0] // 2, 850, "heading", 1370)
+        add(
+            EXPECTED_COPY[kind][-1],
+            EXPLANATORY_CANVAS[0] // 2,
+            850,
+            "heading",
+            1370,
+        )
     else:
         raise ValueError(f"unsupported image kind: {kind}")
 
     actual_copy = [record["text"] for record in records]
-    expected_copy = (
-        [
-            "ORIGIN",
-            "ROAST",
-            "BEAN",
-            "What you received",
-            "Review what it means to you",
-            "Your judgment, on record",
-            "The same source can mean something different to each person.",
-        ]
-        if kind == "judgment"
-        else [
-            "BEANS",
-            "BREW",
-            "COFFEE",
-            "Your reviewed judgments",
-            "Select and apply what matters",
-            "Talk and Work, grounded in them",
-            "Your priorities can now travel into conversation and Agent work.",
-        ]
-    )
+    expected_copy = EXPECTED_COPY[kind]
     if actual_copy != expected_copy:
         raise AssertionError(f"copy mismatch for {kind}: {actual_copy}")
 
@@ -238,7 +311,7 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
         "kind": kind,
         "source": source.name,
         "output": f"docs/assets/readme/{output.name}",
-        "canvas": list(CANVAS),
+        "canvas": list(EXPLANATORY_CANVAS),
         "font": font_path.name,
         "font_sha256": sha256(font_path),
         "pillow_version": PILLOW_VERSION,
@@ -251,6 +324,7 @@ def compose(kind: str, source: Path, output: Path, font_path: Path) -> dict[str,
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--hero-source", required=True, type=Path)
     parser.add_argument("--judgment-source", required=True, type=Path)
     parser.add_argument("--talk-work-source", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
@@ -267,6 +341,11 @@ def main() -> None:
         raise ValueError("canonical Martian Grotesk digest mismatch")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     results = [
+        compose_hero(
+            args.hero_source,
+            args.output_dir / "coffee-chat-hero.png",
+            font_path,
+        ),
         compose(
             "judgment",
             args.judgment_source,

@@ -7,27 +7,29 @@ README. Rejected studies are not part of the asset set.
 
 | File                   | Size       | SHA-256                                                            |
 | ---------------------- | ---------- | ------------------------------------------------------------------ |
-| `coffee-chat-hero.png` | 1774 × 887 | `cb8211087ff8998119ac08a46e477c02d1c61b99e71fa1aadd63c62d78d21bfc` |
+| `coffee-chat-hero.png` | 1774 × 887 | `c08e8550fd9cf8423c2286cd46feeef81f41c4d40c844e534350bd00314d11b0` |
 
 The two-cup composition signals a Coffee Chat without turning the hero into a
 product diagram. It occupies the intended midpoint between realistic product
-photography and flat geometric minimalism.
+photography and flat geometric minimalism. The text-free ImageGen layer remains
+preserved in `source/coffee-chat-hero-illustration.png`; the production title is
+added with canonical OpenBoa typography.
 
 ## Explanatory images
 
 | File                        | Size       | SHA-256                                                            |
 | --------------------------- | ---------- | ------------------------------------------------------------------ |
-| `coffee-chat-judgment.png`  | 1576 × 998 | `be2f5ae2709a073d3f015b49038a19fbba54a17b2dd068c604f9e89251aaad25` |
-| `coffee-chat-talk-work.png` | 1576 × 998 | `0dc479d63b074797c7f7a006c9c8766caf868fec313990f04165f378161fd4d8` |
+| `coffee-chat-judgment.png`  | 1576 × 998 | `652c1889a2886f016a954591785b40efb951b22151f7c3568f8c77dc827d093b` |
+| `coffee-chat-talk-work.png` | 1576 × 998 | `b07f50b2eafbd1bc97fcabc6441005c846996e6d2f01a2bd3cafbb938c558188` |
 
 The images separate generated illustration from deterministic typography. The
 illustration layer provides only coffee objects, arrows, texture, and color.
 [`source/compose_explanatory_images.py`](source/compose_explanatory_images.py)
-adds every final label with the canonical physical Martian Grotesk font and
-records the applied OpenBoa type tokens in
+adds the hero title and every explanatory label with the canonical physical
+Martian Grotesk font and records the applied OpenBoa type tokens in
 [`explanatory-images.audit.json`](explanatory-images.audit.json).
 
-Regenerate both explanatory PNGs from the repository root with the canonical
+Regenerate all three production PNGs from the repository root with the canonical
 Linux renderer:
 
 ```sh
@@ -40,19 +42,20 @@ docker run --rm --platform linux/amd64 \
     --disable-pip-version-check --no-cache-dir \
     --require-hashes -r docs/assets/readme/source/requirements.txt >/dev/null && \
     python docs/assets/readme/source/compose_explanatory_images.py \
+      --hero-source docs/assets/readme/source/coffee-chat-hero-illustration.png \
       --judgment-source docs/assets/readme/source/coffee-chat-judgment-illustration.png \
       --talk-work-source docs/assets/readme/source/coffee-chat-talk-work-illustration.png \
       --output-dir /out --audit /out/explanatory-images.audit.json'
 ```
 
-The two `*-illustration.png` files are approved text-free ImageGen layers. The
+The three `*-illustration.png` files are approved text-free ImageGen layers. The
 composer does not alter their pixels beyond adding the deterministic copy.
 `npm run readme:assets:verify` is the offline PR gate: it checks each committed
 PNG's format, dimensions, and SHA-256 against the reviewed audit without a
 network call. `npm run readme:assets:reproduce` is the explicit maintainer
-check: it regenerates both images in the digest-pinned renderer and requires
-exact PNG and audit bytes. Host font libraries and PNG encoders cannot silently
-change the result.
+check: it regenerates all three images in the digest-pinned renderer and
+requires exact PNG and audit bytes. Host font libraries and PNG encoders cannot
+silently change the result.
 
 ## Brand basis
 
@@ -65,16 +68,16 @@ change the result.
   `MartianGrotesk-wdth-wght.ttf` release file
 - Font SHA-256:
   `f81807163c34ff754e6d915b0b59f76cca88332b67c45cfc7453ace5751ae912`
-- Type tokens: `overline`, `body/lg`, and `heading/lg`; each token has one fixed
-  size across both 1576 × 998 images, custom tracking applies only to stage
-  labels, and full sentences retain native whole-string kerning
+- Type tokens: `display/2xl` for the hero plus `overline`, `body/lg`, and
+  `heading/lg` for the explanatory images; each explanatory token has one fixed
+  size across both 1576 × 998 images, tracked display and stage labels use their
+  canonical tracking, and full sentences retain native whole-string kerning
 - Rendering environment: Pillow 12.3.0 installed from a hash-locked wheel in the
   digest-pinned `python:3.12.7-slim-bookworm` Linux image
 - Font license: OFL-1.1, stored next to the physical source file
 - Production format: deterministic self-contained PNG
 
-The hero contains no visible type. The explanatory image copy is deterministic;
-ImageGen does not render it. No production image has a remote runtime
-dependency, reused legacy pixel, or embedded availability claim. Runtime
-availability remains owned by
+The hero title and explanatory copy are deterministic; ImageGen does not render
+them. No production image has a remote runtime dependency, reused legacy pixel,
+or embedded availability claim. Runtime availability remains owned by
 [`../../product-boundaries.md`](../../product-boundaries.md).

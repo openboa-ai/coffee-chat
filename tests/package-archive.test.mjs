@@ -76,3 +76,11 @@ test("the packaged README keeps every local image target", async () => {
     assert.ok(packagedPaths.has(target), `missing packaged image: ${target}`);
   }
 });
+
+test("the package ships the Agent installation guide", async () => {
+  const files = await collectFiles(root);
+  const packagedPaths = new Set(files.map(({ path }) => path));
+
+  assert.ok(packageRoots.includes("INSTALL_FOR_AGENTS.md"));
+  assert.ok(packagedPaths.has("INSTALL_FOR_AGENTS.md"));
+});

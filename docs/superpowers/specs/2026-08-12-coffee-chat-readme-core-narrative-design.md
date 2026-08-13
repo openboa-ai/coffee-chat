@@ -1,323 +1,370 @@
 # Coffee Chat README core narrative design
 
-**Status:** Confirmed design unit **Date:** 2026-08-12 **Owner:**
-`openboa-ai/coffee-chat` **Scope:** Public README branding and information
-architecture only
+- **Status:** Confirmed design unit
+- **Date:** 2026-08-13
+- **Owner:** `openboa-ai/coffee-chat`
+- **Scope:** Public README branding and information architecture only
 
 ## Purpose
 
-The official README is Coffee Chat's public front door. It must make the product
-understandable and desirable before it routes implementation, security,
-licensing, verification, and repository details to narrower documents.
+The README is Coffee Chat's public front door. It must make the product's mental
+model, distinct data, two uses, and first action understandable before routing
+implementation, security, licensing, and verification details to narrower
+documents.
 
-This design unit fixes the two ideas that the README must communicate without
-requiring a reader to learn product terminology first:
+The page communicates two ideas:
 
-1. Coffee Chat makes owner-reviewed personal judgment its primary product asset;
-   it does not depend on a claim that adjacent systems keep only facts.
-2. The same reviewed records can ground both conversation and practical Agent
-   work.
+1. The same information can lead sincere people toward different meanings,
+   priorities, and next moves. Coffee Chat records that owner-reviewed human
+   layer while keeping the source visible.
+2. The same reviewed records can ground both Talk and Agent Work.
 
-This unit does not change runtime behavior. The public README describes the
-complete first implementation target, with a single WIP notice at the top.
+After the first idea is understood, the README gives the reader one immediate,
+Agent-first installation action. The README does not teach installation or usage
+itself; it hands those responsibilities to the root `INSTALL_FOR_AGENTS.md`
+contract.
 
-## Product premise
+This design does not change runtime behavior. The README describes the complete
+first-release target and uses one WIP notice to distinguish that target from
+current availability.
 
-People can read the same news, paper, or source and sincerely reach different
-interpretations. Each person naturally emphasizes different evidence,
-priorities, risks, and trade-offs because their own judgment feels correct from
-where they stand.
+## Product mental model
 
-That judgment is not another objective fact. It is useful because it honestly
-reveals how a person receives information, what they consider important, and how
-they are likely to use it. Coffee Chat keeps the shared material and the
-person's authored judgment distinguishable.
+Knowing what someone read does not reveal what they made of it.
 
-As Agents make execution abundant, deciding what matters, what good looks like,
-and which trade-off to accept becomes the limiting human input. Coffee Chat's
-product direction is to make a person's authored judgments available as
-inspectable context for Agent conversations and work. It is not a generic
-knowledge system, a tone-personalization layer, a global decision rule, or an AI
-impersonation of the author.
+```text
+same information
+  -> different meaning
+  -> different priority
+  -> different next move
+```
+
+This difference does not require deception. People ordinarily act on what seems
+important and right from where they stand. Their sincerity makes the record
+useful as evidence of their judgment; it does not make the judgment objective
+truth.
+
+Coffee Chat preserves the missing layer between information and action:
+
+```text
+what it meant to you
+  -> what mattered to you
+  -> what you would do
+```
+
+The owner reviews and controls every record. As Agents make execution cheaper,
+this human decision about what matters becomes the bottleneck that Coffee Chat
+makes available to a Plugin.
 
 ## Two-message architecture
 
-### 1. Why the product job is different
+### 1. Why the stored data is different
 
-The README must show one shared source branching into several honest human
-readings. The visual should make the distinction perceptible before prose
-explains it:
+The first explanatory image uses one direct coffee flow:
 
 ```text
-one shared source
-  -> person A emphasizes and concludes one thing
-  -> person B emphasizes and concludes another
-  -> person C emphasizes and concludes another
+ORIGIN                 ROAST                              BEAN
+The source          -> Meaning · Priority · Next move  -> Your reviewed judgment
+
+Same source. Different meaning. Different next move.
 ```
 
-The source remains shared evidence. Coffee Chat's primary asset is the person's
-reviewed interpretation, prioritization, and judgment about that evidence.
+Origin keeps the source visible. Roast is the owner's review step. Bean is the
+approved judgment, not a rewritten source and not an automatically inferred
+profile.
 
-The scene must not imply that a viewpoint becomes objective truth merely because
-it is sincere. It must instead make the author's priorities visible,
-attributable, and inspectable.
+The image must make the practical consequence visible: the same source can lead
+to a different next move. It must not stop at the obvious claim that people have
+different viewpoints.
 
-### 2. Conversation and practical use
+### 2. How the record becomes useful
 
-The second scene must show one authored judgment record flowing into two
-distinct user outcomes:
+The second explanatory image gives Talk and Work equal weight:
 
 ```text
-authored judgment record
-  -> Talk: explore how the author receives and judges the subject
-  -> Work: let the owner's Agent and projects use those declared priorities
+BEANS                  BREW                       COFFEE
+Reviewed judgments  -> Select what matters now -> Talk · Work
+
+The same Beans ground Talk and Work.
 ```
 
-`Talk` is an AI conversation grounded in the author's public records. It never
-claims that the AI is the author.
+Talk lets a person explore what mattered, why, and what the owner would do. The
+AI discloses that it is using the owner's records and never impersonates the
+owner.
 
-`Work` means that an Agent can use the owner's authored judgments as contextual
-input when comparing options, surfacing risks, evaluating trade-offs, or
-producing work. The record informs the work; it is not an executable policy or
-an automatic substitute for the owner's decision.
+Work gives an Agent those reviewed priorities while it evaluates, compares, or
+creates. The records are contextual input, not an executable global policy and
+not a substitute for the owner's final decision.
 
 ## README reading flow
 
-The public page should follow this compact sequence:
+The public page follows this sequence:
 
 ```text
-why this is needed
-  -> what Coffee Chat records
-  -> Talk
-  -> Work
-  -> start a relevant journey
-  -> use it
-  -> technical and governance documents
+WIP and branded hero
+  -> why the same information leads people in different directions
+  -> paste one official installation guide into an Agent
+  -> what Coffee Chat records and why that data is distinct
+  -> one Bean, two equal uses: Talk and Work
+  -> ownership and trust
+  -> technical documents
 ```
 
-The first visual owns the material distinction. The second visual owns the
-conversation-and-use distinction. Prose supports those visuals and must not
-repeat them as a long essay.
+Each section answers one reader question. Prose stays short and does not repeat
+what the images already make visible.
+
+After the installation handoff, every section follows one scan-first pattern:
+
+```text
+short outcome heading
+  -> one-sentence conclusion
+  -> only the smallest supporting structure
+  -> image when it carries information the copy should not repeat
+```
+
+The conclusion never waits for the end of a paragraph. A reader who scans only
+the headings and first sentences must understand what Coffee Chat stores, where
+it is useful, and who controls it.
+
+## Agent-first installation handoff
+
+Immediately after the mental-model section, the README contains only this
+action:
+
+```text
+## Install with your Agent
+
+Paste this into your Agent:
+
+Install Coffee Chat. Follow this guide:
+https://raw.githubusercontent.com/openboa-ai/coffee-chat/main/INSTALL_FOR_AGENTS.md
+```
+
+`INSTALL_FOR_AGENTS.md` is a root-level, Agent-facing operational contract. It
+owns source verification, current-install detection, official marketplace
+registration, Plugin installation, post-install verification, user interaction,
+and Skill routing. The public README does not duplicate those steps.
+
+For Codex, the current official repository marketplace path is:
+
+```text
+codex plugin marketplace add openboa-ai/coffee-chat --ref main
+codex plugin add coffee-chat@openboa-ai
+```
+
+The guide must inspect before mutating, avoid repeating successful installation,
+and report any step it cannot complete. It must never substitute a personal
+fork, clone-and-copy workflow, or arbitrary third-party package for the official
+Openboa AI Plugin.
+
+Plugin installation remains side-effect-free with respect to product data. It
+must not create, fork, sync, activate, or publish a Roastery. After verifying
+the Plugin, the Agent explains that only `$coffee-init` is currently implemented
+and asks whether the user wants to start it. Init begins only after an explicit
+user choice and retains its own Preview and acceptance boundary.
 
 ## Confirmed public copy direction
 
-The opening message is:
+The product introduction is:
 
-> **Knowledge is easy to store. Judgment is still trapped in your head.**
+> Coffee Chat is an **Agent Plugin** that turns your reviewed judgments into
+> records people can explore through **Talk** and Agents can use in **Work**.
 
-The supporting explanation is:
+The mental-model section leads with:
 
-> Coffee Chat is an Agent Plugin that turns what you make of things into
-> owner-reviewed records—so people can talk with them and Agents can use them at
-> work.
+> **The same information can lead two people in different directions.**
 
-The category distinction is based on primary job rather than an invented limit
-on what another system may contain:
+Its two compressed statements are:
 
-| Category                    | Primary job                                                     |
-| --------------------------- | --------------------------------------------------------------- |
-| **LLM wiki / second brain** | Keep knowledge organized, connected, and retrievable            |
-| **Agent memory**            | Help an Agent remember users, conversations, and prior activity |
-| **Digital self**            | Let an AI represent or act on behalf of a person                |
-| **Coffee Chat**             | Make a person's reviewed judgments usable for Talk and Work     |
+> **Same information. Different meaning. Different priority. Different next
+> move.**
 
-Coffee Chat's one-of-one position is the combination of four properties:
+> **What it meant to you → What mattered to you → What you would do**
 
-1. **Owner-reviewed:** an AI inference does not silently become the owner's
-   judgment.
-2. **Owned and versioned:** records are attributable, inspectable, and under
-   owner control.
-3. **AI-disclosed:** the interface uses the records without impersonating the
-   owner.
-4. **Built for Talk + Work:** the same records support both human exploration
-   and Agent work.
+The product consequence is:
+
+> **As Agents make execution cheaper, deciding what matters becomes the
+> bottleneck.**
+
+After installation, the public copy is fixed to this compressed sequence:
+
+### Store judgment, not just information.
+
+The first sentence states the data distinction:
+
+> A Bean stores your approved judgment—not a copy of what you read.
+
+One short line maps the product terms before the existing explanatory image:
+
+> **Origin** keeps the source visible. **Roast** captures meaning, priority, and
+> next move. What you approve becomes a **Bean**.
+
+The section closes only with:
+
+> Across Beans, recurring priorities reveal your **Taste**.
+
+It removes the three-item explanatory list, post-image blockquote, and category
+comparison paragraph because the image and first sentence already carry those
+jobs.
+
+### Use it in Talk and Work.
+
+The first sentence states the two outcomes with equal weight:
+
+> The same reviewed Beans help people understand your thinking and Agents work
+> from your priorities.
+
+The Talk/Work table contains one short job per column. The existing Brew image
+follows it. No paragraph after the image repeats the distinction.
+
+### You stay in control.
+
+The first sentence states the ownership boundary:
+
+> Nothing becomes public without your approval.
+
+Only short trust bullets remain: source separation, owner-controlled versioning,
+AI disclosure/citation, and no impersonation or replacement of the owner's final
+decision.
+
+### Go deeper.
+
+The heading is followed directly by the four owning technical documents. It has
+no setup sentence. License remains one compact sentence.
+
+The README does not use a category comparison table or claim that LLM wikis
+store only facts. Adjacent systems may preserve rich context; Coffee Chat's
+public distinction is its owner-reviewed, source-distinguishable judgment built
+for both Talk and Work.
+
+Taste is introduced only after plain-language understanding exists. It names
+recurring priorities visible across many Beans; it does not lead the
+explanation.
 
 ### Public Skill names
 
 The complete first release exposes these user-visible Skill names:
 
-| Skill            | Responsibility                               |
+| Skill            | Reader-facing responsibility                 |
 | ---------------- | -------------------------------------------- |
-| `$coffee-init`   | Build the owner's public Roastery            |
-| `$coffee-sync`   | Connect or refresh one public Roastery       |
-| `$coffee-roast`  | Propose one owner-reviewed Bean              |
-| `$coffee-brew`   | Use relevant Beans in Agent work             |
+| `$coffee-init`   | Create the owner's public Roastery           |
+| `$coffee-roast`  | Turn one Origin into a reviewed Bean         |
 | `$coffee-chat`   | Talk with one explicitly selected Roastery   |
+| `$coffee-brew`   | Use relevant Beans in Agent work             |
+| `$coffee-sync`   | Connect or refresh one public Roastery       |
 | `$coffee-unsync` | Remove one exact local Roastery relationship |
 
-Public README usage leads with these Skill names. It does not substitute bare
-implementation capability labels such as `init`, `sync`, `roast`, `brew`, or
-`unsync`.
+The six first-release Skill names and their intent routing live in
+`INSTALL_FOR_AGENTS.md`. The README does not duplicate that usage guide.
 
-## Selected visual direction
+## Selected visual system
 
-The selected hero is a restrained editorial illustration of two coffee cups
-facing across open space. It occupies the midpoint between photoreal product
-photography and flat geometric minimalism: clearly designed, tactile enough to
-feel human, and simple enough to leave the product copy in control.
+### Hero
 
-Coffee is the direct identity cue, while the paired composition suggests
-conversation. The hero does not attempt to encode the full product model,
-lifecycle, Talk, or Work in one image.
+The hero preserves the selected editorial illustration of two coffee cups facing
+across open space. It sits between photoreal product photography and flat
+geometric minimalism: tactile enough to feel human, restrained enough to leave
+the product narrative in control.
 
-The selected asset is:
+The exact title `COFFEE CHAT` is centered between the cups as a two-line display
+lockup. It overlaps the illustration field without adding a card, shadow,
+tagline, icon, or new metaphor.
 
-1. `docs/assets/readme/coffee-chat-hero.png`; `1774 x 887`; SHA-256
-   `cb8211087ff8998119ac08a46e477c02d1c61b99e71fa1aadd63c62d78d21bfc`.
+- Production asset: `docs/assets/readme/coffee-chat-hero.png`
+- Canvas: `1774 x 887`
+- SHA-256: `c08e8550fd9cf8423c2286cd46feeef81f41c4d40c844e534350bd00314d11b0`
+- Preserved text-free source:
+  `docs/assets/readme/source/coffee-chat-hero-illustration.png`
+- Title token: `display/2xl`, `wght 550`, `wdth 96`, tracking `-0.025`
 
-It is a self-contained PNG and does not depend on a browser page, animation,
-remote font, or remote image. Rejected vector studies and their generator are
-excluded from the selected production asset set.
+### Explanatory images
+
+The two explanatory images use the same `1576 x 998` grid, illustration weight,
+and copy hierarchy. Each contains one horizontal flow, three stage labels, one
+short explanation per stage, and one closing statement. Neither contains a
+headline or extra decorative object.
+
+Image 1 contains one unroasted coffee bean, one simplified roasting machine, one
+roasted Bean, and exactly two right-facing arrows.
+
+Image 2 contains a small group of Beans, one pour-over dripper, one Coffee cup,
+and exactly two right-facing arrows. It contains no floating Bean or internal
+Brew arrow.
+
+Both images sit between a flat infographic and a detailed illustration. They
+exclude realistic ceramic rendering, complex lighting, cast shadows, botanical
+drawings, UI cards, and decorative cafe objects.
 
 ### OpenBoa brand application
 
-- Primary identity and composition colors are exactly Terracotta `#A64F3C`,
-  Quiet Off-white `#F8F8F5`, and Blue Carbon `#111820` from the canonical
-  OpenBoa Brand System 2026.08.12.
-- The image contains no visible type and therefore has no font dependency.
-- Composition follows the OpenBoa quiet-infrastructure premise through measured
-  space, restrained subject count, and a clear visual hierarchy.
-- OpenBoa scale geometry may provide background rhythm, but the official symbol
-  and lockups may not be redrawn, cropped, recolored, or transformed into a cup,
-  steam, or diagram node.
-- Quiet Off-white, Blue Carbon, and Terracotta remain the dominant colors; small
-  tonal variation is permitted only to give the raster illustration depth.
+- Dominant colors are Quiet Off-white `#F8F8F5`, Blue Carbon `#111820`, and
+  Terracotta `#A64F3C` from OpenBoa Brand System 2026.08.12.
+- Martian Grotesk is the only visible Latin typeface.
+- The hero uses `display/2xl`; explanatory images use `overline`, `body/lg`, and
+  `heading/lg` with their canonical axes and tracking.
+- Illustration texture and tonal variation may add tactile depth without
+  introducing a new dominant color.
+- The official OpenBoa symbol, lockups, and scale geometry are not redrawn into
+  coffee objects.
 
-The system excludes photoreal product photography, complex diagrams, tasting
-flights, cafe scenes, and former coffee-production lifecycle imagery. Legacy
-README imagery remains mood evidence only; no pixels, tracing, or composition
-source may be reused.
-
-### Approved explanatory image set
-
-The README adds two labeled raster images after the hero. Each image contains
-one short horizontal flow and explains one product reason. The images do not ask
-an unlabeled illustration to carry the concept alone.
-
-#### Image 1: why Roast is needed
-
-The first image uses this exact flow and copy:
-
-```text
-ORIGIN                  ROAST                         BEAN
-What you received   ->  Review what it means to you  ->  Your judgment, on record
-
-The same source can mean something different to each person.
-```
-
-`Roast` is an owner-review action, not an automatic source transformation. The
-image uses coffee objects as a restrained visual metaphor: one unroasted green
-bean for Origin, one simplified drum-roasting machine for Roast, and one roasted
-bean for Bean. Exactly two right-facing arrows connect the three stages; the
-objects contain no internal arrows or extra transformation marks. It explains
-why storing the source alone is insufficient.
-
-#### Image 2: why Brew is needed
-
-The second image uses this exact flow and copy:
-
-```text
-BEANS                       BREW                           COFFEE
-Your reviewed judgments  -> Select and apply what matters -> Talk and Work, grounded in them
-
-Your priorities can now travel into conversation and Agent work.
-```
-
-`Brew` is a read-only application action. It selects relevant reviewed Beans for
-the current conversation or task and produces ephemeral Coffee without rewriting
-the Beans. The image contains a small group of Beans, one pour-over dripper for
-Brew, and one Coffee cup. Exactly two horizontal right-facing arrows connect the
-three stages. The Brew stage contains no floating Bean, internal arrow, or other
-transformation cue.
-
-Both images use the same fixed landscape grid at approximately `1200 x 760`.
-They sit between a flat infographic and a detailed illustration: each object
-uses two or three color planes, a thin imperfect outline, and only enough paper
-grain to feel human. They exclude realistic ceramic rendering, liquid detail,
-complex lighting, cast shadows, botanical drawings, UI cards, and decorative
-objects.
-
-The explanatory set uses Quiet Off-white `#F8F8F5` as the dominant field, Blue
-Carbon `#111820` for text and structural contrast, and Terracotta `#A64F3C` for
-the action and controlled accent. Natural coffee brown is permitted only where
-needed to keep a Bean readable. The official OpenBoa symbol, scale pattern, or
-logo is not redrawn into coffee objects.
-
-Both images share three uppercase stage labels, one short explanation per stage,
-and one bold closing sentence. Neither image has a headline. No other copy
-appears. All exact text must be inspected at original resolution before a
-preview can be selected.
-
-Image generation owns the illustration layer only. All visible copy is added in
-a deterministic raster-composition pass using the canonical physical
-`MartianGrotesk-wdth-wght.ttf` file from OpenBoa Brand System 2026.08.12. Stage
-labels use the `overline` token (`wght 650`, `wdth 100`, tracking `0.08`),
-supporting descriptions use the `body/lg` token (`wght 450`, `wdth 100`,
-tracking `0`), and the closing sentence uses the `heading/lg` token (`wght 550`,
-`wdth 96`, tracking `0`). Each token uses one fixed size across both
-`1576 x 998` images; copy may not shrink independently to fit. Full sentences
-are shaped as native whole strings so the font's own kerning remains intact;
-custom tracking applies only to stage labels. Generated lettering, font
-substitution, and visually similar fallback fonts are not acceptable.
-
-### README integration checkpoint
-
-The selected two-cup PNG remains the only visual referenced by the README until
-the two labeled explanatory previews are approved. The README describes the
-complete first product target through `coffee-chat`, places one WIP notice at
-the top, and excludes `coffee-blend`.
+ImageGen owns only the text-free raster illustration layers. Exact title and
+copy are added by the deterministic Pillow composer with the canonical physical
+`MartianGrotesk-wdth-wght.ttf` file. The audit manifest records source, canvas,
+font digest, token, axes, tracking, bounds, and final PNG digest.
 
 ## Guardrails
 
-- A first-time reader must not need `Taste`, `PoV`, or other product labels to
-  understand the premise. A maintained product term may be introduced only after
-  plain-language understanding exists.
-- Do not reintroduce removed legacy lifecycle or artifact vocabulary.
-- Do not claim that LLM wikis preserve only facts or cannot preserve
-  interpretation, opinion, or other rich context.
-- Compare adjacent categories by their primary job rather than weakening their
-  capabilities to manufacture a contrast.
-- Do not frame Coffee Chat as a generic LLM memory, personality profile,
-  identity simulation, style transfer, or impersonation system.
-- Keep source evidence and authored judgment visibly distinct.
-- Treat sincerity as evidence of the author's real priorities, not as proof of
-  objective correctness.
-- Keep `Talk` and `Work` visibly separate; neither may collapse into a generic
-  "personalized AI" claim.
-- Distinguish the approved first-release direction from current implementation
-  with one WIP notice at the top; do not interrupt the product narrative with
-  repeated implementation disclaimers.
-- Keep technical implementation, repository boundaries, security, licensing, and
-  verification details in linked documents rather than leading with them.
-- Create the README image system from new source assets. Legacy README imagery
-  is mood reference only and must not be recolored or reused as production
-  source.
-- Apply the canonical OpenBoa brand system to identity, color, typography,
-  spacing, pattern, contrast, accessibility, and asset handoff.
+- A first-time reader must not need Taste, PoV, or another product label to
+  understand the premise.
+- Do not reintroduce removed lifecycle or artifact vocabulary.
+- Do not claim that an LLM wiki preserves only facts or cannot contain
+  interpretation.
+- Do not frame Coffee Chat as generic memory, a personality profile, a digital
+  self, style transfer, or impersonation.
+- Keep source evidence and owner-reviewed judgment visibly distinguishable.
+- Treat sincerity as evidence of priorities, not proof of objective truth.
+- Give Talk and Work equal visual and verbal weight.
+- Keep exactly one availability disclaimer at the top.
+- Keep technical implementation, security, licensing, and verification details
+  in linked documents.
+- After installation, keep headings outcome-led and no longer than six words.
+- Put each section's conclusion in its first sentence.
+- Remove paragraphs that merely restate an adjacent image, table, or callout.
+- Keep the README installation handoff short; do not reproduce commands or a
+  usage tutorial outside `INSTALL_FOR_AGENTS.md`.
+- Installation must not create or mutate a Roastery, and the Agent must not
+  automatically invoke `$coffee-init` after installing the Plugin.
+- Use new or approved ImageGen raster sources; never substitute SVG production
+  art.
 
 ## Verification
 
-The completed README and assets must pass these checks:
+The completed README and assets must satisfy these checks:
 
-1. A five-second review can identify both core messages: the material is
-   authored human judgment rather than duplicated raw facts, and it can ground
-   both conversation and work.
-2. A reader can distinguish source evidence, author judgment, and AI-generated
-   output without reading a technical document.
-3. The page never implies that the AI is the author or that a sincere judgment
-   is objective truth.
-4. The page does not require unexplained product terminology or removed legacy
-   concepts.
-5. Talk, Work, current availability, and the next action remain scannable on a
-   narrow GitHub viewport.
-6. Local links, image paths, alt text, heading hierarchy, formatting, and
-   light/dark contrast are valid.
-7. The top WIP notice makes clear that the documented first-release experience
-   is still being implemented.
-8. The product is called an Agent Plugin and its usage section exposes only the
-   six confirmed `$coffee-*` Skill names.
+1. In five seconds, a reader can identify why the stored data is different and
+   that it powers both Talk and Work.
+2. The practical consequence of personal judgment reaches `different next move`,
+   not only `different viewpoint`.
+3. A reader can distinguish Origin, owner-reviewed Bean, and AI-produced Coffee.
+4. The page never implies that the AI is the owner or that sincerity proves
+   objective truth.
+5. The Agent-install block appears between the mental model and the
+   distinct-data explanation and links to the official raw
+   `INSTALL_FOR_AGENTS.md`.
+6. The README states current availability once; installation and usage details
+   are not duplicated.
+7. After installation, a heading-only scan yields `store judgment`,
+   `use it in Talk and Work`, `stay in control`, and `go deeper`.
+8. Every post-install section leads with its conclusion and contains no
+   paragraph that repeats an adjacent image or table.
+9. The installation guide verifies the official source, installs through the
+   supported Plugin path, preserves side-effect-free installation, and reports
+   the current Skill boundary honestly.
+10. All PNGs, exact copy, font use, audit records, hashes, local links, package
+    contents, and deterministic reproduction checks pass.
 
-## Remaining decision
+## Deferred visual
 
-A separate lifecycle visual remains optional and deferred. It may be added only
-after the selected hero and complete README are reviewed together.
+A separate lifecycle visual remains optional. It may be added only if the final
+README still contains a comprehension gap after the hero and two explanatory
+images are reviewed together.

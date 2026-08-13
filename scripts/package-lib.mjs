@@ -15,6 +15,7 @@ export const packageRoots = Object.freeze([
   "runtime",
   "skills",
   "AGENTS.md",
+  "INSTALL_FOR_AGENTS.md",
   "LICENSE",
   "README.md",
   "SECURITY.md",

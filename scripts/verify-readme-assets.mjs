@@ -9,29 +9,36 @@ const assetRoot = join(root, "docs", "assets", "readme");
 const audit = JSON.parse(
   await readFile(join(assetRoot, "explanatory-images.audit.json"), "utf8"),
 );
-const expected = new Map(
-  audit.images.map(({ kind, output_sha256 }) => [kind, output_sha256]),
-);
+const assets = new Map([
+  ["hero", { filename: "coffee-chat-hero.png", width: 1774, height: 887 }],
+  [
+    "judgment",
+    { filename: "coffee-chat-judgment.png", width: 1576, height: 998 },
+  ],
+  [
+    "talk-work",
+    { filename: "coffee-chat-talk-work.png", width: 1576, height: 998 },
+  ],
+]);
 
 assert.deepEqual(
-  [...expected.keys()],
-  ["judgment", "talk-work"],
-  "README image audit must describe exactly the two production images",
+  audit.images.map(({ kind }) => kind),
+  [...assets.keys()],
+  "README image audit must describe exactly the three production images",
 );
 
-for (const [kind, digest] of expected) {
-  const filename =
-    kind === "judgment"
-      ? "coffee-chat-judgment.png"
-      : "coffee-chat-talk-work.png";
+for (const { kind, output_sha256: digest } of audit.images) {
+  const asset = assets.get(kind);
+  assert.ok(asset, `unsupported README image kind: ${kind}`);
+  const { filename, width, height } = asset;
   const image = await readFile(join(assetRoot, filename));
   assert.deepEqual(
     image.subarray(0, 8),
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
     `${filename} must remain a PNG`,
   );
-  assert.equal(image.readUInt32BE(16), 1576, `${filename} width`);
-  assert.equal(image.readUInt32BE(20), 998, `${filename} height`);
+  assert.equal(image.readUInt32BE(16), width, `${filename} width`);
+  assert.equal(image.readUInt32BE(20), height, `${filename} height`);
   assert.equal(
     createHash("sha256").update(image).digest("hex"),
     digest,

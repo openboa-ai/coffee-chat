@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -37,7 +38,17 @@ const fontPath = join(
   "source",
   "MartianGrotesk-wdth-wght.ttf",
 );
+const heroSourcePath = join(
+  root,
+  "docs",
+  "assets",
+  "readme",
+  "source",
+  "coffee-chat-hero-illustration.png",
+);
 const expectedDigest =
+  "c08e8550fd9cf8423c2286cd46feeef81f41c4d40c844e534350bd00314d11b0";
+const expectedHeroSourceDigest =
   "cb8211087ff8998119ac08a46e477c02d1c61b99e71fa1aadd63c62d78d21bfc";
 const expectedPillowVersion = "12.3.0";
 const canonicalRenderer =
@@ -47,19 +58,46 @@ const expectedFontDigest =
 const removedBrewHeadline =
   "A record becomes useful when it shapes what happens next.";
 const expectedIllustrationSources = new Set([
+  "coffee-chat-hero-illustration.png",
   "coffee-chat-judgment-illustration.png",
   "coffee-chat-talk-work-illustration.png",
 ]);
+const expectedCopy = {
+  hero: ["COFFEE CHAT"],
+  judgment: [
+    "ORIGIN",
+    "ROAST",
+    "BEAN",
+    "The source",
+    "Meaning · Priority · Next move",
+    "Your reviewed judgment",
+    "Same source. Different meaning. Different next move.",
+  ],
+  "talk-work": [
+    "BEANS",
+    "BREW",
+    "COFFEE",
+    "Reviewed judgments",
+    "Select what matters now",
+    "Talk · Work",
+    "The same Beans ground Talk and Work.",
+  ],
+};
+const expectedCanvas = {
+  hero: [1774, 887],
+  judgment: [1576, 998],
+  "talk-work": [1576, 998],
+};
 const explanatoryAssets = [
   {
     path: judgmentPath,
     reference: "docs/assets/readme/coffee-chat-judgment.png",
-    digest: "be2f5ae2709a073d3f015b49038a19fbba54a17b2dd068c604f9e89251aaad25",
+    digest: "652c1889a2886f016a954591785b40efb951b22151f7c3568f8c77dc827d093b",
   },
   {
     path: talkWorkPath,
     reference: "docs/assets/readme/coffee-chat-talk-work.png",
-    digest: "0dc479d63b074797c7f7a006c9c8766caf868fec313990f04165f378161fd4d8",
+    digest: "b07f50b2eafbd1bc97fcabc6441005c846996e6d2f01a2bd3cafbb938c558188",
   },
 ];
 
@@ -80,17 +118,28 @@ test("the README uses the selected raster hero", async () => {
   assert.doesNotMatch(readme, /\.svg\b/u);
 });
 
-test("the explanatory images use deterministic canonical OpenBoa type", async () => {
-  const [readme, auditText, font] = await Promise.all([
+test("all README images use deterministic canonical OpenBoa type", async () => {
+  const [readme, auditText, font, heroSource] = await Promise.all([
     readFile(readmePath, "utf8"),
     readFile(auditPath, "utf8"),
     readFile(fontPath),
+    readFile(heroSourcePath),
   ]);
   const audit = JSON.parse(auditText);
 
+  assert.deepEqual(
+    audit.images.find(({ kind }) => kind === "judgment")?.copy,
+    expectedCopy.judgment,
+  );
   assert.equal(
     createHash("sha256").update(font).digest("hex"),
     expectedFontDigest,
+  );
+  assert.equal(heroSource.readUInt32BE(16), 1774);
+  assert.equal(heroSource.readUInt32BE(20), 887);
+  assert.equal(
+    createHash("sha256").update(heroSource).digest("hex"),
+    expectedHeroSourceDigest,
   );
   for (const asset of explanatoryAssets) {
     const image = await readFile(asset.path);
@@ -106,22 +155,26 @@ test("the explanatory images use deterministic canonical OpenBoa type", async ()
     );
     assert.ok(readme.includes(`](${asset.reference})`), asset.reference);
   }
-  assert.equal(audit.images.length, 2);
+  assert.deepEqual(
+    audit.images.map(({ kind }) => kind),
+    ["hero", "judgment", "talk-work"],
+  );
   for (const image of audit.images) {
     assert.equal(image.font, "MartianGrotesk-wdth-wght.ttf");
     assert.equal(image.font_sha256, expectedFontDigest);
     assert.equal(image.pillow_version, expectedPillowVersion);
-    assert.deepEqual(image.canvas, [1576, 998]);
+    assert.deepEqual(image.canvas, expectedCanvas[image.kind]);
+    assert.deepEqual(image.copy, expectedCopy[image.kind]);
     assert.ok(expectedIllustrationSources.has(image.source));
     assert.ok(!image.source.includes("/"));
     for (const record of image.records) {
       assert.equal(record.font, "MartianGrotesk-wdth-wght.ttf");
-      assert.equal(record.paint, "#111820");
+      assert.ok(["#111820", "#A64F3C"].includes(record.paint));
       assert.ok([450, 550, 650].includes(record.axes.wght));
       assert.ok([96, 100].includes(record.axes.wdth));
       assert.match(
         record.token,
-        /^ref\.typography\.styles\.(?:overline|body\.lg|heading\.lg)$/u,
+        /^ref\.typography\.styles\.(?:display\.2xl|overline|body\.lg|heading\.lg)$/u,
       );
     }
   }
@@ -135,7 +188,14 @@ test("the explanatory images use deterministic canonical OpenBoa type", async ()
       (record) => record.text === removedBrewHeadline,
     ),
   );
-  for (const image of audit.images) {
+  const heroAudit = audit.images.find((image) => image.kind === "hero");
+  assert.ok(heroAudit);
+  assert.equal(heroAudit.records.length, 1);
+  assert.equal(heroAudit.records[0].role, "hero-title");
+  assert.ok(heroAudit.records[0].font_size >= 120);
+  assert.equal(heroAudit.records[0].tracking_em, -0.025);
+  assert.equal(heroAudit.records[0].shaping, "custom-tracked-glyphs");
+  for (const image of audit.images.filter(({ kind }) => kind !== "hero")) {
     const expectedSizes = { overline: 42, body: 20, heading: 35 };
     for (const record of image.records) {
       assert.equal(record.font_size, expectedSizes[record.role]);
@@ -185,47 +245,96 @@ test("README image verification is offline and reproduction is pinned", async ()
   assert.doesNotMatch(workflow, /readme:assets:reproduce/u);
 });
 
+test("the offline verifier accepts all three reviewed README images", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["scripts/verify-readme-assets.mjs"],
+    {
+      cwd: root,
+      encoding: "utf8",
+    },
+  );
+
+  assert.equal(
+    result.status,
+    0,
+    [result.error?.message, result.stdout, result.stderr]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  assert.match(result.stdout, /"status":"readme_assets_valid"/u);
+});
+
 test("the README presents the complete first Coffee Chat release", async () => {
   const readme = await readFile(readmePath, "utf8");
+  const prose = readme.replaceAll("\n> ", " ").replace(/\s+/gu, " ");
 
   assert.match(readme, /^> \[!IMPORTANT\] \*\*WIP\*\*/u);
   assert.equal((readme.match(/\bWIP\b/gu) ?? []).length, 1);
-  assert.match(readme, /Coffee Chat is an Agent Plugin/u);
+  assert.match(readme, /Coffee Chat is an \*\*Agent Plugin\*\*/u);
   assert.match(readme, /owner-reviewed/iu);
-  assert.match(readme, /LLM wiki \/ second brain/u);
-  assert.match(readme, /Agent memory/u);
-  assert.match(readme, /Digital self/u);
-  assert.match(readme, /## One record\. Two uses\./u);
-  assert.match(readme, /## Origin\. Bean\. Coffee\./u);
-  for (const skill of [
-    "coffee-init",
-    "coffee-sync",
-    "coffee-roast",
-    "coffee-brew",
-    "coffee-chat",
-    "coffee-unsync",
-  ]) {
-    assert.ok(readme.includes(`\`$${skill}\``), skill);
-  }
+  assert.match(
+    readme,
+    /## The same information can lead two people in different directions\./u,
+  );
+  assert.match(
+    readme,
+    /What it meant to you → What mattered to you → What you would do/u,
+  );
+  assert.match(
+    prose,
+    /As Agents make execution cheaper, deciding what matters becomes the bottleneck\./u,
+  );
+  assert.match(readme, /## Store judgment, not just information\./u);
+  assert.match(readme, /## Use it in Talk and Work\./u);
+  assert.match(readme, /## Install with your Agent/u);
+  assert.match(
+    readme,
+    /https:\/\/raw\.githubusercontent\.com\/openboa-ai\/coffee-chat\/main\/INSTALL_FOR_AGENTS\.md/u,
+  );
+  assert.match(readme, /## You stay in control\./u);
+  assert.match(readme, /## Go deeper\./u);
+  const mentalModel = readme.indexOf(
+    "## The same information can lead two people in different directions.",
+  );
+  const install = readme.indexOf("## Install with your Agent");
+  const dataDifference = readme.indexOf(
+    "## Store judgment, not just information.",
+  );
+  const uses = readme.indexOf("## Use it in Talk and Work.");
+  const trust = readme.indexOf("## You stay in control.");
+  const deeper = readme.indexOf("## Go deeper.");
+  assert.ok(mentalModel < install);
+  assert.ok(install < dataDifference);
+  assert.ok(dataDifference < uses);
+  assert.ok(uses < trust);
+  assert.ok(trust < deeper);
   assert.doesNotMatch(readme, /Codex-first/u);
+  assert.doesNotMatch(readme, /codex plugin/u);
   assert.doesNotMatch(readme, /LLM wiki[^\n]*(?:only|just) facts/iu);
+  assert.doesNotMatch(readme, /LLM wiki \/ second brain/u);
+  assert.doesNotMatch(readme, /Coffee Chat's one-of-one design/u);
   assert.doesNotMatch(readme, /coffee[- ]blend/iu);
+  assert.doesNotMatch(
+    readme,
+    /## Coffee Chat records your judgment—not just the information behind it\./u,
+  );
+  assert.doesNotMatch(readme, /## One Bean\. Two uses\./u);
+  assert.doesNotMatch(readme, /## Your judgment stays yours\./u);
+  assert.doesNotMatch(readme, /## Documentation/u);
 });
 
 test("the README separates the first-release vision from current availability", async () => {
   const readme = await readFile(readmePath, "utf8");
-  const prose = readme.replaceAll("\n> ", " ");
+  const prose = readme.replaceAll("\n> ", " ").replace(/\s+/gu, " ");
 
   assert.match(
     prose,
-    /Only `\$coffee-init` is implemented today; the other listed Skills are not yet available\./u,
+    /Only `\$coffee-init` is implemented today; the rest of the first-release Skills are not yet available\./u,
   );
-  assert.match(readme, /When the first release is available, install/u);
-  assert.match(readme, /The first release will provide these public Skills/u);
-  assert.match(
-    readme,
-    /At release, `\$coffee-init` and `\$coffee-roast` will/u,
-  );
+  assert.doesNotMatch(readme, /## Start with Coffee Chat/u);
+  assert.doesNotMatch(prose, /When the first release is available, install/u);
+  assert.doesNotMatch(prose, /The first-release journey is short/u);
   assert.doesNotMatch(readme, /`\$coffee-init` and `\$coffee-roast` show/u);
   assert.doesNotMatch(readme, /`\$coffee-brew` and `\$coffee-chat` use/u);
 });
@@ -237,6 +346,7 @@ test("every local README target exists", async () => {
     "docs/assets/readme/coffee-chat-talk-work.png",
     "docs/assets/readme/explanatory-images.audit.json",
     "docs/assets/readme/source/compose_explanatory_images.py",
+    "docs/assets/readme/source/coffee-chat-hero-illustration.png",
     "docs/assets/readme/source/coffee-chat-judgment-illustration.png",
     "docs/assets/readme/source/coffee-chat-talk-work-illustration.png",
     "docs/assets/readme/source/MartianGrotesk-wdth-wght.ttf",
@@ -244,6 +354,7 @@ test("every local README target exists", async () => {
     "docs/assets/readme/source/requirements.txt",
     "scripts/reproduce-readme-assets.mjs",
     "scripts/verify-readme-assets.mjs",
+    "INSTALL_FOR_AGENTS.md",
     "docs/product-boundaries.md",
     "contract/roastery/README.md",
     "docs/quality-map.md",

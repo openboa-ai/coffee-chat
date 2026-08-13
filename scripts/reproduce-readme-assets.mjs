@@ -48,6 +48,7 @@ try {
         "--disable-pip-version-check --no-cache-dir",
         "--require-hashes -r docs/assets/readme/source/requirements.txt >/dev/null",
         "&& python docs/assets/readme/source/compose_explanatory_images.py",
+        "--hero-source docs/assets/readme/source/coffee-chat-hero-illustration.png",
         "--judgment-source docs/assets/readme/source/coffee-chat-judgment-illustration.png",
         "--talk-work-source docs/assets/readme/source/coffee-chat-talk-work-illustration.png",
         "--output-dir /out",
@@ -94,6 +95,7 @@ try {
   );
 
   for (const filename of [
+    "coffee-chat-hero.png",
     "coffee-chat-judgment.png",
     "coffee-chat-talk-work.png",
   ]) {

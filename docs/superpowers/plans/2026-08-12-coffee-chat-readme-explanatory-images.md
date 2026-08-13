@@ -1,5 +1,9 @@
 # Coffee Chat README Explanatory Images Implementation Plan
 
+> **Superseded 2026-08-13:** Retained as execution history. The approved hero,
+> exact explanatory copy, and deterministic three-image contract now live in
+> [`../specs/2026-08-12-coffee-chat-readme-core-narrative-design.md`](../specs/2026-08-12-coffee-chat-readme-core-narrative-design.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
