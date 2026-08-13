@@ -185,9 +185,9 @@ test("Init snapshots authority bytes instead of trusting a shared JSON export", 
   );
   assert.equal(
     preview.source.commit,
-    "8b196137ca22d6e5bcf373424d32cc95fb41bcf2",
+    "483af109f8c42048edf5d36ccdad43d7fc49e5d3",
   );
-  assert.equal(preview.source.tree, "0b70253937bb21e461d459e04336995ee01f5a13");
+  assert.equal(preview.source.tree, "ef6e9c081fb6844eb25e1f7d3b5374751ae826ad");
 });
 
 test("accepted Init publishes only approved identity bytes and registers after verification", async () => {
