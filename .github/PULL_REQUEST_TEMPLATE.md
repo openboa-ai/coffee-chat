@@ -11,8 +11,9 @@ List the exact local commands and results.
 - [ ] This pull request changes `.github/**`, `.githooks/**`, `AGENTS.md`,
       `SECURITY.md`, `CODEOWNERS`, dependency manifests, executable authority,
       or an external-write boundary.
-- [ ] If checked, I understand the organization ruleset—not this checkbox or a
-      candidate workflow—requires `security-maintainers` review before merge.
+- [ ] If checked, I understand the central trusted gate—not this checkbox or
+      candidate code—requires the protected `coffee-security` Environment
+      confirmation before merge.
 
 ## Boundaries
 

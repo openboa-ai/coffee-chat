@@ -48,28 +48,27 @@ perform its documented user-scoped GitHub and Registry writes.
 - Work on a non-default branch, open a pull request, and enable GitHub-native
   squash auto-merge only after the exact head passes the local verification
   contract and all required GitHub checks.
-- Candidate-executing workflows accept only `OWNER` or `MEMBER` authors and the
-  exact in-repository GitHub identity `dependabot[bot]`, with matching actor,
-  pull-request author, and head repository. Do not widen that set. Merge queue
-  is disabled. Never add custom write-token merge automation or treat a passing
-  candidate-controlled check as authorization for a sensitive change.
-- Mark the pull request's sensitive-path declaration accurately. The
-  organization ruleset—not the agent or candidate workflow—decides whether the
-  human-only `security-maintainers` team must review it.
+- The target repository exposes one inert `pull_request_target` wrapper pinned
+  to the central reusable gate. That trusted gate accepts only `OWNER` or
+  `MEMBER` authors and exact in-repository `dependabot[bot]`, with matching
+  actor, pull-request author, and head repository. Do not add another target
+  workflow or widen that set. Merge queue is disabled. Never add custom
+  write-token merge automation.
+- Mark the pull request's sensitive-path declaration accurately. The central
+  classifier and repository ruleset—not the agent or candidate checkout—decide
+  whether the protected `coffee-security` Environment must confirm it.
 - Normal code, documentation, tests, and vetted compatible dependency updates
   remain eligible for native auto-merge. Changes to repository automation,
   security policy, hooks, external-write boundaries, or executable authority
-  wait for ruleset-required human review after this pre-authorized bootstrap
-  rollout.
-- The organization-required workflow in `openboa-ai/.github` is the
-  authorization boundary. It loads controls and the YAML parser only from its
-  own workflow SHA and this repository's base SHA, and treats the pull-request
-  checkout as data. Local and candidate package scripts are post-trust quality
-  checks, never authorization.
+  wait for the Environment confirmation.
+- The reusable workflow in `openboa-ai/.github` is the authorization boundary.
+  It loads controls and the YAML parser only from its own workflow SHA and this
+  repository's base SHA, and treats the pull-request checkout as data. Local and
+  candidate package scripts are post-trust quality checks, never authorization.
 - On an author-controlled checkout, install the isolated parser explicitly with
   `node .github/policy-bootstrap.mjs && npm ci --ignore-scripts --prefix .github/policy-parser`
   before local policy tests. Never use that candidate command to decide whether
   an untrusted branch is safe.
 - Reject root `.npmrc`, parser `.npmrc`, and `npm-shrinkwrap.json`; they are
   unsupported competing install authorities. Preserve trusted history, worktree,
-  and raw-blob secret scanning.
+  and raw-blob secret scanning in the central gate.
