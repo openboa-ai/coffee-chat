@@ -69,7 +69,7 @@ test("preflight rejects a seed tree mismatch before any external write", async (
   assert.deepEqual(writes, []);
 });
 
-test("protection rejects an incomplete active ruleset", async () => {
+test("protection rejects an incomplete selected-actions allowlist", async () => {
   const preview = createInitPreview({
     owner: "example",
     attribution: "Example Owner",
@@ -122,6 +122,22 @@ test("protection rejects an incomplete active ruleset", async () => {
       }
       if (
         method === "PUT" &&
+        path === `repos/${TARGET}/actions/permissions/selected-actions`
+      ) {
+        return body;
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/actions/permissions/selected-actions`
+      ) {
+        return {
+          github_owned_allowed: false,
+          verified_allowed: false,
+          patterns_allowed: [],
+        };
+      }
+      if (
+        method === "PUT" &&
         path === `repos/${TARGET}/actions/permissions/workflow`
       ) {
         return body;
@@ -136,7 +152,7 @@ test("protection rejects an incomplete active ruleset", async () => {
         };
       }
       if (method === "POST" && path === `repos/${TARGET}/rulesets`) {
-        return { id: 1, name: body.name, enforcement: "active", rules: [] };
+        return { id: 1, ...body };
       }
       throw new Error(`Unexpected request: ${method} ${path}`);
     },
@@ -225,6 +241,27 @@ test("protection rejects a ruleset without owner review or trusted boundary cont
           enabled: true,
           allowed_actions: "selected",
           sha_pinning_required: true,
+        };
+      }
+      if (
+        method === "PUT" &&
+        path === `repos/${TARGET}/actions/permissions/selected-actions`
+      ) {
+        assert.deepEqual(body, {
+          github_owned_allowed: true,
+          verified_allowed: false,
+          patterns_allowed: [],
+        });
+        return body;
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/actions/permissions/selected-actions`
+      ) {
+        return {
+          github_owned_allowed: true,
+          verified_allowed: false,
+          patterns_allowed: [],
         };
       }
       if (
@@ -342,6 +379,22 @@ test("protection rejects each missing trusted boundary context", async () => {
             enabled: true,
             allowed_actions: "selected",
             sha_pinning_required: true,
+          };
+        }
+        if (
+          method === "PUT" &&
+          path === `repos/${TARGET}/actions/permissions/selected-actions`
+        ) {
+          return body;
+        }
+        if (
+          method === "GET" &&
+          path === `repos/${TARGET}/actions/permissions/selected-actions`
+        ) {
+          return {
+            github_owned_allowed: true,
+            verified_allowed: false,
+            patterns_allowed: [],
           };
         }
         if (
@@ -561,6 +614,28 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (
         method === "PUT" &&
+        path === `repos/${TARGET}/actions/permissions/selected-actions`
+      ) {
+        writes.push("selected-actions");
+        assert.deepEqual(body, {
+          github_owned_allowed: true,
+          verified_allowed: false,
+          patterns_allowed: [],
+        });
+        return {};
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/actions/permissions/selected-actions`
+      ) {
+        return {
+          github_owned_allowed: true,
+          verified_allowed: false,
+          patterns_allowed: [],
+        };
+      }
+      if (
+        method === "PUT" &&
         path === `repos/${TARGET}/actions/permissions/workflow`
       ) {
         writes.push("workflow-permissions");
@@ -737,6 +812,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
     "commit",
     "codeowners-bootstrap",
     "actions",
+    "selected-actions",
     "workflow-permissions",
     "ruleset",
     "blob",

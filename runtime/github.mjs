@@ -198,6 +198,15 @@ function protectedActions(value) {
   );
 }
 
+function protectedSelectedActions(value) {
+  return (
+    value?.github_owned_allowed === true &&
+    value?.verified_allowed === false &&
+    Array.isArray(value?.patterns_allowed) &&
+    value.patterns_allowed.length === 0
+  );
+}
+
 function protectedWorkflowPermissions(value) {
   return (
     value?.default_workflow_permissions === "read" &&
@@ -477,22 +486,36 @@ export function createGitHubBoundary({
       });
       await transport.api({
         method: "PUT",
+        path: `repos/${target}/actions/permissions/selected-actions`,
+        body: {
+          github_owned_allowed: true,
+          verified_allowed: false,
+          patterns_allowed: [],
+        },
+      });
+      await transport.api({
+        method: "PUT",
         path: `repos/${target}/actions/permissions/workflow`,
         body: {
           default_workflow_permissions: "read",
           can_approve_pull_request_reviews: false,
         },
       });
-      const [actionPermissions, workflowPermissions] = await Promise.all([
-        transport.api({
-          method: "GET",
-          path: `repos/${target}/actions/permissions`,
-        }),
-        transport.api({
-          method: "GET",
-          path: `repos/${target}/actions/permissions/workflow`,
-        }),
-      ]);
+      const [actionPermissions, selectedActions, workflowPermissions] =
+        await Promise.all([
+          transport.api({
+            method: "GET",
+            path: `repos/${target}/actions/permissions`,
+          }),
+          transport.api({
+            method: "GET",
+            path: `repos/${target}/actions/permissions/selected-actions`,
+          }),
+          transport.api({
+            method: "GET",
+            path: `repos/${target}/actions/permissions/workflow`,
+          }),
+        ]);
       const createdRuleset = await transport.api({
         method: "POST",
         path: `repos/${target}/rulesets`,
@@ -501,6 +524,7 @@ export function createGitHubBoundary({
       if (
         !protectedRepository(repository) ||
         !protectedActions(actionPermissions) ||
+        !protectedSelectedActions(selectedActions) ||
         !protectedWorkflowPermissions(workflowPermissions) ||
         !protectedRuleset(createdRuleset)
       ) {
@@ -652,6 +676,7 @@ export function createGitHubBoundary({
         reference,
         activeRulesets,
         actionPermissions,
+        selectedActions,
         workflowPermissions,
       ] = await Promise.all([
         transport.api({ method: "GET", path: `repos/${target}` }),
@@ -663,6 +688,10 @@ export function createGitHubBoundary({
         transport.api({
           method: "GET",
           path: `repos/${target}/actions/permissions`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/actions/permissions/selected-actions`,
         }),
         transport.api({
           method: "GET",
@@ -692,6 +721,7 @@ export function createGitHubBoundary({
         reference?.object?.sha !== merge.commit ||
         !protectedRepository(repository) ||
         !protectedActions(actionPermissions) ||
+        !protectedSelectedActions(selectedActions) ||
         !protectedWorkflowPermissions(workflowPermissions) ||
         !protectedRuleset(rulesetDetail)
       ) {
