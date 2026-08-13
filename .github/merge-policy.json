@@ -9,11 +9,8 @@
   "eligible_bot_logins": ["dependabot[bot]"],
   "custom_merge_controller": false,
   "required_checks": [
-    { "context": "Coffee Chat required", "integration_id": 15368 },
-    { "context": "Coffee Chat dependency review", "integration_id": 15368 },
-    { "context": "Secret boundary", "integration_id": 15368 },
     {
-      "context": "Coffee Chat CodeQL JavaScript-TypeScript",
+      "context": "OpenBoa Coffee trusted required / OpenBoa Coffee trusted required",
       "integration_id": 15368
     }
   ],
@@ -36,9 +33,9 @@
   ],
   "codeql_enforcement": "native_code_scanning",
   "sensitive_review": {
-    "enforcement": "github_repository_ruleset",
-    "required_team": "security-maintainers",
+    "enforcement": "github_environment",
+    "environment": "coffee-security",
     "required_approvals": 1,
-    "bypass_actors": []
+    "prevent_self_review": false
   }
 }

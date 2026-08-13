@@ -280,11 +280,9 @@ assert.deepEqual(mergePolicy.eligible_bot_logins, ["dependabot[bot]"]);
 assert.equal("eligible_author_logins" in mergePolicy, false);
 assert.equal(mergePolicy.custom_merge_controller, false);
 assert.deepEqual(mergePolicy.required_checks, [
-  { context: "Coffee Chat required", integration_id: 15368 },
-  { context: "Coffee Chat dependency review", integration_id: 15368 },
-  { context: "Secret boundary", integration_id: 15368 },
   {
-    context: "Coffee Chat CodeQL JavaScript-TypeScript",
+    context:
+      "OpenBoa Coffee trusted required / OpenBoa Coffee trusted required",
     integration_id: 15368,
   },
 ]);
@@ -307,10 +305,10 @@ assert.deepEqual(mergePolicy.protected_paths, [
 ]);
 assert.equal(mergePolicy.codeql_enforcement, "native_code_scanning");
 assert.deepEqual(mergePolicy.sensitive_review, {
-  enforcement: "github_repository_ruleset",
-  required_team: "security-maintainers",
+  enforcement: "github_environment",
+  environment: "coffee-security",
   required_approvals: 1,
-  bypass_actors: [],
+  prevent_self_review: false,
 });
 
 const agents = read("AGENTS.md");
