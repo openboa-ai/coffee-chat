@@ -26,11 +26,12 @@ that:
 - `<owner>/coffee-chat` does not already exist.
 
 Accepted Init then creates only that public fork, enables the Standard Roastery
-ruleset and required CI, proposes only normalized owner identity plus the exact
-`roastery/CONTENT_LICENSE.md`, requests GitHub-native squash auto-merge, and
-revalidates the resulting public default branch. Owned registration is the last
-write. Init does not clone the fork, create a Bean, or activate a conversation
-target.
+ruleset and required CI, verifies the fork already snapshots the exact pinned
+seed without moving its default branch, and proposes target-owner `CODEOWNERS`,
+normalized owner identity, and the exact `roastery/CONTENT_LICENSE.md`. It then
+requests GitHub-native squash auto-merge and revalidates the resulting public
+default branch. Owned registration is the last write. Init does not clone the
+fork, create a Bean, or activate a conversation target.
 
 Cancellation, rejection, invalid attribution, alternate-license input, stale
 Preview, and failed preflight preserve zero GitHub and Registry writes. Failure

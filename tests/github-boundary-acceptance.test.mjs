@@ -172,7 +172,7 @@ test("protection rejects an incomplete selected-actions allowlist", async () => 
   assert.deepEqual(defaultBranchWrites, []);
 });
 
-test("protection rejects a ruleset without owner review or trusted boundary controls", async () => {
+test("protection rejects a generated-fork ruleset that requires impossible self-review", async () => {
   const preview = createInitPreview({
     owner: "example",
     attribution: "Example Owner",
@@ -299,7 +299,7 @@ test("protection rejects a ruleset without owner review or trusted boundary cont
                   ...rule,
                   parameters: {
                     ...rule.parameters,
-                    require_code_owner_review: false,
+                    require_code_owner_review: true,
                   },
                 }
               : rule,
@@ -319,6 +319,62 @@ test("protection rejects a ruleset without owner review or trusted boundary cont
       "code" in error &&
       error.code === "protection_mismatch",
   );
+});
+
+test("fork rejects a stale snapshot without mutating the default branch", async () => {
+  const preview = createInitPreview({
+    owner: "example",
+    attribution: "Example Owner",
+  });
+  const defaultBranchWrites = [];
+  let forked = false;
+  const transport = {
+    async enableAutoMerge() {
+      throw new Error("Auto-merge must not run while the fork is verified");
+    },
+    async api({ method, path, body, allowNotFound = false }) {
+      if (method === "POST" && path === `repos/${SOURCE}/forks`) {
+        forked = true;
+        return { full_name: TARGET };
+      }
+      if (method === "GET" && path === `repos/${TARGET}`) {
+        if (!forked && allowNotFound) return undefined;
+        return {
+          private: false,
+          fork: true,
+          default_branch: "main",
+          full_name: TARGET,
+          parent: { full_name: SOURCE },
+        };
+      }
+      if (method === "GET" && path === `repos/${TARGET}/git/ref/heads/main`) {
+        return { object: { sha: "f".repeat(40) } };
+      }
+      if (
+        method === "PATCH" &&
+        path === `repos/${TARGET}/git/refs/heads/main`
+      ) {
+        defaultBranchWrites.push(body);
+        return { object: { sha: preview.source.commit } };
+      }
+      throw new Error(`Unexpected request: ${method} ${path}`);
+    },
+  };
+  const github = createGitHubBoundary({
+    transport,
+    pause: async () => {},
+    attempts: 1,
+  });
+
+  await assert.rejects(
+    () => github.fork(preview),
+    (error) =>
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "fork_seed_mismatch",
+  );
+  assert.deepEqual(defaultBranchWrites, []);
 });
 
 test("protection rejects each missing trusted boundary context", async () => {
@@ -467,7 +523,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   let blobSequence = 0;
   const head = "c".repeat(40);
   const mergeCommit = "d".repeat(40);
-  let forkHead = "e".repeat(40);
+  const forkHead = preview.source.commit;
 
   const transport = {
     async api({ method, path, body, allowNotFound = false }) {
@@ -515,13 +571,11 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (
         method === "PATCH" &&
-        path === `repos/${TARGET}/git/refs/heads/main` &&
-        body.sha === preview.source.commit
+        path === `repos/${TARGET}/git/refs/heads/main`
       ) {
-        writes.push("anchor-seed");
-        assert.deepEqual(body, { sha: preview.source.commit, force: true });
-        forkHead = preview.source.commit;
-        return { object: { sha: forkHead } };
+        assert.fail(
+          `Default branch mutation is forbidden: ${JSON.stringify(body)}`,
+        );
       }
       if (method === "PATCH" && path === `repos/${TARGET}`) {
         writes.push("repository-settings");
@@ -635,7 +689,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
           {
             allowed_merge_methods: ["squash"],
             dismiss_stale_reviews_on_push: true,
-            require_code_owner_review: true,
+            require_code_owner_review: false,
             require_last_push_approval: false,
             required_approving_review_count: 0,
             required_review_thread_resolution: true,
@@ -761,7 +815,6 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   });
   assert.deepEqual(writes, [
     "fork",
-    "anchor-seed",
     "repository-settings",
     "actions",
     "selected-actions",

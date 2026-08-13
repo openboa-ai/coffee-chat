@@ -81,7 +81,7 @@ function ruleset() {
         parameters: {
           allowed_merge_methods: ["squash"],
           dismiss_stale_reviews_on_push: true,
-          require_code_owner_review: true,
+          require_code_owner_review: false,
           require_last_push_approval: false,
           required_approving_review_count: 0,
           required_review_thread_resolution: true,
@@ -146,7 +146,7 @@ function protectedRuleset(value) {
     !pull ||
     JSON.stringify(pull.allowed_merge_methods) !== JSON.stringify(["squash"]) ||
     pull.dismiss_stale_reviews_on_push !== true ||
-    pull.require_code_owner_review !== true ||
+    pull.require_code_owner_review !== false ||
     pull.require_last_push_approval !== false ||
     pull.required_approving_review_count !== 0 ||
     pull.required_review_thread_resolution !== true
@@ -348,23 +348,6 @@ export function createGitHubBoundary({
           value.default_branch === preview.source.defaultBranch,
       });
       if (!repository) throw new GitHubBoundaryError("fork_mismatch");
-      await poll({
-        attempts,
-        pause,
-        code: "fork_ref_not_ready",
-        read: () =>
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/git/ref/heads/${preview.source.defaultBranch}`,
-            allowNotFound: true,
-          }),
-        accept: (value) => typeof value?.object?.sha === "string",
-      });
-      await transport.api({
-        method: "PATCH",
-        path: `repos/${target}/git/refs/heads/${preview.source.defaultBranch}`,
-        body: { sha: preview.source.commit, force: true },
-      });
       const reference = await poll({
         attempts,
         pause,

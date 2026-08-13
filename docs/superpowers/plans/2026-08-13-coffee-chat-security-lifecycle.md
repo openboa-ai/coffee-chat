@@ -11,9 +11,10 @@ agent lifecycle without changing the shipped Plugin behavior.
 **Architecture:** Repository workflows remain read-only and candidate execution
 is restricted to organization owners/members. A structural YAML contract rejects
 workflow-policy bypasses. The live organization ruleset later supplies
-human-only team review for sensitive paths. Coffee Init supplies the equivalent
-boundary to user-owned forks with a target-owner `CODEOWNERS` bootstrap and
-ruleset-enforced code-owner review.
+human-only team review for sensitive paths. Coffee Init cannot require the sole
+personal-fork owner to review their own initialization pull request, so it uses
+strict trusted checks, a target-owner `CODEOWNERS` handoff in that pull request,
+and no direct default-branch mutation.
 
 **Stack:** Node.js 24, `yaml`, Node test runner, GitHub Actions, GitHub
 Rulesets, Gitleaks, CodeQL, npm.
@@ -30,19 +31,20 @@ Rulesets, Gitleaks, CodeQL, npm.
 **Red tests:** Extend the existing protected-fork acceptance test and add a
 focused rejection test proving that:
 
-- the protection bootstrap writes a target-owner `CODEOWNERS` file before the
-  ruleset becomes active;
+- the fork snapshot must already equal the exact pinned source default-branch
+  commit and Init never moves the fork default branch directly;
 - the file owns `.github`, `CODEOWNERS`, security policy, executable/runtime,
   contract, and package-control paths, but not `roastery/CONTENT_LICENSE.md`,
   `roastery/roastery.json`, or `roastery/beans/**`;
-- the pull-request rule has zero general approvals, requires code-owner review,
-  and dismisses stale approvals;
+- the generated-fork pull-request rule has zero general approvals, does not
+  require impossible self-review, and dismisses stale approvals;
 - required checks include `Secret boundary` and
   `Roastery CodeQL JavaScript-TypeScript` in addition to the existing required
   and dependency-review lanes;
 - selected-only Actions, SHA pinning, and read-only workflow token defaults are
   verified;
-- a ruleset without code-owner review or trusted-boundary context is rejected.
+- a ruleset that requires self-review or omits a trusted-boundary context is
+  rejected.
 
 Run the focused test and record the expected failure before production edits:
 
@@ -51,10 +53,11 @@ node --test tests/github-boundary-acceptance.test.mjs
 ```
 
 **Implementation:** Add the narrowest repository-native helpers in
-`runtime/github.mjs` to create and verify the deterministic owner-bound
-`CODEOWNERS` bootstrap commit, tighten Actions settings, and enforce the new
-ruleset contract. Preserve the exact pinned seed verification, two-file Init PR,
-automatic squash merge, error codes, and zero-write preflight paths.
+`runtime/github.mjs` to verify the exact fork snapshot, include deterministic
+owner-bound `CODEOWNERS` in the initialization pull request, tighten Actions
+settings, and enforce the new ruleset contract. Preserve the exact pinned seed
+verification, automatic squash merge, error codes, and zero-write preflight
+paths.
 
 **Green checks:**
 
@@ -64,7 +67,7 @@ node --test tests/init-acceptance.test.mjs tests/init-cli-acceptance.test.mjs
 git diff --check
 ```
 
-Commit: `fix: require owner review for fork security controls`
+Commit: `fix: prevent direct fork default-branch mutation`
 
 ## Task 2: Replace the workflow contract with structural policy and fixtures
 
@@ -199,9 +202,9 @@ Commit: `docs: define selective-review agent lifecycle`
 **Verification order:**
 
 1. Re-run the original downstream-fork exploit regression and its legitimate
-   two-file Init control.
-2. Remove the code-owner requirement in an isolated fixture and prove the
-   regression fails.
+   three-file Init control.
+2. Require code-owner self-review in an isolated generated-fork fixture and
+   prove the regression fails.
 3. Exercise an alternate bypass using an escaped or aliased YAML key.
 4. Run `npm ci --ignore-scripts`, `npm audit --audit-level=moderate`,
    `npm run verify`, `actionlint`, and `git diff --check` from a clean install.
