@@ -27,7 +27,9 @@
     "/AGENTS.md",
     "/CODEOWNERS",
     "/SECURITY.md",
+    "/.npmrc",
     "/contract/**",
+    "/npm-shrinkwrap.json",
     "/runtime/**",
     "/scripts/**",
     "/skills/**"

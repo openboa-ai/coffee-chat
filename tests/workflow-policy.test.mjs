@@ -165,6 +165,86 @@ test("policy rejects a competing parser shrinkwrap before loading code", () => {
   assert.match(result.stderr, /npm-shrinkwrap\.json.*absent before loading/u);
 });
 
+test("trusted policy never loads the candidate parser installation", () => {
+  const root = fixtureRoot();
+  const marker = join(root, "candidate-parser-executed-by-trusted-policy");
+  const packageRoot = join(
+    root,
+    ".github",
+    "policy-parser",
+    "node_modules",
+    "yaml",
+  );
+  rmSync(packageRoot, { force: true, recursive: true });
+  mkdirSync(packageRoot, { recursive: true });
+  writeFileSync(
+    join(packageRoot, "package.json"),
+    `${JSON.stringify({ name: "yaml", version: "2.9.0", type: "module", exports: "./index.js" })}\n`,
+  );
+  writeFileSync(
+    join(packageRoot, "index.js"),
+    `import { writeFileSync } from "node:fs"; writeFileSync(process.env.COFFEE_POLICY_MARKER, "executed\\n"); throw new Error("candidate parser executed");\n`,
+  );
+
+  const result = runPolicy(root, {
+    env: { COFFEE_POLICY_MARKER: marker },
+  });
+  assert.equal(
+    result.status,
+    0,
+    `trusted policy failed\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
+  );
+  assert.equal(
+    existsSync(marker),
+    false,
+    "trusted policy imported candidate-selected parser code",
+  );
+});
+
+test("policy rejects a root npm shrinkwrap before dependency installation", () => {
+  const root = fixtureRoot();
+  writeFileSync(
+    join(root, "npm-shrinkwrap.json"),
+    `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`,
+  );
+  const result = runPolicy(root);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /root npm-shrinkwrap\.json must be absent/u);
+});
+
+test("policy rejects root and parser npm configuration before installation", () => {
+  for (const path of [".npmrc", ".github/policy-parser/.npmrc"]) {
+    const root = fixtureRoot();
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), "registry=https://attacker.invalid\n");
+    const result = runPolicy(root);
+    assert.notEqual(result.status, 0, path);
+    assert.match(result.stderr, /\.npmrc must be absent/u);
+  }
+});
+
+test("local verification never auto-bootstraps candidate policy code", () => {
+  const packageJson = JSON.parse(source(fixtureRoot(), "package.json"));
+  assert.equal(Object.hasOwn(packageJson.scripts, "policy:install"), false);
+  assert.equal(packageJson.scripts.test, "node --test tests/*.test.mjs");
+  assert.equal(
+    packageJson.scripts.policy,
+    "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
+  );
+  assert.doesNotMatch(JSON.stringify(packageJson.scripts), /policy-bootstrap/u);
+
+  const mergePolicy = JSON.parse(
+    source(fixtureRoot(), ".github/merge-policy.json"),
+  );
+  assert.ok(mergePolicy.protected_paths.includes("/npm-shrinkwrap.json"));
+  assert.ok(mergePolicy.protected_paths.includes("/.npmrc"));
+  assert.match(
+    source(fixtureRoot(), "CODEOWNERS"),
+    /^\/npm-shrinkwrap\.json /mu,
+  );
+  assert.match(source(fixtureRoot(), "CODEOWNERS"), /^\/\.npmrc /mu);
+});
+
 assertRejected(
   "a dependency lock redirected away from the npm registry",
   (root) => {
@@ -229,10 +309,22 @@ test("canonical policy covers all executable authority", () => {
     assert.ok(policy.protected_paths.includes(path), path);
 });
 
-test("CodeQL and lifecycle documentation remain PR-only", () => {
+test("CodeQL transition analyzes candidate data from a trusted-base event", () => {
+  const codeql = parse(source(fixtureRoot(), ".github/workflows/codeql.yml"));
+  assert.deepEqual(Object.keys(codeql.on).sort(), [
+    "pull_request",
+    "pull_request_target",
+  ]);
+  const checkout = codeql.jobs.analyze.steps[0];
+  assert.equal(
+    checkout.with.repository,
+    "${{ github.event.pull_request.head.repo.full_name }}",
+  );
+  assert.equal(checkout.with.ref, "${{ github.event.pull_request.head.sha }}");
+  assert.match(codeql.jobs.analyze.if, /github\.actor/u);
   assert.doesNotMatch(
     source(fixtureRoot(), ".github/workflows/codeql.yml"),
-    /^  push:/mu,
+    /npm |node |secrets\./u,
   );
   for (const path of [
     "docs/superpowers/specs/2026-08-13-coffee-repositories-security-lifecycle-design.md",
