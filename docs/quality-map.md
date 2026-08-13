@@ -22,3 +22,6 @@ benchmark result require separate gates and are not inferred from these tests.
 npm run verify
 git diff --check
 ```
+
+Routine documentation-only pull requests use the approval-free lane;
+`coffee-security` remains reserved for policy evolution and protected paths.
