@@ -1,10 +1,34 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { loadPolicyParser } from "./policy-bootstrap.mjs";
 
-const root = process.env.CI_POLICY_ROOT ?? ".";
-const { isAlias, isMap, isSeq, parseDocument, visit } = loadPolicyParser(root);
+const controlRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const root = resolve(process.env.CI_POLICY_ROOT ?? controlRoot);
+const { isAlias, isMap, isSeq, parseDocument, visit } =
+  loadPolicyParser(controlRoot);
+assert.equal(
+  existsSync(resolve(root, ".npmrc")),
+  false,
+  "root .npmrc must be absent",
+);
+assert.equal(
+  existsSync(resolve(root, ".github/policy-parser/.npmrc")),
+  false,
+  "isolated policy parser .npmrc must be absent before install",
+);
+assert.equal(
+  existsSync(resolve(root, "npm-shrinkwrap.json")),
+  false,
+  "root npm-shrinkwrap.json must be absent",
+);
+assert.equal(
+  existsSync(resolve(root, ".github/policy-parser/npm-shrinkwrap.json")),
+  false,
+  "isolated policy parser npm-shrinkwrap.json must be absent before loading",
+);
 const pathAt = (path) => `${root}/${path}`;
 const workflowRoot = pathAt(".github/workflows");
 const expectedWorkflows = [
@@ -87,6 +111,17 @@ function requireTriggers(name, workflow) {
   exactKeys(workflow.on, ["pull_request"], `${name}: exact PR-only triggers`);
 }
 
+function requireTrustedCodeqlTriggers(workflow) {
+  const triggers = Object.keys(workflow.on).sort();
+  assert.equal(
+    JSON.stringify(triggers) ===
+      JSON.stringify(["pull_request", "pull_request_target"]) ||
+      JSON.stringify(triggers) === JSON.stringify(["pull_request_target"]),
+    true,
+    "CodeQL must use the trusted-base transition or final trigger",
+  );
+}
+
 function requireConcurrency(name, workflow) {
   assert.deepEqual(
     workflow.concurrency,
@@ -161,6 +196,11 @@ for (const [name, workflow] of workflows) {
   requireBoundedJobs(name, workflow);
   requireConcurrency(name, workflow);
   if (name === "secret-boundary.yml") continue;
+  if (name === "codeql.yml") {
+    requireTrustedCodeqlTriggers(workflow);
+    exactPermissions(workflow.permissions, {}, `${name}: workflow permissions`);
+    continue;
+  }
   requireTriggers(name, workflow);
   exactPermissions(workflow.permissions, {}, `${name}: workflow permissions`);
 }
@@ -175,14 +215,22 @@ const codeqlJob = codeql.jobs.analyze;
 assert.deepEqual(Object.keys(codeql.jobs), ["analyze"]);
 exactKeys(
   codeqlJob,
-  ["name", "runs-on", "timeout-minutes", "permissions", "steps"],
+  ["name", "if", "runs-on", "timeout-minutes", "permissions", "steps"],
   "CodeQL job",
+);
+assert.equal(
+  codeqlJob.if,
+  "((github.event.pull_request.author_association == 'OWNER' || github.event.pull_request.author_association == 'MEMBER') && github.actor == github.event.pull_request.user.login && github.event.pull_request.head.repo.full_name == github.repository) || (github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)",
 );
 assert.deepEqual(codeqlJob.steps, [
   {
     name: "Check out repository without persisted credentials",
     uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
-    with: { "persist-credentials": false },
+    with: {
+      repository: "${{ github.event.pull_request.head.repo.full_name }}",
+      ref: "${{ github.event.pull_request.head.sha }}",
+      "persist-credentials": false,
+    },
   },
   {
     name: "Initialize CodeQL",
@@ -523,22 +571,20 @@ const packageJson = JSON.parse(read("package.json"));
 const packageLock = JSON.parse(read("package-lock.json"));
 assert.equal(
   packageJson.scripts.policy,
-  "npm run policy:install && node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
+  "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
 );
 assert.deepEqual(packageJson.scripts, {
   "format:check": "prettier --check .",
   format: "prettier --write .",
   typecheck: "tsc --noEmit",
-  test: "npm run policy:install && node --test tests/*.test.mjs",
+  test: "node --test tests/*.test.mjs",
   "readme:assets:verify": "node scripts/verify-readme-assets.mjs",
   "readme:assets:reproduce": "node scripts/reproduce-readme-assets.mjs",
   build: "node scripts/build-package.mjs",
   "package:smoke": "node scripts/package-smoke.mjs",
   "hooks:install": "git config core.hooksPath .githooks",
-  "policy:install":
-    "node .github/policy-bootstrap.mjs && npm ci --ignore-scripts --prefix .github/policy-parser",
   policy:
-    "npm run policy:install && node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
+    "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
   "security:scan": "gitleaks git --redact --no-banner .",
   verify:
     "npm run format:check && npm run typecheck && npm test && npm run readme:assets:verify && npm run build && npm run package:smoke && npm run policy",
@@ -678,7 +724,9 @@ assert.deepEqual(mergePolicy.protected_paths, [
   "/AGENTS.md",
   "/CODEOWNERS",
   "/SECURITY.md",
+  "/.npmrc",
   "/contract/**",
+  "/npm-shrinkwrap.json",
   "/runtime/**",
   "/scripts/**",
   "/skills/**",

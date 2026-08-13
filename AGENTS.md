@@ -61,11 +61,15 @@ perform its documented user-scoped GitHub and Registry writes.
   security policy, hooks, external-write boundaries, or executable authority
   wait for ruleset-required human review after this pre-authorized bootstrap
   rollout.
-- Preserve the trusted-base secret boundary: candidate content is scanned as
-  data, including worktree, history, and raw blobs, before any candidate code is
-  executed. Keep `pull_request_target` isolated from Node/npm execution and
-  secrets.
-- Authenticate the exact isolated parser manifest and lock with built-in Node.js
-  code before installing or loading YAML, and audit that isolated dependency
-  tree independently. Structural policy must pass before root candidate
-  dependencies are installed or delegated package scripts run.
+- The organization-required workflow in `openboa-ai/.github` is the
+  authorization boundary. It loads controls and the YAML parser only from its
+  own workflow SHA and this repository's base SHA, and treats the pull-request
+  checkout as data. Local and candidate package scripts are post-trust quality
+  checks, never authorization.
+- On an author-controlled checkout, install the isolated parser explicitly with
+  `node .github/policy-bootstrap.mjs && npm ci --ignore-scripts --prefix .github/policy-parser`
+  before local policy tests. Never use that candidate command to decide whether
+  an untrusted branch is safe.
+- Reject root `.npmrc`, parser `.npmrc`, and `npm-shrinkwrap.json`; they are
+  unsupported competing install authorities. Preserve trusted history, worktree,
+  and raw-blob secret scanning.
