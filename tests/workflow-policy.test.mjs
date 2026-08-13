@@ -132,6 +132,17 @@ test("policy authenticates its parser lock before loading candidate code", () =>
   assert.match(result.stderr, /authenticated before loading/u);
 });
 
+test("policy rejects a competing parser shrinkwrap before loading code", () => {
+  const root = fixtureRoot();
+  writeFileSync(
+    join(root, ".github", "policy-parser", "npm-shrinkwrap.json"),
+    `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`,
+  );
+  const result = runPolicy(root);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /npm-shrinkwrap\.json.*absent before loading/u);
+});
+
 assertRejected(
   "a dependency lock redirected away from the npm registry",
   (root) => {
