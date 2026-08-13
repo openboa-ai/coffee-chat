@@ -65,3 +65,5 @@ perform its documented user-scoped GitHub and Registry writes.
   data, including worktree, history, and raw blobs, before any candidate code is
   executed. Keep `pull_request_target` isolated from Node/npm execution and
   secrets.
+
+<!-- Temporary ruleset verification; this comment must never merge. -->
