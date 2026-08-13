@@ -1,9 +1,9 @@
 # Coffee Repositories Security Lifecycle Design
 
-**Date:** 2026-08-13  
-**Scope:** `openboa-ai/coffee-chat`, `coffee-chat-roastery`, `coffee-chat-eval`,
-and `coffee-chat-bench`  
-**Decision:** Path-sensitive human review with GitHub-native automatic merge
+- **Date:** 2026-08-13
+- **Scope:** `openboa-ai/coffee-chat`, `coffee-chat-roastery`,
+  `coffee-chat-eval`, and `coffee-chat-bench`
+- **Decision:** Path-sensitive human review with GitHub-native automatic merge
 
 ## Objective
 
