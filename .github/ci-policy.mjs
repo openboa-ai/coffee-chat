@@ -343,12 +343,16 @@ const commandSteps = [
     "npm ci --ignore-scripts --prefix .github/policy-parser",
   ],
   [
-    "Install locked dependencies without lifecycle scripts",
-    "npm ci --ignore-scripts",
+    "Audit authenticated policy parser dependencies",
+    "npm audit --audit-level=moderate --prefix .github/policy-parser",
   ],
   [
     "Enforce repository policy before delegated scripts",
     "node .github/ci-policy.mjs",
+  ],
+  [
+    "Install locked dependencies without lifecycle scripts",
+    "npm ci --ignore-scripts",
   ],
   ["Audit dependencies", "npm audit --audit-level=moderate"],
   ["Check formatting", "npm run format:check"],

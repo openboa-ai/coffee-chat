@@ -86,6 +86,28 @@ test("repository policy accepts the canonical workflow set", () => {
   );
 });
 
+test("quality enforces structural policy before root install and audits both dependency trees", () => {
+  const workflow = parse(
+    source(fixtureRoot(), ".github/workflows/quality.yml"),
+  );
+  const steps = workflow.jobs.quality.steps;
+  const indexOf = (name) => steps.findIndex((step) => step.name === name);
+
+  assert.ok(
+    indexOf("Enforce repository policy before delegated scripts") <
+      indexOf("Install locked dependencies without lifecycle scripts"),
+    "root dependencies must not be installed before structural policy passes",
+  );
+  assert.equal(
+    steps[indexOf("Audit authenticated policy parser dependencies")].run,
+    "npm audit --audit-level=moderate --prefix .github/policy-parser",
+  );
+  assert.equal(
+    steps[indexOf("Audit dependencies")].run,
+    "npm audit --audit-level=moderate",
+  );
+});
+
 test("policy authenticates its parser lock before loading candidate code", () => {
   const root = fixtureRoot();
   const marker = join(root, "candidate-parser-executed");
@@ -495,6 +517,27 @@ assertRejected("an install that enables dependency scripts", (root) => {
     "npm ci",
   );
 });
+
+assertRejected("a missing isolated parser dependency audit", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    "      - name: Audit authenticated policy parser dependencies\n        run: npm audit --audit-level=moderate --prefix .github/policy-parser\n",
+    "",
+  );
+});
+
+assertRejected(
+  "root dependency installation before structural policy",
+  (root) => {
+    replaceOnce(
+      root,
+      ".github/workflows/quality.yml",
+      "      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n      - name: Install locked dependencies without lifecycle scripts\n        run: npm ci --ignore-scripts\n",
+      "      - name: Install locked dependencies without lifecycle scripts\n        run: npm ci --ignore-scripts\n      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n",
+    );
+  },
+);
 
 assertRejected("a missing moderate dependency audit", (root) => {
   replaceOnce(

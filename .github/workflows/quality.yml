@@ -85,10 +85,12 @@ jobs:
         run: node .github/policy-bootstrap.mjs
       - name: Install authenticated policy parser
         run: npm ci --ignore-scripts --prefix .github/policy-parser
-      - name: Install locked dependencies without lifecycle scripts
-        run: npm ci --ignore-scripts
+      - name: Audit authenticated policy parser dependencies
+        run: npm audit --audit-level=moderate --prefix .github/policy-parser
       - name: Enforce repository policy before delegated scripts
         run: node .github/ci-policy.mjs
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
       - name: Check formatting
