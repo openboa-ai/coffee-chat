@@ -131,6 +131,32 @@ Workflow jobs have bounded timeouts. CodeQL remains an advanced workflow because
 it must support `merge_group`; native code-scanning merge protection is
 tightened to block medium-or-higher findings and analysis errors.
 
+## Coffee Init downstream fork boundary
+
+Coffee Init also creates a user-owned Roastery fork, where organization teams
+are unavailable. That generated repository uses the same selective-review
+principle through a target-specific root `CODEOWNERS` file:
+
+- after the exact pinned seed is verified and before the ruleset is activated,
+  Init creates one auditable security-bootstrap commit that replaces the generic
+  source ownership routing with the authenticated target owner;
+- the owner is assigned only to workflow, security policy, executable code,
+  contract, and ownership-control paths; normal Bean metadata/content paths
+  remain outside the manual gate;
+- the branch ruleset requires code-owner review for those matched paths,
+  dismisses stale approvals after a push, and retains zero general approvals;
+- the initial digest-bound Init pull request still changes only the two
+  approved, non-owned identity/license files and remains eligible for automatic
+  merge;
+- required checks include the trusted secret boundary and the CodeQL job, not
+  only candidate-controlled quality and dependency contexts;
+- Actions are selected-only with full-SHA pinning and read-only default workflow
+  permissions instead of allowing every action.
+
+This closes the same candidate-workflow substitution path in personal forks
+without making every Bean change manual or requiring an organization team that
+cannot exist in a user-owned repository.
+
 ## GitHub-native controls
 
 For every repository:
