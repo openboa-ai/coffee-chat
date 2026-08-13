@@ -336,6 +336,10 @@ const commandSteps = [
     "Install locked dependencies without lifecycle scripts",
     "npm ci --ignore-scripts",
   ],
+  [
+    "Enforce repository policy before delegated scripts",
+    "node .github/ci-policy.mjs",
+  ],
   ["Audit dependencies", "npm audit --audit-level=moderate"],
   ["Check formatting", "npm run format:check"],
   ["Check types", "npm run typecheck"],

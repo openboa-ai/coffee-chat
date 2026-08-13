@@ -83,6 +83,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
+      - name: Enforce repository policy before delegated scripts
+        run: node .github/ci-policy.mjs
       - name: Audit dependencies
         run: npm audit --audit-level=moderate
       - name: Check formatting

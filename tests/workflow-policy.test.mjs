@@ -377,6 +377,30 @@ assertRejected("a weakened required package script", (root) => {
   writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
 });
 
+assertRejected("an implicit package lifecycle hook", (root) => {
+  const path = "package.json";
+  const packageJson = JSON.parse(source(root, path));
+  packageJson.scripts.pretest = "node attacker.mjs";
+  writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
+});
+
+assertRejected("a package-only policy entrypoint bypass", (root) => {
+  const packagePath = "package.json";
+  const packageJson = JSON.parse(source(root, packagePath));
+  packageJson.scripts.policy = "true";
+  packageJson.scripts.test = "true";
+  writeFileSync(
+    join(root, packagePath),
+    `${JSON.stringify(packageJson, null, 2)}\n`,
+  );
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    "      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n",
+    "",
+  );
+});
+
 assertRejected("an install that enables dependency scripts", (root) => {
   replaceOnce(
     root,
