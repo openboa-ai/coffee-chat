@@ -1,5 +1,6 @@
-> [!IMPORTANT] **WIP** — Coffee Chat is under active development. The README
-> below describes the complete first release.
+> [!IMPORTANT] **WIP** — Coffee Chat is under active development. This README
+> describes the complete first release. Only `$coffee-init` is implemented
+> today; the other listed Skills are not yet available.
 
 # Coffee Chat
 
@@ -68,12 +69,13 @@ comes from reviewed records, not a hidden profile.
 
 ## Install
 
-Install **Coffee Chat** from the Plugins Directory and enable it in a new
-conversation.
+When the first release is available, install **Coffee Chat** from the Plugins
+Directory and enable it in a new conversation.
 
 ## Skills
 
-Use the Skill that matches what you want to do.
+The first release will provide these public Skills. Choose the one that matches
+what you want to do.
 
 | Skill                | Use it to                 |
 | -------------------- | ------------------------- |
@@ -84,9 +86,9 @@ Use the Skill that matches what you want to do.
 | **`$coffee-chat`**   | Talk with one Roastery    |
 | **`$coffee-unsync`** | Disconnect a Roastery     |
 
-`$coffee-init` and `$coffee-roast` show the exact public change before asking
-for approval. `$coffee-brew` and `$coffee-chat` use reviewed Beans without
-rewriting the Roastery.
+At release, `$coffee-init` and `$coffee-roast` will show the exact public change
+before asking for approval. `$coffee-brew` and `$coffee-chat` will use reviewed
+Beans without rewriting the Roastery.
 
 ## Designed for trust
 

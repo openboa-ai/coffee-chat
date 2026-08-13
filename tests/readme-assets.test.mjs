@@ -212,6 +212,24 @@ test("the README presents the complete first Coffee Chat release", async () => {
   assert.doesNotMatch(readme, /coffee[- ]blend/iu);
 });
 
+test("the README separates the first-release vision from current availability", async () => {
+  const readme = await readFile(readmePath, "utf8");
+  const prose = readme.replaceAll("\n> ", " ");
+
+  assert.match(
+    prose,
+    /Only `\$coffee-init` is implemented today; the other listed Skills are not yet available\./u,
+  );
+  assert.match(readme, /When the first release is available, install/u);
+  assert.match(readme, /The first release will provide these public Skills/u);
+  assert.match(
+    readme,
+    /At release, `\$coffee-init` and `\$coffee-roast` will/u,
+  );
+  assert.doesNotMatch(readme, /`\$coffee-init` and `\$coffee-roast` show/u);
+  assert.doesNotMatch(readme, /`\$coffee-brew` and `\$coffee-chat` use/u);
+});
+
 test("every local README target exists", async () => {
   for (const target of [
     "docs/assets/readme/coffee-chat-hero.png",
