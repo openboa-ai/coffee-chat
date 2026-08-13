@@ -31,12 +31,13 @@ assert.equal(
 );
 const pathAt = (path) => `${root}/${path}`;
 const workflowRoot = pathAt(".github/workflows");
-const expectedWorkflows = [
+const legacyWorkflows = [
   "codeql.yml",
   "dependency-review.yml",
   "quality.yml",
   "secret-boundary.yml",
 ];
+const expectedWorkflows = [...legacyWorkflows, "trusted.yml"];
 const actionPins = new Set([
   "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
   "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294",
@@ -184,11 +185,36 @@ function requireBoundedJobs(name, workflow) {
 }
 
 assert.deepEqual(readdirSync(workflowRoot).sort(), expectedWorkflows);
+const trustedWorkflowSource = read(".github/workflows/trusted.yml");
+const trustedControlSha = trustedWorkflowSource.match(
+  /uses: openboa-ai\/\.github\/\.github\/workflows\/coffee-trusted-gate\.yml@([0-9a-f]{40})/u,
+)?.[1];
+assert.ok(trustedControlSha, "trusted wrapper must use one full control SHA");
+assert.equal(
+  trustedWorkflowSource,
+  `name: OpenBoa Coffee trusted gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  trusted:
+    name: OpenBoa Coffee trusted required
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: openboa-ai/.github/.github/workflows/coffee-trusted-gate.yml@${trustedControlSha}
+    with:
+      control_sha: ${trustedControlSha}
+`,
+  "trusted wrapper must remain exact",
+);
 const workflows = new Map(
-  expectedWorkflows.map((name) => [
-    name,
-    loadYaml(`.github/workflows/${name}`),
-  ]),
+  legacyWorkflows.map((name) => [name, loadYaml(`.github/workflows/${name}`)]),
 );
 
 for (const [name, workflow] of workflows) {
