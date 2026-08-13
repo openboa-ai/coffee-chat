@@ -23,7 +23,7 @@ const authority = deepFreeze(
   ),
 );
 
-const CALVER = "2026.8.10";
+const CALVER = "2026.8.13";
 const OWNER = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/iu;
 const DIGEST = /^sha256:[0-9a-f]{64}$/u;
 

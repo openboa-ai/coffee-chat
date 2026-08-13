@@ -13,7 +13,7 @@ import { homedir, platform } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 
-const CALVER = "2026.8.10";
+const CALVER = "2026.8.13";
 const SHA = /^[0-9a-f]{40}$/u;
 const DIGEST = /^sha256:[0-9a-f]{64}$/u;
 const REPOSITORY = /^https:\/\/github\.com\/[A-Za-z0-9-]+\/coffee-chat$/u;

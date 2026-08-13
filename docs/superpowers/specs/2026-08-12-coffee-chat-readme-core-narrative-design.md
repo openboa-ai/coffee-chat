@@ -152,10 +152,13 @@ codex plugin marketplace add openboa-ai/coffee-chat --ref main
 codex plugin add coffee-chat@openboa-ai
 ```
 
-The guide must inspect before mutating, avoid repeating successful installation,
-and report any step it cannot complete. It must never substitute a personal
-fork, clone-and-copy workflow, or arbitrary third-party package for the official
-Openboa AI Plugin.
+The guide must inspect before mutating, refresh the verified official
+marketplace before comparing the installed Plugin version with the shared
+official CalVer, avoid repeating an identical installation, and report any step
+it cannot complete. A version mismatch requires explicit approval before
+reinstalling only the local Plugin from the refreshed official marketplace. The
+guide must never substitute a personal fork, clone-and-copy workflow, or
+arbitrary third-party package for the official Openboa AI Plugin.
 
 Plugin installation remains side-effect-free with respect to product data. It
 must not create, fork, sync, activate, or publish a Roastery. After verifying

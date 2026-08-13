@@ -31,6 +31,10 @@ package collector.
 - All seven packaged Skill names and parent directories use the `coffee-*`
   prefix. `$coffee-blend` remains discoverable and deferred outside the six
   first-release public journeys.
+- Refresh the verified official marketplace before comparing the installed
+  version with the shared official CalVer. Reuse an identical enabled
+  installation; require explicit approval before reinstalling a stale official
+  installation.
 - Do not install from a personal fork, clone Plugin files by hand, or improvise
   an unsupported host path.
 - Keep exactly one WIP notice in the public README.
@@ -94,11 +98,12 @@ the guide is absent from `packageRoots`.
 
 - [ ] **Step 1: Write the exact Agent guide**
 
-The guide instructs the Agent to inspect before changing local state, reuse a
-verified official installation, add the official marketplace only when absent,
-install the official Plugin only when absent, verify the result, report any
-blocked step, preserve side-effect-free installation, and ask before starting
-`$coffee-init`.
+The guide instructs the Agent to inspect before changing local state, add or
+refresh the verified official marketplace, compare the installed version with
+the shared official CalVer, reuse an identical enabled installation, ask before
+reinstalling a stale official installation, install when absent, verify the
+result, report any blocked step, preserve side-effect-free installation, and ask
+before starting `$coffee-init`.
 
 - [ ] **Step 2: Include the guide in the package**
 

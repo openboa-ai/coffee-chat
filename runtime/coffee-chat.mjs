@@ -27,7 +27,7 @@ export function dispatch(capability) {
   if (!capabilitySet.has(capability)) {
     return {
       schema: "coffee-chat-capability-result",
-      calver: "2026.8.10",
+      calver: "2026.8.13",
       capability,
       status: "invalid_capability",
       allowedCapabilities: capabilities,
@@ -37,7 +37,7 @@ export function dispatch(capability) {
   if (capability === "init") {
     return {
       schema: "coffee-chat-capability-result",
-      calver: "2026.8.10",
+      calver: "2026.8.13",
       capability,
       status: "available",
       workflow: "preview_then_explicit_apply",
@@ -48,7 +48,7 @@ export function dispatch(capability) {
 
   return {
     schema: "coffee-chat-capability-result",
-    calver: "2026.8.10",
+    calver: "2026.8.13",
     capability,
     status: "not_implemented",
     implementationOwner: "later capability Goal",

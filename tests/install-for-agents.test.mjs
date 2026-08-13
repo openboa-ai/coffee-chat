@@ -19,11 +19,22 @@ const expectedSkillNames = [
 
 test("the Agent install guide preserves the official install boundary", async () => {
   const guide = await readFile(guidePath, "utf8");
+  const pluginManifest = JSON.parse(
+    await readFile(join(root, ".codex-plugin", "plugin.json"), "utf8"),
+  );
   const prose = guide.replace(/\s+/gu, " ");
   const inspect = guide.indexOf("codex plugin marketplace list --json");
-  const install = guide.indexOf(
+  const addMarketplace = guide.indexOf(
     "codex plugin marketplace add openboa-ai/coffee-chat --ref main --json",
   );
+  const refreshMarketplace = guide.indexOf(
+    "codex plugin marketplace upgrade openboa-ai --json",
+  );
+  const refreshedInstalled = guide.indexOf(
+    "codex plugin list --json",
+    refreshMarketplace,
+  );
+  const compareVersions = guide.indexOf("Compare the installed version");
 
   assert.match(guide, /\*\*Publisher:\*\* Openboa AI/u);
   assert.match(
@@ -31,8 +42,27 @@ test("the Agent install guide preserves the official install boundary", async ()
     /\*\*Official source:\*\* `https:\/\/github\.com\/openboa-ai\/coffee-chat`/u,
   );
   assert.match(guide, /\*\*Official Codex marketplace:\*\* `openboa-ai`/u);
-  assert.ok(inspect >= 0 && inspect < install);
+  assert.match(
+    guide,
+    new RegExp(
+      `\\*\\*Official CalVer:\\*\\* \`${pluginManifest.version}\``,
+      "u",
+    ),
+  );
+  assert.ok(inspect >= 0 && inspect < addMarketplace);
+  assert.ok(addMarketplace < refreshMarketplace);
+  assert.ok(refreshMarketplace < refreshedInstalled);
+  assert.ok(refreshedInstalled < compareVersions);
   assert.match(guide, /codex plugin add coffee-chat@openboa-ai --json/u);
+  assert.doesNotMatch(guide, /codex plugin remove coffee-chat@openboa-ai/u);
+  assert.match(
+    prose,
+    /If the versions differ, ask for the user's approval to reinstall only that Plugin from the refreshed official marketplace/u,
+  );
+  assert.doesNotMatch(
+    prose,
+    /already installed and enabled from the official source, do not reinstall it\. Continue to verification/u,
+  );
   assert.match(prose, /Do not install from a personal fork/u);
   assert.match(prose, /Do not clone or copy Plugin files/u);
   assert.match(

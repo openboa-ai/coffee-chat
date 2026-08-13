@@ -39,6 +39,7 @@ const expectedIdentityFields = Object.freeze([
   "repository",
   "license",
 ]);
+const expectedCalver = "2026.8.13";
 
 function json(path) {
   return JSON.parse(readFileSync(join(root, path), "utf8"));
@@ -74,6 +75,7 @@ test("portable and OpenAI manifests are separate projections of one CalVer ident
     metadata.version,
     /^\d{4}\.(?:[1-9]|1[0-2])\.(?:[1-9]|[12]\d|3[01])$/u,
   );
+  assert.equal(metadata.version, expectedCalver);
   assert.equal(
     portable.$schema,
     "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
@@ -127,7 +129,7 @@ test("Init is available while the other six capabilities remain explicitly defer
       stderr: "",
       stdout: {
         schema: "coffee-chat-capability-result",
-        calver: "2026.8.10",
+        calver: expectedCalver,
         capability: "init",
         status: "available",
         workflow: "preview_then_explicit_apply",
@@ -144,7 +146,7 @@ test("Init is available while the other six capabilities remain explicitly defer
       assert.deepEqual(first, second, capability);
       assert.deepEqual(first.stdout, {
         schema: "coffee-chat-capability-result",
-        calver: "2026.8.10",
+        calver: expectedCalver,
         capability,
         status: "not_implemented",
         implementationOwner: "later capability Goal",

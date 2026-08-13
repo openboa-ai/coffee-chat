@@ -10,6 +10,7 @@ current host cannot perform.
 - **Plugin:** `coffee-chat`
 - **Official source:** `https://github.com/openboa-ai/coffee-chat`
 - **Official Codex marketplace:** `openboa-ai`
+- **Official CalVer:** `2026.8.13`
 
 Do not install from a personal fork, a Roastery, or a third-party mirror. Do not
 clone or copy Plugin files as a substitute for supported Plugin installation.
@@ -20,11 +21,8 @@ If Codex CLI Plugin commands are available, inspect the current state:
 
 ```bash
 codex plugin marketplace list --json
-codex plugin list --available --json
+codex plugin list --json
 ```
-
-If `coffee-chat@openboa-ai` is already installed and enabled from the official
-source, do not reinstall it. Continue to verification.
 
 If Codex CLI Plugin commands are unavailable, use the host's Plugins Directory
 only when it shows **Coffee Chat** by **Openboa AI**. Complete the installation
@@ -35,7 +33,7 @@ If this Agent has neither Codex CLI Plugin support nor a supported Plugins
 Directory, explain that the current host cannot install Coffee Chat. Do not
 invent an alternative installation path.
 
-## 2. Install with Codex
+## 2. Refresh the official source
 
 Skip any command whose result is already present and verified.
 
@@ -54,8 +52,24 @@ codex plugin marketplace upgrade openboa-ai --json
 If the name `openboa-ai` resolves to any other source, stop and report the
 conflict. Do not remove or replace it without the user's approval.
 
-Confirm that the marketplace resolves to the official repository. If
-`coffee-chat@openboa-ai` is absent, install it:
+After adding or refreshing the official marketplace, run:
+
+```bash
+codex plugin list --json
+```
+
+Compare the installed version reported for `coffee-chat@openboa-ai` with the
+Official CalVer above.
+
+- If it is absent, install it:
+
+```bash
+codex plugin add coffee-chat@openboa-ai --json
+```
+
+- If its version matches and it is enabled, keep the existing installation.
+- If the versions differ, ask for the user's approval to reinstall only that
+  Plugin from the refreshed official marketplace. After approval, run:
 
 ```bash
 codex plugin add coffee-chat@openboa-ai --json
