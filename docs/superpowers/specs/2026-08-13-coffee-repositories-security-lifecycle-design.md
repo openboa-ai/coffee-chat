@@ -73,9 +73,8 @@ remain queued until the team approval is present and then merge automatically.
 5. GitHub performs the squash merge and deletes the branch. No custom
    write-token merge controller is introduced.
 
-`merge_group` remains supported by every candidate-executing workflow so the
-same checks remain usable if merge queues are enabled later. The current solo
-maintainer lifecycle does not require a merge queue.
+Merge queue is intentionally disabled. Candidate-executing workflows expose only
+the pull-request event used by this solo-maintainer lifecycle.
 
 ## Sensitive path policy
 
@@ -91,12 +90,12 @@ All repositories require review for these shared control surfaces:
 
 Additional repository-specific boundaries are intentionally narrow:
 
-| Repository             | Additional sensitive paths                                                                                                                                                                    | Reason                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `coffee-chat`          | `.agents/**/*`, `.codex-plugin/**/*`, `contract/roastery-authority.json`, `runtime/github.mjs`, `runtime/registry.mjs`, `runtime/init.mjs`, `runtime/init-cli.mjs`, `skills/coffee-init/**/*` | Agent/plugin authority and code capable of GitHub or Registry writes |
-| `coffee-chat-roastery` | `contract/**/*`, `roastery/roastery.json`                                                                                                                                                     | Canonical downstream contract and executable authority pin           |
-| `coffee-chat-eval`     | `integrations/harbor/**/*`, `src/harbor.ts`, `src/pcda-harbor.ts`, `src/pcda-runner.ts`, `src/registry.ts`, `src/runner.ts`                                                                   | External candidate/model execution and registry boundaries           |
-| `coffee-chat-bench`    | `config/judges/**/*`, `harbor/**/*`, `src/openai-judge.ts`                                                                                                                                    | Judge configuration and external model/verifier execution            |
+| Repository             | Additional sensitive paths                                                                                                                                                                                                                                                                                              | Reason                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `coffee-chat`          | `.agents/**/*`, `.codex-plugin/**/*`, `contract/**/*`, `runtime/**/*`, `scripts/**/*`, `skills/**/*`                                                                                                                                                                                                                    | Agent/plugin authority and executable package, GitHub, or Registry behavior       |
+| `coffee-chat-roastery` | `dist/**/*`, `scripts/**/*`, `src/**/*`, `contract/**/*`, `roastery/CONTENT_LICENSE.md`, `roastery/roastery.json`, `LICENSE`, `tsconfig.json`, `tsconfig.build.json`                                                                                                                                                    | Published executable output, source, content authority, and build contract        |
+| `coffee-chat-eval`     | `integrations/harbor/**/*`, `evals/**/*`, `src/benchmark-smoke.ts`, `src/canary-cli.ts`, `src/harbor.ts`, `src/pcda-cli.ts`, `src/pcda-receipt.ts`, `src/pcda-resources.ts`, `src/protocol-canary.ts`, `src/registry.ts`, `src/runner.ts`                                                                               | External execution, verifier, calibration, receipt, and registry boundaries       |
+| `coffee-chat-bench`    | `config/judges/**/*`, `harbor/**/*`, `schemas/judge-campaign.schema.json`, `src/bank.ts`, `src/bounded-fs.ts`, `src/cli.ts`, `src/contracts.ts`, `src/digest.ts`, `src/identity.ts`, `src/judge-campaign.ts`, `src/judge-config.ts`, `src/judge-panel.ts`, `src/judgment.ts`, `src/openai-judge.ts`, `src/projector.ts` | Judge, attestation, resource, cost, projection, and external execution boundaries |
 
 Package manifests are not manually gated. The dependency review action, lockfile
 install, audit, type/build/test gates, and structural policy contract provide
@@ -111,8 +110,8 @@ instead of relying on regular expressions. The test parses every workflow with
 duplicate-key rejection and checks at least these invariants:
 
 - the workflow set is explicit;
-- candidate workflows use `pull_request` and `merge_group`, never
-  `pull_request_target` or secrets;
+- candidate workflows use only `pull_request`, never `pull_request_target` or
+  secrets;
 - the secret boundary uses only `pull_request_target` and optional manual
   dispatch, checks out trusted controls and candidate data separately, and does
   not execute the candidate;
@@ -126,13 +125,13 @@ duplicate-key rejection and checks at least these invariants:
 - locked dependency installation ignores lifecycle scripts, and a moderate
   vulnerability audit runs before repository code;
 - dependency review fails on moderate-or-higher runtime, development, or
-  unknown-scope additions and uses exact merge-group base/head SHAs;
+  unknown-scope additions;
 - required aggregate check names and the package command that invokes the policy
   contract cannot silently drift.
 
-Workflow jobs have bounded timeouts. CodeQL remains an advanced workflow because
-it must support `merge_group`; native code-scanning merge protection is
-tightened to block medium-or-higher findings and analysis errors.
+Workflow jobs have bounded timeouts. CodeQL remains an advanced pull-request
+workflow with native code-scanning merge protection tightened to block
+medium-or-higher findings and analysis errors.
 
 ## Coffee Init downstream fork boundary
 

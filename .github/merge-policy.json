@@ -27,12 +27,10 @@
     "/AGENTS.md",
     "/CODEOWNERS",
     "/SECURITY.md",
-    "/contract/roastery-authority.json",
-    "/runtime/github.mjs",
-    "/runtime/init-cli.mjs",
-    "/runtime/init.mjs",
-    "/runtime/registry.mjs",
-    "/skills/coffee-init/**"
+    "/contract/**",
+    "/runtime/**",
+    "/scripts/**",
+    "/skills/**"
   ],
   "codeql_enforcement": "native_code_scanning",
   "sensitive_review": {

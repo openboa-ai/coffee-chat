@@ -82,9 +82,7 @@ function requireCommand(job, name, command) {
 }
 
 function requireTriggers(name, workflow) {
-  const expected =
-    name === "codeql.yml" ? ["push", "pull_request"] : ["pull_request"];
-  exactKeys(workflow.on, expected, `${name}: exact PR-only triggers`);
+  exactKeys(workflow.on, ["pull_request"], `${name}: exact PR-only triggers`);
 }
 
 function requireConcurrency(name, workflow) {
@@ -171,7 +169,6 @@ exactKeys(
   ["name", "on", "permissions", "concurrency", "jobs"],
   "CodeQL workflow",
 );
-assert.deepEqual(codeql.on.push, { branches: ["main"] });
 const codeqlJob = codeql.jobs.analyze;
 assert.deepEqual(Object.keys(codeql.jobs), ["analyze"]);
 exactKeys(
@@ -259,11 +256,16 @@ assert.deepEqual(gate, {
   },
   run: [
     'case "$AUTHOR_ASSOCIATION" in',
-    "  OWNER|MEMBER) exit 0 ;;",
+    "  OWNER|MEMBER)",
+    '    test "$ACTOR" = "$PR_AUTHOR"',
+    '    test "$HEAD_REPOSITORY" = "$BASE_REPOSITORY"',
+    "    ;;",
+    "  *)",
+    '    test "$ACTOR" = "dependabot[bot]"',
+    '    test "$PR_AUTHOR" = "dependabot[bot]"',
+    '    test "$HEAD_REPOSITORY" = "$BASE_REPOSITORY"',
+    "    ;;",
     "esac",
-    'test "$ACTOR" = "dependabot[bot]"',
-    'test "$PR_AUTHOR" = "dependabot[bot]"',
-    'test "$HEAD_REPOSITORY" = "$BASE_REPOSITORY"',
     "",
   ].join("\n"),
 });
@@ -401,7 +403,7 @@ exactKeys(
 );
 assert.equal(
   boundaryJob.if,
-  "github.event_name == 'workflow_dispatch' || github.event.pull_request.author_association == 'OWNER' || github.event.pull_request.author_association == 'MEMBER' || (github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)",
+  "github.event_name == 'workflow_dispatch' || (((github.event.pull_request.author_association == 'OWNER' || github.event.pull_request.author_association == 'MEMBER') && github.actor == github.event.pull_request.user.login && github.event.pull_request.head.repo.full_name == github.repository) || (github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository))",
 );
 assert.equal(boundaryJob["runs-on"], "ubuntu-24.04");
 const trustedCheckout = stepNamed(
@@ -504,6 +506,22 @@ assert.equal(
   packageJson.scripts.policy,
   "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
 );
+assert.deepEqual(packageJson.scripts, {
+  "format:check": "prettier --check .",
+  format: "prettier --write .",
+  typecheck: "tsc --noEmit",
+  test: "node --test tests/*.test.mjs",
+  "readme:assets:verify": "node scripts/verify-readme-assets.mjs",
+  "readme:assets:reproduce": "node scripts/reproduce-readme-assets.mjs",
+  build: "node scripts/build-package.mjs",
+  "package:smoke": "node scripts/package-smoke.mjs",
+  "hooks:install": "git config core.hooksPath .githooks",
+  policy:
+    "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
+  "security:scan": "gitleaks git --redact --no-banner .",
+  verify:
+    "npm run format:check && npm run typecheck && npm test && npm run readme:assets:verify && npm run build && npm run package:smoke && npm run policy",
+});
 assert.equal(packageJson.devDependencies.yaml, "2.9.0");
 
 const dependabot = loadYaml(".github/dependabot.yml");
@@ -609,12 +627,10 @@ assert.deepEqual(mergePolicy.protected_paths, [
   "/AGENTS.md",
   "/CODEOWNERS",
   "/SECURITY.md",
-  "/contract/roastery-authority.json",
-  "/runtime/github.mjs",
-  "/runtime/init-cli.mjs",
-  "/runtime/init.mjs",
-  "/runtime/registry.mjs",
-  "/skills/coffee-init/**",
+  "/contract/**",
+  "/runtime/**",
+  "/scripts/**",
+  "/skills/**",
 ]);
 assert.equal(mergePolicy.codeql_enforcement, "native_code_scanning");
 assert.deepEqual(mergePolicy.sensitive_review, {

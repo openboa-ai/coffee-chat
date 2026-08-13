@@ -141,7 +141,7 @@ Commit: `test: enforce structural workflow policy`
 - set dependency review to `fail-on-severity: moderate`,
   `fail-on-scopes: runtime,development,unknown`, `show-patched-versions: true`,
   and no PR comment;
-- keep exact `merge_group.base_sha` and `merge_group.head_sha`;
+- keep candidate execution limited to the pull-request event and exact head;
 - preserve Gitleaks history/worktree/raw-blob coverage and trusted-base
   execution;
 - add the CodeQL context to the repository merge-policy contract;

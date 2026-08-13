@@ -1,9 +1,6 @@
 name: Coffee Chat CodeQL
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
 
 permissions: {}

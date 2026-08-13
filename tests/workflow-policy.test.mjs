@@ -11,6 +11,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { afterEach, test } from "node:test";
+import { parse } from "yaml";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const checker = join(repositoryRoot, ".github", "ci-policy.mjs");
@@ -93,6 +94,56 @@ test("canonical author gates admit only maintainers and Dependabot", () => {
   assert.deepEqual(policy.eligible_bot_logins, ["dependabot[bot]"]);
   assert.equal(policy.merge_queue, false);
   assert.doesNotMatch(quality, /COLLABORATOR|CONTRIBUTOR/u);
+});
+
+test("maintainer author gate binds actor, PR author, and same-repository head", () => {
+  const workflow = parse(
+    source(fixtureRoot(), ".github/workflows/quality.yml"),
+  );
+  const gate = workflow.jobs.quality.steps[0].run;
+  const run = (overrides) =>
+    spawnSync("bash", ["-euo", "pipefail", "-c", gate], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        ACTOR: "owner",
+        AUTHOR_ASSOCIATION: "OWNER",
+        BASE_REPOSITORY: "openboa-ai/coffee-chat",
+        HEAD_REPOSITORY: "openboa-ai/coffee-chat",
+        PR_AUTHOR: "owner",
+        ...overrides,
+      },
+    });
+  assert.equal(run({}).status, 0);
+  assert.notEqual(run({ ACTOR: "different-maintainer" }).status, 0);
+  assert.notEqual(run({ HEAD_REPOSITORY: "owner/coffee-chat" }).status, 0);
+});
+
+test("canonical policy covers all executable authority", () => {
+  const policy = JSON.parse(source(fixtureRoot(), ".github/merge-policy.json"));
+  for (const path of [
+    "/contract/**",
+    "/runtime/**",
+    "/scripts/**",
+    "/skills/**",
+  ])
+    assert.ok(policy.protected_paths.includes(path), path);
+});
+
+test("CodeQL and lifecycle documentation remain PR-only", () => {
+  assert.doesNotMatch(
+    source(fixtureRoot(), ".github/workflows/codeql.yml"),
+    /^  push:/mu,
+  );
+  for (const path of [
+    "docs/superpowers/specs/2026-08-13-coffee-repositories-security-lifecycle-design.md",
+    "docs/superpowers/plans/2026-08-13-coffee-chat-security-lifecycle.md",
+  ]) {
+    assert.doesNotMatch(
+      readFileSync(join(repositoryRoot, path), "utf8"),
+      /merge_group/u,
+    );
+  }
 });
 
 assertRejected("duplicate YAML mapping keys", (root) => {
@@ -319,6 +370,13 @@ assertRejected("a weakened package policy command", (root) => {
   writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
 });
 
+assertRejected("a weakened required package script", (root) => {
+  const path = "package.json";
+  const packageJson = JSON.parse(source(root, path));
+  packageJson.scripts.test = "true";
+  writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
+});
+
 assertRejected("an install that enables dependency scripts", (root) => {
   replaceOnce(
     root,
@@ -390,12 +448,7 @@ assertRejected("a changed required-check integration identity", (root) => {
 });
 
 assertRejected("a removed sensitive external-write path", (root) => {
-  replaceOnce(
-    root,
-    ".github/merge-policy.json",
-    '    "/runtime/github.mjs",\n',
-    "",
-  );
+  replaceOnce(root, ".github/merge-policy.json", '    "/runtime/**",\n', "");
 });
 
 assertRejected("raw-blob secret scan removal", (root) => {
