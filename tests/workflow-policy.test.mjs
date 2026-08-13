@@ -77,6 +77,19 @@ test("repository policy accepts the canonical workflow set", () => {
   );
 });
 
+test("canonical author gates admit only maintainers and Dependabot", () => {
+  const quality = source(fixtureRoot(), ".github/workflows/quality.yml");
+  const boundary = source(
+    fixtureRoot(),
+    ".github/workflows/secret-boundary.yml",
+  );
+  const policy = JSON.parse(source(fixtureRoot(), ".github/merge-policy.json"));
+  assert.match(quality, /dependabot\[bot\]/u);
+  assert.match(boundary, /dependabot\[bot\]/u);
+  assert.deepEqual(policy.eligible_bot_logins, ["dependabot[bot]"]);
+  assert.doesNotMatch(quality, /COLLABORATOR|CONTRIBUTOR/u);
+});
+
 assertRejected("duplicate YAML mapping keys", (root) => {
   const path = ".github/workflows/quality.yml";
   writeFileSync(
@@ -195,6 +208,24 @@ assertRejected("a weakened author eligibility gate", (root) => {
     ".github/workflows/quality.yml",
     "OWNER|MEMBER)",
     "OWNER|MEMBER|COLLABORATOR)",
+  );
+});
+
+assertRejected("a removed Dependabot identity gate", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    'if test "$PR_AUTHOR" = "dependabot[bot]"; then',
+    "if true; then",
+  );
+});
+
+assertRejected("a broadened eligible bot policy", (root) => {
+  replaceOnce(
+    root,
+    ".github/merge-policy.json",
+    '"eligible_bot_logins": ["dependabot[bot]"]',
+    '"eligible_bot_logins": ["dependabot[bot]", "renovate[bot]"]',
   );
 });
 

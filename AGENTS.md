@@ -48,17 +48,18 @@ perform its documented user-scoped GitHub and Registry writes.
 - Work on a non-default branch, open a pull request, and enable GitHub-native
   squash auto-merge only after the exact head passes the local verification
   contract and all required GitHub checks.
-- Candidate-executing workflows accept only `OWNER` or `MEMBER` authors. Do not
-  widen that set, add a custom write-token merge controller, or treat a passing
-  candidate-controlled check as authorization for a sensitive change.
+- Candidate-executing workflows accept only `OWNER` or `MEMBER` authors and the
+  exact GitHub identity `dependabot[bot]`. Do not widen that set. Never add
+  custom write-token merge automation or treat a passing candidate-controlled
+  check as authorization for a sensitive change.
 - Mark the pull request's sensitive-path declaration accurately. The
   organization ruleset—not the agent or candidate workflow—decides whether the
   human-only `security-maintainers` team must review it.
 - Normal code, documentation, tests, and vetted compatible dependency updates
   remain eligible for native auto-merge. Changes to repository automation,
-  security policy, hooks, external-write boundaries, executable authority, or
-  dependency manifests wait for ruleset-required human review after this
-  pre-authorized bootstrap rollout.
+  security policy, hooks, external-write boundaries, or executable authority
+  wait for ruleset-required human review after this pre-authorized bootstrap
+  rollout.
 - Preserve the trusted-base secret boundary: candidate content is scanned as
   data, including worktree, history, and raw blobs, before any candidate code is
   executed. Keep `pull_request_target` isolated from Node/npm execution and

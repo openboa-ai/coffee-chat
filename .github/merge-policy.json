@@ -4,6 +4,7 @@
   "required_code_owner_reviews": 0,
   "required_last_push_approvals": 0,
   "eligible_author_associations": ["OWNER", "MEMBER"],
+  "eligible_bot_logins": ["dependabot[bot]"],
   "custom_merge_controller": false,
   "required_checks": [
     "Coffee Chat required",

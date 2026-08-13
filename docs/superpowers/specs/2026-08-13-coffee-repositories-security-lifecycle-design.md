@@ -45,6 +45,8 @@ remain queued until the team approval is present and then merge automatically.
 
 - `openboa` remains an organization member and is the expected author for agent
   pull requests.
+- `dependabot[bot]` is the only additional machine identity admitted for its
+  GitHub-authored dependency pull requests.
 - `SonSangjoon` is the sole member of a new `security-maintainers` team.
 - The agent account is deliberately excluded from that team, so it cannot
   satisfy the sensitive-path review it triggered.
@@ -119,7 +121,8 @@ duplicate-key rejection and checks at least these invariants:
 - reusable actions are allowlisted and pinned to full commit SHAs, including
   nested or flow-style YAML;
 - checkout credentials are never persisted;
-- quality jobs reject non-`OWNER`/`MEMBER` candidate execution before checkout;
+- quality jobs reject candidate execution before checkout unless the pull
+  request author is `OWNER`, `MEMBER`, or exactly `dependabot[bot]`;
 - locked dependency installation ignores lifecycle scripts, and a moderate
   vulnerability audit runs before repository code;
 - dependency review fails on moderate-or-higher runtime, development, or

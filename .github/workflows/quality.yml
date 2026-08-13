@@ -25,12 +25,17 @@ jobs:
         env:
           AUTHOR_ASSOCIATION:
             ${{ github.event.pull_request.author_association }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           case "$AUTHOR_ASSOCIATION" in
             OWNER|MEMBER)
               printf '%s\n' 'author=trusted_maintainer'
               ;;
             *)
+              if test "$PR_AUTHOR" = "dependabot[bot]"; then
+                printf '%s\n' 'author=trusted_dependabot'
+                exit 0
+              fi
               printf '%s\n' 'author=untrusted' >&2
               exit 1
               ;;

@@ -238,11 +238,13 @@ const gate = quality.steps[gateIndex];
 assert.equal(gate.if, "github.event_name == 'pull_request'");
 assert.deepEqual(gate.env, {
   AUTHOR_ASSOCIATION: "${{ github.event.pull_request.author_association }}",
+  PR_AUTHOR: "${{ github.event.pull_request.user.login }}",
 });
 assert.match(gate.run, /case "\$AUTHOR_ASSOCIATION" in/u);
 assert.match(gate.run, /OWNER\|MEMBER\)/u);
+assert.match(gate.run, /test "\$PR_AUTHOR" = "dependabot\[bot\]"/u);
 assert.match(gate.run, /exit 1/u);
-assert.doesNotMatch(gate.run, /COLLABORATOR|PR_AUTHOR|openboa/u);
+assert.doesNotMatch(gate.run, /COLLABORATOR|CONTRIBUTOR|openboa/u);
 const checkout = quality.steps[checkoutIndex];
 assert.equal(checkout.with["fetch-depth"], 0);
 assert.equal(checkout.with["persist-credentials"], false);
@@ -324,6 +326,7 @@ assert.deepEqual(Object.keys(boundary.jobs), ["secret-boundary"]);
 const boundaryJob = boundary.jobs["secret-boundary"];
 assert.match(boundaryJob.if, /OWNER/u);
 assert.match(boundaryJob.if, /MEMBER/u);
+assert.match(boundaryJob.if, /dependabot\[bot\]/u);
 for (const fragment of [
   "path: trusted",
   "path: candidate",
@@ -417,6 +420,7 @@ const mergePolicy = JSON.parse(read(".github/merge-policy.json"));
 assert.equal(mergePolicy.merge_method, "squash");
 assert.equal(mergePolicy.required_approvals, 0);
 assert.deepEqual(mergePolicy.eligible_author_associations, ["OWNER", "MEMBER"]);
+assert.deepEqual(mergePolicy.eligible_bot_logins, ["dependabot[bot]"]);
 assert.equal("eligible_author_logins" in mergePolicy, false);
 assert.equal(mergePolicy.custom_merge_controller, false);
 assert.deepEqual(mergePolicy.required_checks, [
