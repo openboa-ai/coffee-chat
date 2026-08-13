@@ -1,5 +1,5 @@
 ---
-name: init
+name: coffee-init
 description:
   Build the user's owned public Roastery from the immutable official seed. Use
   when the user explicitly asks to initialize or build their own Roastery.

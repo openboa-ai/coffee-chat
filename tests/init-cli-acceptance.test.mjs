@@ -13,7 +13,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const script = join(root, "skills", "init", "scripts", "run.mjs");
+const script = join(root, "skills", "coffee-init", "scripts", "run.mjs");
 
 function run(cwd, state, ...args) {
   const result = spawnSync(process.execPath, [script, ...args], {

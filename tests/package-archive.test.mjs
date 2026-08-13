@@ -1,15 +1,20 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
-import { packageRoots } from "../scripts/package-lib.mjs";
+import { collectFiles, packageRoots } from "../scripts/package-lib.mjs";
 
-const capabilities = [
-  "init",
-  "sync",
-  "unsync",
-  "roast",
-  "brew",
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+
+const skillNames = [
+  "coffee-init",
+  "coffee-sync",
+  "coffee-unsync",
+  "coffee-roast",
+  "coffee-brew",
   "coffee-chat",
   "coffee-blend",
 ];
@@ -41,13 +46,41 @@ test("package smoke is isolated and contains only the declared Plugin", () => {
     packageRoots.some((path) => path.startsWith("submission/")),
     false,
   );
-  assert.deepEqual(capabilities, [
-    "init",
-    "sync",
-    "unsync",
-    "roast",
-    "brew",
+  assert.deepEqual(skillNames, [
+    "coffee-init",
+    "coffee-sync",
+    "coffee-unsync",
+    "coffee-roast",
+    "coffee-brew",
     "coffee-chat",
     "coffee-blend",
   ]);
+});
+
+test("the packaged README keeps every local image target", async () => {
+  const [readme, files] = await Promise.all([
+    readFile(`${root}/README.md`, "utf8"),
+    collectFiles(root),
+  ]);
+  const packagedPaths = new Set(files.map(({ path }) => path));
+  const localImages = [...readme.matchAll(/!\[[^\]]*\]\(([^)]+)\)/gu)]
+    .map((match) => match[1])
+    .filter((target) => !/^(?:https?:|data:)/u.test(target));
+
+  assert.deepEqual(localImages, [
+    "docs/assets/readme/coffee-chat-hero.png",
+    "docs/assets/readme/coffee-chat-judgment.png",
+    "docs/assets/readme/coffee-chat-talk-work.png",
+  ]);
+  for (const target of localImages) {
+    assert.ok(packagedPaths.has(target), `missing packaged image: ${target}`);
+  }
+});
+
+test("the package ships the Agent installation guide", async () => {
+  const files = await collectFiles(root);
+  const packagedPaths = new Set(files.map(({ path }) => path));
+
+  assert.ok(packageRoots.includes("INSTALL_FOR_AGENTS.md"));
+  assert.ok(packagedPaths.has("INSTALL_FOR_AGENTS.md"));
 });

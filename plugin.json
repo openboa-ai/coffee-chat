@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "coffee-chat",
-  "version": "2026.8.10",
+  "version": "2026.8.13",
   "description": "A Codex-first, Skills-only Plugin for explicit public Roastery journeys.",
   "author": {
     "name": "Openboa AI",

@@ -4,3 +4,6 @@
 *.ts text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+*.png binary
+*.ttf binary
+*.woff2 binary

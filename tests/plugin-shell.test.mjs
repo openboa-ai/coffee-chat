@@ -22,6 +22,15 @@ const capabilities = Object.freeze([
   "coffee-chat",
   "coffee-blend",
 ]);
+const skillNames = Object.freeze({
+  init: "coffee-init",
+  sync: "coffee-sync",
+  unsync: "coffee-unsync",
+  roast: "coffee-roast",
+  brew: "coffee-brew",
+  "coffee-chat": "coffee-chat",
+  "coffee-blend": "coffee-blend",
+});
 const expectedIdentityFields = Object.freeze([
   "name",
   "version",
@@ -30,6 +39,7 @@ const expectedIdentityFields = Object.freeze([
   "repository",
   "license",
 ]);
+const expectedCalver = "2026.8.13";
 
 function json(path) {
   return JSON.parse(readFileSync(join(root, path), "utf8"));
@@ -65,6 +75,7 @@ test("portable and OpenAI manifests are separate projections of one CalVer ident
     metadata.version,
     /^\d{4}\.(?:[1-9]|1[0-2])\.(?:[1-9]|[12]\d|3[01])$/u,
   );
+  assert.equal(metadata.version, expectedCalver);
   assert.equal(
     portable.$schema,
     "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
@@ -84,15 +95,16 @@ test("all seven capability Skills are discoverable and have fixed launchers", ()
       .filter((entry) => entry.isDirectory())
       .map(({ name }) => name)
       .sort(),
-    [...capabilities].sort(),
+    Object.values(skillNames).sort(),
   );
 
   for (const capability of capabilities) {
+    const skillName = skillNames[capability];
     const skill = readFileSync(
-      join(root, "skills", capability, "SKILL.md"),
+      join(root, "skills", skillName, "SKILL.md"),
       "utf8",
     );
-    assert.match(skill, new RegExp(`^---\\nname: ${capability}\\n`, "u"));
+    assert.match(skill, new RegExp(`^---\\nname: ${skillName}\\n`, "u"));
     if (capability === "init") {
       assert.match(skill, /status: available/u);
       assert.match(skill, /preview --owner/u);
@@ -103,7 +115,7 @@ test("all seven capability Skills are discoverable and have fixed launchers", ()
       assert.match(skill, /later capability Goal/u);
     }
     assert.doesNotThrow(() =>
-      readFileSync(join(root, "skills", capability, "scripts/run.mjs"), "utf8"),
+      readFileSync(join(root, "skills", skillName, "scripts/run.mjs"), "utf8"),
     );
   }
 });
@@ -117,11 +129,11 @@ test("Init is available while the other six capabilities remain explicitly defer
       stderr: "",
       stdout: {
         schema: "coffee-chat-capability-result",
-        calver: "2026.8.10",
+        calver: expectedCalver,
         capability: "init",
         status: "available",
         workflow: "preview_then_explicit_apply",
-        entrypoint: "skills/init/scripts/run.mjs",
+        entrypoint: "skills/coffee-init/scripts/run.mjs",
         writesOnlyAfterAcceptedPreview: true,
       },
     });
@@ -134,7 +146,7 @@ test("Init is available while the other six capabilities remain explicitly defer
       assert.deepEqual(first, second, capability);
       assert.deepEqual(first.stdout, {
         schema: "coffee-chat-capability-result",
-        calver: "2026.8.10",
+        calver: expectedCalver,
         capability,
         status: "not_implemented",
         implementationOwner: "later capability Goal",
@@ -150,7 +162,7 @@ test("Init is available while the other six capabilities remain explicitly defer
       });
 
       const skill = invoke(
-        `skills/${capability}/scripts/run.mjs`,
+        `skills/${skillNames[capability]}/scripts/run.mjs`,
         capability,
         scratch,
       );

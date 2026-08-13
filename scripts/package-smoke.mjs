@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
-import { capabilities } from "../runtime/coffee-chat.mjs";
+import { capabilities, skillNames } from "../runtime/coffee-chat.mjs";
 import { collectFiles, packageRoots, packageZip } from "./package-lib.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -28,7 +28,7 @@ try {
   const init = spawnSync(
     process.execPath,
     [
-      join(plugin, "skills", "init", "scripts/run.mjs"),
+      join(plugin, "skills", skillNames.init, "scripts/run.mjs"),
       "preview",
       "--owner",
       "example",
@@ -51,7 +51,7 @@ try {
   for (const capability of capabilities.filter((name) => name !== "init")) {
     const result = spawnSync(
       process.execPath,
-      [join(plugin, "skills", capability, "scripts/run.mjs")],
+      [join(plugin, "skills", skillNames[capability], "scripts/run.mjs")],
       { encoding: "utf8" },
     );
     assert.equal(result.status, 3, capability);

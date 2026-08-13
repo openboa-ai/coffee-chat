@@ -1,5 +1,5 @@
 ---
-name: sync
+name: coffee-sync
 description:
   Declare an explicit owned or external Roastery relationship entrypoint. Use
   when the user asks to select or refresh a Roastery relationship.

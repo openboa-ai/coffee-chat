@@ -43,7 +43,7 @@ test("owned registration is read-only before verification and atomic afterward",
       record,
     });
     assert.deepEqual(JSON.parse(readFileSync(path, "utf8")), {
-      calver: "2026.8.10",
+      calver: "2026.8.13",
       owned: record,
     });
     assert.equal(statSync(path).mode & 0o777, 0o600);
