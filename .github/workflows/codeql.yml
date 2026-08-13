@@ -9,10 +9,17 @@ on:
 
 permissions: {}
 
+concurrency:
+  group:
+    ${{ github.workflow }}-${{ github.event.pull_request.number ||
+    github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Coffee Chat CodeQL JavaScript-TypeScript
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       actions: read

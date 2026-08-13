@@ -6,10 +6,17 @@ on:
 
 permissions: {}
 
+concurrency:
+  group:
+    ${{ github.workflow }}-${{ github.event.pull_request.number ||
+    github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependency-review:
     name: Coffee Chat dependency review
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -18,6 +25,9 @@ jobs:
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
         with:
           comment-summary-in-pr: never
+          fail-on-severity: moderate
+          fail-on-scopes: runtime,development,unknown
+          show-patched-versions: true
       - name: Review merge group dependencies
         if: github.event_name == 'merge_group'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
@@ -25,3 +35,6 @@ jobs:
           base-ref: ${{ github.event.merge_group.base_sha }}
           head-ref: ${{ github.event.merge_group.head_sha }}
           comment-summary-in-pr: never
+          fail-on-severity: moderate
+          fail-on-scopes: runtime,development,unknown
+          show-patched-versions: true

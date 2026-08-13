@@ -8,13 +8,30 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: deps
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
     groups:
       security:
         applies-to: security-updates
         patterns:
           - "*"
-      versions:
+      production-minor-patch:
         applies-to: version-updates
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      development-minor-patch:
+        applies-to: version-updates
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
         patterns:
           - "*"
 
@@ -25,12 +42,20 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: deps
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
     groups:
       security:
         applies-to: security-updates
         patterns:
           - "*"
-      versions:
+      compatible-actions:
         applies-to: version-updates
+        update-types:
+          - minor
+          - patch
         patterns:
           - "*"

@@ -15,7 +15,7 @@
     "build": "node scripts/build-package.mjs",
     "package:smoke": "node scripts/package-smoke.mjs",
     "hooks:install": "git config core.hooksPath .githooks",
-    "policy": "node .github/ci-policy.mjs",
+    "policy": "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
     "security:scan": "gitleaks git --redact --no-banner .",
     "verify": "npm run format:check && npm run typecheck && npm test && npm run readme:assets:verify && npm run build && npm run package:smoke && npm run policy"
   },

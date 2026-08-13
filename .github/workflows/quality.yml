@@ -6,10 +6,17 @@ on:
 
 permissions: {}
 
+concurrency:
+  group:
+    ${{ github.workflow }}-${{ github.event.pull_request.number ||
+    github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Coffee Chat shell quality
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -33,10 +40,21 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          ref:
+            ${{ github.event.pull_request.head.sha ||
+            github.event.merge_group.head_sha || github.sha }}
       - name: Install immutable Gitleaks
         run: .github/scripts/install-gitleaks.sh
-      - name: Scan complete Git history
+      - name: Scan complete history, tree, and raw blobs
+        env:
+          BASE_SHA:
+            ${{ github.event.pull_request.base.sha ||
+            github.event.merge_group.base_sha || '' }}
+          HEAD_SHA:
+            ${{ github.event.pull_request.head.sha ||
+            github.event.merge_group.head_sha || github.sha }}
         run: |
+          set -o pipefail
           test ! -e .gitleaks.toml
           test ! -e .gitleaksignore
           gitleaks git --config "$GITLEAKS_TRUSTED_CONFIG" \
@@ -45,13 +63,31 @@ jobs:
           gitleaks dir --config "$GITLEAKS_TRUSTED_CONFIG" \
             --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \
             --redact --no-banner .
+          blob_dir="$(mktemp -d)"
+          if test -n "$BASE_SHA"; then
+            object_range="$BASE_SHA..$HEAD_SHA"
+          else
+            object_range="$HEAD_SHA"
+          fi
+          git rev-list --objects "$object_range" |
+            cut -d' ' -f1 |
+            git cat-file --batch-check='%(objectname) %(objecttype)' |
+            awk '$2 == "blob" { print $1 }' |
+            while read -r object_id; do
+              git cat-file blob "$object_id" > "$blob_dir/$object_id"
+            done
+          gitleaks dir --config "$GITLEAKS_TRUSTED_CONFIG" \
+            --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \
+            --redact --no-banner "$blob_dir"
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           cache: npm
-      - name: Install locked dependencies
-        run: npm ci
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
       - name: Check formatting
         run: npm run format:check
       - name: Check types
@@ -72,6 +108,7 @@ jobs:
     if: always()
     needs: quality
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:

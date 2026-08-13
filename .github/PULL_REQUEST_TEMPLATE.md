@@ -6,6 +6,14 @@ Describe the one product-shell or governance objective.
 
 List the exact local commands and results.
 
+## Sensitive-path declaration
+
+- [ ] This pull request changes `.github/**`, `.githooks/**`, `AGENTS.md`,
+      `SECURITY.md`, `CODEOWNERS`, dependency manifests, executable authority,
+      or an external-write boundary.
+- [ ] If checked, I understand the organization ruleset—not this checkbox or a
+      candidate workflow—requires `security-maintainers` review before merge.
+
 ## Boundaries
 
 - [ ] No capability is reported as implemented or measured.
@@ -13,5 +21,5 @@ List the exact local commands and results.
       runtime was added.
 - [ ] Plugin install/uninstall and Roastery sync/unsync terminology remain
       separate.
-- [ ] The change is eligible for GitHub-native squash with zero approvals after
-      required checks pass.
+- [ ] The change is eligible for GitHub-native squash auto-merge after required
+      checks and any organization-ruleset review pass.
