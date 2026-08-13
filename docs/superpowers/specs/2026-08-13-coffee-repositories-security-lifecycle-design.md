@@ -3,7 +3,8 @@
 - **Date:** 2026-08-13
 - **Scope:** `openboa-ai/coffee-chat`, `coffee-chat-roastery`,
   `coffee-chat-eval`, and `coffee-chat-bench`
-- **Decision:** Path-sensitive human review with GitHub-native automatic merge
+- **Decision:** Trusted central path classification, protected Environment
+  confirmation, and GitHub-native automatic merge
 
 ## Objective
 
@@ -13,10 +14,9 @@ automatically after deterministic security and quality checks pass. Only changes
 to narrowly defined security-governance or external-side-effect boundaries
 should wait for one human review.
 
-The hardening rollout itself is authorized to complete without a manual review.
-Repository rules that require future sensitive-path review are therefore enabled
-only after the bootstrap pull requests have passed their required checks and
-merged.
+The hardening rollout itself is authorized to complete without a separate user
+confirmation. Future sensitive changes still pause at the protected
+`coffee-security` Environment before the central aggregate can succeed.
 
 ## Considered approaches
 
@@ -26,20 +26,22 @@ This is simple, but makes the human maintainer a queue for documentation, tests,
 and routine dependency updates. It does not match the requested autonomous agent
 lifecycle.
 
-### 2. Workflow environment approval for sensitive changes
+### 2. Candidate-controlled workflow environment approval
 
-A workflow can detect sensitive paths and pause on a protected environment. This
-adds a manual gate, but the gate definition lives in the same workflow surface
-that a pull request can modify. It also creates another custom status controller
-to maintain.
+A normal `pull_request` workflow can detect paths and pause on an Environment,
+but its definition is candidate-controlled. A candidate can remove the gate or
+manufacture the expected status, so this is not an authorization boundary.
 
-### 3. Repository ruleset path review plus native auto-merge
+### 3. Immutable central gate plus protected Environment
 
-This is the selected design. A repository ruleset, outside the candidate tree,
-requires one review from a human-only team when a configured file pattern is
-changed. All pull requests may have GitHub-native squash auto-merge enabled.
-Non-sensitive pull requests merge when checks pass; sensitive pull requests
-remain queued until the team approval is present and then merge automatically.
+This is the selected design. Each target repository exposes one minimal
+`pull_request_target` wrapper pinned to a full commit SHA in
+`openboa-ai/.github`. The reusable workflow, target base policy, and parser are
+immutable for the run; the pull-request head is data. A trusted classifier sends
+protected-path or policy-evolution changes to `coffee-security`, while routine
+changes skip the Environment. The repository ruleset requires only the exact
+central aggregate, so native squash auto-merge resumes after the applicable
+lanes succeed.
 
 ## Actors and authority
 
@@ -47,38 +49,42 @@ remain queued until the team approval is present and then merge automatically.
   pull requests.
 - `dependabot[bot]` is the only additional machine identity admitted for its
   GitHub-authored dependency pull requests.
-- `SonSangjoon` is the sole member of a new `security-maintainers` team.
-- The agent account is deliberately excluded from that team, so it cannot
-  satisfy the sensitive-path review it triggered.
+- `SonSangjoon` is the required reviewer for the `coffee-security` Environment.
+  `prevent_self_review` is disabled because this is a solo-maintainer lifecycle;
+  the pause still requires an explicit human action for sensitive changes.
+- `security-maintainers` remains CODEOWNERS defense in depth, not a repository
+  ruleset approval requirement or a substitute for the Environment.
 - The rulesets retain no bypass actors. Changes use pull requests and squash
   merge; direct updates, deletions, and non-fast-forward updates to `main` stay
   blocked.
-- A human-authored sensitive change should be transferred to an agent-authored
-  branch or pull request so the human can supply the independent review.
+- No workflow receives a write token for merging. GitHub-native auto-merge owns
+  the final squash after the required aggregate succeeds.
 
 ## Pull request lifecycle
 
 1. An agent works on a non-default branch, runs repository-local verification,
    opens a pull request, and enables GitHub-native squash auto-merge.
-2. The trusted `pull_request_target` secret boundary checks the candidate as
-   data only. It scans the worktree, history, and raw Git blobs without running
-   candidate code or exposing secrets.
-3. Read-only `pull_request` jobs run deterministic quality, repository-policy,
-   dependency, and CodeQL checks. External model or benchmark execution stays
-   manual and fail-closed.
-4. The repository ruleset evaluates changed paths:
-   - no sensitive match: green required checks are sufficient;
-   - sensitive match: one `security-maintainers` review is additionally
-     required.
-5. GitHub performs the squash merge and deletes the branch. No custom
-   write-token merge controller is introduced.
+2. The pinned target wrapper calls the central reusable gate from an immutable
+   organization-controls SHA.
+3. The gate authenticates the target base parser, rejects competing npm
+   authorities and symlinks, scans history/worktree/raw blobs, classifies both
+   sides of renames, and treats the candidate checkout as data until authorized.
+4. Routine changes skip `coffee-security`; protected-path or exact-policy
+   evolution waits for the Environment confirmation.
+5. Trusted lanes perform dependency review, build-mode-none CodeQL,
+   deterministic repository quality, and the isolated Eval Harbor calibration
+   where applicable.
+6. The fail-closed central aggregate is the repository ruleset's sole required
+   check. GitHub performs the squash merge and deletes the branch.
 
-Merge queue is intentionally disabled. Candidate-executing workflows expose only
-the pull-request event used by this solo-maintainer lifecycle.
+Merge queue is intentionally disabled. Target repositories reject every other
+`.yml` or `.yaml` workflow, so candidate code cannot define a competing status
+or write-capable pull-request lane.
 
 ## Sensitive path policy
 
-All repositories require review for these shared control surfaces:
+All repositories require the protected Environment confirmation for these shared
+control surfaces:
 
 - `.github/**/*`
 - `.githooks/**/*`
@@ -105,33 +111,25 @@ and compatible minor/patch updates are grouped.
 
 ## Repository-local security contract
 
-Each repository has a structural YAML policy test that rejects policy bypasses
-instead of relying on regular expressions. The test parses every workflow with
-duplicate-key rejection and checks at least these invariants:
+Each repository has a structural policy test that rejects policy bypasses
+instead of relying on regular expressions. It checks at least these invariants:
 
-- the workflow set is explicit;
-- candidate workflows use only `pull_request`, never `pull_request_target` or
-  secrets;
-- the secret boundary uses only `pull_request_target` and optional manual
-  dispatch, checks out trusted controls and candidate data separately, and does
-  not execute the candidate;
-- permissions are explicit, minimal, and checked at both workflow and job
-  levels;
-- reusable actions are allowlisted and pinned to full commit SHAs, including
-  nested or flow-style YAML;
-- checkout credentials are never persisted;
-- quality jobs reject candidate execution before checkout unless the pull
-  request author is `OWNER`, `MEMBER`, or exactly `dependabot[bot]`;
-- locked dependency installation ignores lifecycle scripts, and a moderate
-  vulnerability audit runs before repository code;
-- dependency review fails on moderate-or-higher runtime, development, or
-  unknown-scope additions;
-- required aggregate check names and the package command that invokes the policy
-  contract cannot silently drift.
+- `.github/workflows` contains only the exact inert wrapper, and its reusable
+  workflow reference and `control_sha` are the same full commit SHA;
+- future `.yml` and `.yaml` workflows are rejected;
+- package scripts, publication metadata, lock registry/integrity, protected
+  paths, and the central aggregate identity cannot silently drift;
+- root/parser `.npmrc` and `npm-shrinkwrap.json` are unsupported competing
+  installation authorities;
+- Dependabot permits security updates and compatible minor/patch version updates
+  without allowing routine major churn;
+- bounded YAML parsing rejects oversized, deeply nested, or excessive-alias
+  Dependabot input before trusted-policy resource exhaustion.
 
-Workflow jobs have bounded timeouts. CodeQL remains an advanced pull-request
-workflow with native code-scanning merge protection tightened to block
-medium-or-higher findings and analysis errors.
+The central workflow owns permissions, immutable action pins, checkout
+credential handling, bounded timeouts, secret scanning, dependency review,
+CodeQL, and fail-closed aggregation. Repository code may run only after trusted
+authorization.
 
 ## Coffee Init downstream fork boundary
 
@@ -169,8 +167,9 @@ For every repository:
 - secret scanning, push protection, Dependabot security updates, private
   vulnerability reporting, dependency graph, and automatic dependency submission
   remain enabled where the plan supports them;
-- rulesets require strict repository-specific quality, dependency review,
-  secret-boundary, and CodeQL checks;
+- rulesets require the exact GitHub Actions identity of the central aggregate;
+- the protected `coffee-security` Environment handles only classified sensitive
+  changes, while routine changes remain approval-free;
 - required conversations stay enabled, while global required approvals remain
   zero;
 - only squash merge is enabled, auto-merge is enabled, and merged branches are
@@ -189,8 +188,9 @@ recorded as plan limitations, not claimed as enabled controls.
   pull request is merged.
 - If a bootstrap pull request fails remotely, auto-merge remains pending while
   the branch is fixed. Repository rules are not weakened to make it pass.
-- If a new path-review rule unexpectedly blocks normal work, its exact ruleset
-  JSON is preserved before mutation and can be restored through the GitHub API.
+- If the central classifier or aggregate unexpectedly blocks normal work, the
+  exact ruleset and Environment configuration are preserved before mutation and
+  can be restored through the GitHub API.
 - A rule is not considered deployed until two live reads confirm its final state
   and a synthetic normal/sensitive path evaluation proves the intended split.
 
@@ -198,9 +198,9 @@ recorded as plan limitations, not claimed as enabled controls.
 
 Each repository must pass its existing product-specific checks plus:
 
-- structural workflow-policy fixture tests covering duplicate keys, escaped
-  keys, aliases, job-level permission overrides, unpinned actions, missing CI
-  invocation, and weakened package commands;
+- structural policy fixtures covering wrapper drift, future target workflows,
+  package/lock authority, required aggregate identity, protected paths, and
+  bounded Dependabot YAML;
 - `npm ci --ignore-scripts`, `npm audit --audit-level=moderate`, formatting,
   type checking, deterministic tests, build/package checks where present, and
   `git diff --check`;

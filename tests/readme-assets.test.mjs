@@ -211,14 +211,12 @@ test("all README images use deterministic canonical OpenBoa type", async () => {
 });
 
 test("README image verification is offline and reproduction is pinned", async () => {
-  const [packageText, verifier, reproducer, workflow, assetGuide] =
-    await Promise.all([
-      readFile(join(root, "package.json"), "utf8"),
-      readFile(join(root, "scripts", "verify-readme-assets.mjs"), "utf8"),
-      readFile(join(root, "scripts", "reproduce-readme-assets.mjs"), "utf8"),
-      readFile(join(root, ".github", "workflows", "quality.yml"), "utf8"),
-      readFile(join(root, "docs", "assets", "readme", "README.md"), "utf8"),
-    ]);
+  const [packageText, verifier, reproducer, assetGuide] = await Promise.all([
+    readFile(join(root, "package.json"), "utf8"),
+    readFile(join(root, "scripts", "verify-readme-assets.mjs"), "utf8"),
+    readFile(join(root, "scripts", "reproduce-readme-assets.mjs"), "utf8"),
+    readFile(join(root, "docs", "assets", "readme", "README.md"), "utf8"),
+  ]);
   const packageJson = JSON.parse(packageText);
 
   assert.equal(
@@ -240,9 +238,6 @@ test("README image verification is offline and reproduction is pinned", async ()
     /assert\.deepEqual\(\s*actualAudit,\s*expectedAudit/u,
   );
   assert.ok(assetGuide.includes(canonicalRenderer));
-  assert.doesNotMatch(workflow, /setup-python/u);
-  assert.doesNotMatch(workflow, /pip install/u);
-  assert.doesNotMatch(workflow, /readme:assets:reproduce/u);
 });
 
 test("the offline verifier accepts all three reviewed README images", () => {

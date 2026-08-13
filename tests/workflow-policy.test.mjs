@@ -1,736 +1,240 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
-import { afterEach, test } from "node:test";
+import test from "node:test";
+import { promisify } from "node:util";
 
-import { loadPolicyParser } from "../.github/policy-bootstrap.mjs";
+const execFileAsync = promisify(execFile);
+const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
+const checker = join(repositoryRoot, ".github/ci-policy.mjs");
 
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const { parse } = loadPolicyParser(repositoryRoot);
-const checker = join(repositoryRoot, ".github", "ci-policy.mjs");
-const fixtures = [];
-
-afterEach(() => {
-  while (fixtures.length > 0) {
-    rmSync(fixtures.pop(), { force: true, recursive: true });
-  }
-});
-
-function fixtureRoot() {
-  const root = mkdtempSync(join(tmpdir(), "coffee-chat-policy-"));
-  fixtures.push(root);
-  for (const path of [
-    ".github",
-    "AGENTS.md",
-    "CODEOWNERS",
-    "SECURITY.md",
-    "package-lock.json",
-    "package.json",
-  ]) {
-    cpSync(join(repositoryRoot, path), join(root, path), { recursive: true });
-  }
-  return root;
-}
-
-function source(root, path) {
-  return readFileSync(join(root, path), "utf8");
-}
-
-function replaceOnce(root, path, before, after) {
-  const input = source(root, path);
-  assert.equal(input.includes(before), true, `${path}: missing fixture source`);
-  writeFileSync(join(root, path), input.replace(before, after), "utf8");
-}
-
-function runPolicy(root, { candidateChecker = false, env = {} } = {}) {
-  const checkerPath = candidateChecker
-    ? join(root, ".github", "ci-policy.mjs")
-    : checker;
-  return spawnSync(process.execPath, [checkerPath], {
-    cwd: repositoryRoot,
-    encoding: "utf8",
-    env: { ...process.env, ...env, CI_POLICY_ROOT: root },
-  });
-}
-
-function assertRejected(name, mutate) {
-  test(`policy rejects ${name}`, () => {
-    const root = fixtureRoot();
-    mutate(root);
-    const result = runPolicy(root);
-    assert.notEqual(
-      result.status,
-      0,
-      `${name} unexpectedly passed\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
-    );
-  });
-}
-
-test("repository policy accepts the canonical workflow set", () => {
-  const result = runPolicy(fixtureRoot());
-  assert.equal(
-    result.status,
-    0,
-    `policy failed\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
-  );
-});
-
-test("quality enforces structural policy before root install and audits both dependency trees", () => {
-  const workflow = parse(
-    source(fixtureRoot(), ".github/workflows/quality.yml"),
-  );
-  const steps = workflow.jobs.quality.steps;
-  const indexOf = (name) => steps.findIndex((step) => step.name === name);
-
-  assert.ok(
-    indexOf("Enforce repository policy before delegated scripts") <
-      indexOf("Install locked dependencies without lifecycle scripts"),
-    "root dependencies must not be installed before structural policy passes",
-  );
-  assert.equal(
-    steps[indexOf("Audit authenticated policy parser dependencies")].run,
-    "npm audit --audit-level=moderate --prefix .github/policy-parser",
-  );
-  assert.equal(
-    steps[indexOf("Audit dependencies")].run,
-    "npm audit --audit-level=moderate",
-  );
-});
-
-test("policy authenticates its parser lock before loading candidate code", () => {
-  const root = fixtureRoot();
-  const marker = join(root, "candidate-parser-executed");
-  const parserRoot = join(root, ".github", "policy-parser");
-  mkdirSync(join(parserRoot, "node_modules", "yaml"), { recursive: true });
-  writeFileSync(
-    join(parserRoot, "package.json"),
-    `${JSON.stringify({
-      name: "@openboa-ai/coffee-policy-parser",
-      private: true,
-      version: "1.0.0",
-      dependencies: { yaml: "2.9.0" },
-    })}\n`,
-  );
-  writeFileSync(
-    join(parserRoot, "package-lock.json"),
-    `${JSON.stringify({ lockfileVersion: 3, integrity: "candidate" })}\n`,
-  );
-  for (const packageRoot of [
-    join(parserRoot, "node_modules", "yaml"),
-    join(root, "node_modules", "yaml"),
-  ]) {
-    mkdirSync(packageRoot, { recursive: true });
-    writeFileSync(
-      join(packageRoot, "package.json"),
-      `${JSON.stringify({ name: "yaml", version: "0.0.0", type: "module", exports: "./index.js" })}\n`,
-    );
-    writeFileSync(
-      join(packageRoot, "index.js"),
-      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.COFFEE_POLICY_MARKER, "executed\\n"); export function isAlias() {} export function isMap() {} export function isSeq() {} export function parseDocument() { throw new Error("candidate parser executed"); } export function visit() {}\n`,
-    );
-  }
-
-  const result = runPolicy(root, {
-    candidateChecker: true,
-    env: { COFFEE_POLICY_MARKER: marker },
-  });
-  assert.notEqual(result.status, 0);
-  assert.equal(
-    existsSync(marker),
-    false,
-    "candidate-selected parser code executed before lock authentication",
-  );
-  assert.match(result.stderr, /authenticated before loading/u);
-});
-
-test("policy rejects a competing parser shrinkwrap before loading code", () => {
-  const root = fixtureRoot();
-  writeFileSync(
-    join(root, ".github", "policy-parser", "npm-shrinkwrap.json"),
-    `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`,
-  );
-  const result = runPolicy(root);
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /npm-shrinkwrap\.json.*absent before loading/u);
-});
-
-test("trusted policy never loads the candidate parser installation", () => {
-  const root = fixtureRoot();
-  const marker = join(root, "candidate-parser-executed-by-trusted-policy");
-  const packageRoot = join(
-    root,
-    ".github",
-    "policy-parser",
-    "node_modules",
-    "yaml",
-  );
-  rmSync(packageRoot, { force: true, recursive: true });
-  mkdirSync(packageRoot, { recursive: true });
-  writeFileSync(
-    join(packageRoot, "package.json"),
-    `${JSON.stringify({ name: "yaml", version: "2.9.0", type: "module", exports: "./index.js" })}\n`,
-  );
-  writeFileSync(
-    join(packageRoot, "index.js"),
-    `import { writeFileSync } from "node:fs"; writeFileSync(process.env.COFFEE_POLICY_MARKER, "executed\\n"); throw new Error("candidate parser executed");\n`,
-  );
-
-  const result = runPolicy(root, {
-    env: { COFFEE_POLICY_MARKER: marker },
-  });
-  assert.equal(
-    result.status,
-    0,
-    `trusted policy failed\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
-  );
-  assert.equal(
-    existsSync(marker),
-    false,
-    "trusted policy imported candidate-selected parser code",
-  );
-});
-
-test("policy rejects a root npm shrinkwrap before dependency installation", () => {
-  const root = fixtureRoot();
-  writeFileSync(
-    join(root, "npm-shrinkwrap.json"),
-    `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`,
-  );
-  const result = runPolicy(root);
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /root npm-shrinkwrap\.json must be absent/u);
-});
-
-test("policy rejects root and parser npm configuration before installation", () => {
-  for (const path of [".npmrc", ".github/policy-parser/.npmrc"]) {
-    const root = fixtureRoot();
-    mkdirSync(dirname(join(root, path)), { recursive: true });
-    writeFileSync(join(root, path), "registry=https://attacker.invalid\n");
-    const result = runPolicy(root);
-    assert.notEqual(result.status, 0, path);
-    assert.match(result.stderr, /\.npmrc must be absent/u);
-  }
-});
-
-test("local verification never auto-bootstraps candidate policy code", () => {
-  const packageJson = JSON.parse(source(fixtureRoot(), "package.json"));
-  assert.equal(Object.hasOwn(packageJson.scripts, "policy:install"), false);
-  assert.equal(packageJson.scripts.test, "node --test tests/*.test.mjs");
-  assert.equal(
-    packageJson.scripts.policy,
-    "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
-  );
-  assert.doesNotMatch(JSON.stringify(packageJson.scripts), /policy-bootstrap/u);
-
-  const mergePolicy = JSON.parse(
-    source(fixtureRoot(), ".github/merge-policy.json"),
-  );
-  assert.ok(mergePolicy.protected_paths.includes("/npm-shrinkwrap.json"));
-  assert.ok(mergePolicy.protected_paths.includes("/.npmrc"));
-  assert.match(
-    source(fixtureRoot(), "CODEOWNERS"),
-    /^\/npm-shrinkwrap\.json /mu,
-  );
-  assert.match(source(fixtureRoot(), "CODEOWNERS"), /^\/\.npmrc /mu);
-});
-
-assertRejected(
-  "a dependency lock redirected away from the npm registry",
-  (root) => {
-    replaceOnce(
-      root,
+async function withFixture(mutate, check) {
+  const fixture = await mkdtemp(join(tmpdir(), "coffee-chat-policy-"));
+  try {
+    for (const relativePath of [
+      ".github",
+      "package.json",
       "package-lock.json",
-      "https://registry.npmjs.org/prettier/-/prettier-3.9.6.tgz",
-      "https://attacker.invalid/prettier-3.9.6.tgz",
-    );
-  },
-);
-
-test("canonical author gates admit only maintainers and Dependabot", () => {
-  const quality = source(fixtureRoot(), ".github/workflows/quality.yml");
-  const boundary = source(
-    fixtureRoot(),
-    ".github/workflows/secret-boundary.yml",
-  );
-  const policy = JSON.parse(source(fixtureRoot(), ".github/merge-policy.json"));
-  assert.match(quality, /dependabot\[bot\]/u);
-  assert.match(boundary, /dependabot\[bot\]/u);
-  assert.match(quality, /github\.actor/u);
-  assert.match(quality, /head\.repo\.full_name/u);
-  assert.match(boundary, /github\.actor/u);
-  assert.match(boundary, /head\.repo\.full_name/u);
-  assert.deepEqual(policy.eligible_bot_logins, ["dependabot[bot]"]);
-  assert.equal(policy.merge_queue, false);
-  assert.doesNotMatch(quality, /COLLABORATOR|CONTRIBUTOR/u);
-});
-
-test("maintainer author gate binds actor, PR author, and same-repository head", () => {
-  const workflow = parse(
-    source(fixtureRoot(), ".github/workflows/quality.yml"),
-  );
-  const gate = workflow.jobs.quality.steps[0].run;
-  const run = (overrides) =>
-    spawnSync("bash", ["-euo", "pipefail", "-c", gate], {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        ACTOR: "owner",
-        AUTHOR_ASSOCIATION: "OWNER",
-        BASE_REPOSITORY: "openboa-ai/coffee-chat",
-        HEAD_REPOSITORY: "openboa-ai/coffee-chat",
-        PR_AUTHOR: "owner",
-        ...overrides,
-      },
-    });
-  assert.equal(run({}).status, 0);
-  assert.notEqual(run({ ACTOR: "different-maintainer" }).status, 0);
-  assert.notEqual(run({ HEAD_REPOSITORY: "owner/coffee-chat" }).status, 0);
-});
-
-test("canonical policy covers all executable authority", () => {
-  const policy = JSON.parse(source(fixtureRoot(), ".github/merge-policy.json"));
-  for (const path of [
-    "/contract/**",
-    "/runtime/**",
-    "/scripts/**",
-    "/skills/**",
-  ])
-    assert.ok(policy.protected_paths.includes(path), path);
-});
-
-test("CodeQL transition analyzes candidate data from a trusted-base event", () => {
-  const codeql = parse(source(fixtureRoot(), ".github/workflows/codeql.yml"));
-  assert.deepEqual(Object.keys(codeql.on).sort(), [
-    "pull_request",
-    "pull_request_target",
-  ]);
-  const checkout = codeql.jobs.analyze.steps[0];
-  assert.equal(
-    checkout.with.repository,
-    "${{ github.event.pull_request.head.repo.full_name }}",
-  );
-  assert.equal(checkout.with.ref, "${{ github.event.pull_request.head.sha }}");
-  assert.match(codeql.jobs.analyze.if, /github\.actor/u);
-  assert.doesNotMatch(
-    source(fixtureRoot(), ".github/workflows/codeql.yml"),
-    /npm |node |secrets\./u,
-  );
-  for (const path of [
-    "docs/superpowers/specs/2026-08-13-coffee-repositories-security-lifecycle-design.md",
-    "docs/superpowers/plans/2026-08-13-coffee-chat-security-lifecycle.md",
-  ]) {
-    assert.doesNotMatch(
-      readFileSync(join(repositoryRoot, path), "utf8"),
-      /merge_group/u,
-    );
+      "AGENTS.md",
+      "CODEOWNERS",
+      "SECURITY.md",
+    ]) {
+      await cp(
+        join(repositoryRoot, relativePath),
+        join(fixture, relativePath),
+        {
+          recursive: true,
+        },
+      );
+    }
+    await mutate(fixture);
+    await check(fixture);
+  } finally {
+    await rm(fixture, { force: true, recursive: true });
   }
+}
+
+async function runChecker(root) {
+  try {
+    const result = await execFileAsync(process.execPath, [checker], {
+      env: { ...process.env, CI_POLICY_ROOT: root },
+    });
+    return { output: `${result.stdout}${result.stderr}`, status: 0 };
+  } catch (error) {
+    const failure =
+      /** @type {{code?: number, stderr?: string, stdout?: string}} */ (error);
+    return {
+      output: `${failure.stdout ?? ""}${failure.stderr ?? ""}`,
+      status: failure.code,
+    };
+  }
+}
+
+async function expectRejected(name, mutate) {
+  await test(name, async () => {
+    await withFixture(mutate, async (fixture) => {
+      const result = await runChecker(fixture);
+      assert.notEqual(result.status, 0, result.output);
+    });
+  });
+}
+
+async function replaceOnce(root, relativePath, before, after) {
+  const path = join(root, relativePath);
+  const source = await readFile(path, "utf8");
+  assert.ok(source.includes(before), `${relativePath}: fixture source missing`);
+  await writeFile(path, source.replace(before, after));
+}
+
+async function mutateJson(root, relativePath, mutate) {
+  const path = join(root, relativePath);
+  const value = JSON.parse(await readFile(path, "utf8"));
+  mutate(value);
+  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+test("merge policy binds the trusted aggregate and protected Environment", async () => {
+  const mergePolicy = JSON.parse(
+    await readFile(join(repositoryRoot, ".github/merge-policy.json"), "utf8"),
+  );
+  assert.deepEqual(mergePolicy.required_checks, [
+    {
+      context:
+        "OpenBoa Coffee trusted required / OpenBoa Coffee trusted required",
+      integration_id: 15368,
+    },
+  ]);
+  assert.deepEqual(mergePolicy.sensitive_review, {
+    enforcement: "github_environment",
+    environment: "coffee-security",
+    required_approvals: 1,
+    prevent_self_review: false,
+  });
+  assert.equal(mergePolicy.codeql_enforcement, "trusted_central_aggregate");
 });
 
-assertRejected("duplicate YAML mapping keys", (root) => {
-  const path = ".github/workflows/quality.yml";
-  writeFileSync(
-    join(root, path),
-    `${source(root, path)}\npermissions:\n  contents: write\n`,
-    "utf8",
+test("target repository exposes only the exact trusted wrapper", async () => {
+  assert.deepEqual(
+    (await readdir(join(repositoryRoot, ".github/workflows")))
+      .filter((name) => /\.ya?ml$/u.test(name))
+      .sort(),
+    ["trusted.yml"],
   );
+  const result = await runChecker(repositoryRoot);
+  assert.equal(result.status, 0, result.output);
 });
 
-assertRejected("escaped permission keys", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "permissions: {}",
-    '"permissio\\u006es": write-all',
-  );
-});
-
-assertRejected("aliases that hide write permissions", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "permissions: {}",
-    "x-permissions: &write-permissions\n  contents: write\npermissions: *write-permissions",
-  );
-});
-
-assertRejected("escaped unpinned action keys", (root) => {
-  const action =
-    "uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1";
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    action,
-    '"us\\u0065s": actions/checkout@main',
-  );
-});
-
-assertRejected("flow-style unpinned actions", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "    steps:\n",
-    "    steps:\n      - { uses: actions/cache@main }\n",
-  );
-});
-
-assertRejected("future workflows with write permissions", (root) => {
-  writeFileSync(
-    join(root, ".github/workflows/future.yml"),
-    `name: Future\n\non:\n  pull_request:\n  merge_group:\n\npermissions:\n  contents: write\n\njobs:\n  future:\n    runs-on: ubuntu-24.04\n    timeout-minutes: 5\n    steps:\n      - run: 'true'\n`,
-    "utf8",
-  );
-});
-
-assertRejected("job-level write permission overrides", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "permissions:\n      contents: read",
-    "permissions:\n      contents: read\n      actions: write",
-  );
-});
-
-assertRejected("pull_request_target on candidate workflows", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "  pull_request:\n",
-    "  pull_request_target:\n",
-  );
-});
-
-assertRejected("a removed author eligibility gate", (root) => {
-  const path = ".github/workflows/quality.yml";
-  const input = source(root, path);
-  const start = input.indexOf(
-    "      - name: Verify trusted pull request author\n",
-  );
-  const end = input.indexOf(
-    "      - name: Check out repository without persisted credentials\n",
-    start,
-  );
-  assert.ok(start >= 0 && end > start);
-  writeFileSync(join(root, path), input.slice(0, start) + input.slice(end));
-});
-
-assertRejected("an author gate moved after checkout", (root) => {
-  const path = ".github/workflows/quality.yml";
-  const input = source(root, path);
-  const gateStart = input.indexOf(
-    "      - name: Verify trusted pull request author\n",
-  );
-  const checkoutStart = input.indexOf(
-    "      - name: Check out repository without persisted credentials\n",
-    gateStart,
-  );
-  const setupStart = input.indexOf(
-    "      - name: Install immutable Gitleaks\n",
-    checkoutStart,
-  );
-  assert.ok(
-    gateStart >= 0 && checkoutStart > gateStart && setupStart > checkoutStart,
-  );
-  const gate = input.slice(gateStart, checkoutStart);
-  const checkout = input.slice(checkoutStart, setupStart);
-  writeFileSync(
-    join(root, path),
-    input.slice(0, gateStart) + checkout + gate + input.slice(setupStart),
+await expectRejected("rejects a future yml workflow", async (root) => {
+  await writeFile(
+    join(root, ".github/workflows/untrusted.yml"),
+    "name: untrusted\non: [pull_request]\njobs: {}\n",
   );
 });
 
-assertRejected("a weakened author eligibility gate", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "OWNER|MEMBER)",
-    "OWNER|MEMBER|COLLABORATOR)",
+await expectRejected("rejects a future yaml workflow", async (root) => {
+  await writeFile(
+    join(root, ".github/workflows/untrusted.yaml"),
+    "name: untrusted\non: [pull_request]\njobs: {}\n",
   );
 });
 
-assertRejected("a failure-tolerant author eligibility gate", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Verify trusted pull request author\n",
-    "      - name: Verify trusted pull request author\n        continue-on-error: true\n",
-  );
-});
-
-assertRejected("a removed Dependabot identity gate", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    'test "$PR_AUTHOR" = "dependabot[bot]"',
-    "true",
-  );
-});
-
-assertRejected("a failure-tolerant quality secret scan", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Scan complete history, tree, and raw blobs\n",
-    "      - name: Scan complete history, tree, and raw blobs\n        continue-on-error: true\n",
-  );
-});
-
-assertRejected("a failure-tolerant trusted secret boundary", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/secret-boundary.yml",
-    "      - name: Scan candidate without executing it\n",
-    "      - name: Scan candidate without executing it\n        continue-on-error: true\n",
-  );
-});
-
-assertRejected("a broadened eligible bot policy", (root) => {
-  replaceOnce(
-    root,
-    ".github/merge-policy.json",
-    '"eligible_bot_logins": ["dependabot[bot]"]',
-    '"eligible_bot_logins": ["dependabot[bot]", "renovate[bot]"]',
-  );
-});
-
-assertRejected("persisted checkout credentials", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "persist-credentials: false",
-    "persist-credentials: true",
-  );
-});
-
-assertRejected("an unpinned action", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/codeql.yml",
-    "github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3",
-    "github/codeql-action/init@v3",
-  );
-});
-
-assertRejected("a missing job timeout", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "    timeout-minutes: 30\n",
-    "",
-  );
-});
-
-assertRejected("policy execution removed from its owning job", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Check repository policy\n        run: npm run policy\n",
-    "",
-  );
-});
-
-assertRejected("policy execution moved to the aggregate job", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Check repository policy\n        run: npm run policy\n",
-    "",
-  );
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Interpret required lane state\n",
-    "      - name: Check repository policy\n        run: npm run policy\n      - name: Interpret required lane state\n",
-  );
-});
-
-assertRejected("a weakened package policy command", (root) => {
-  const path = "package.json";
-  const packageJson = JSON.parse(source(root, path));
-  packageJson.scripts.policy = "node .github/ci-policy.mjs";
-  writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
-});
-
-assertRejected("a weakened required package script", (root) => {
-  const path = "package.json";
-  const packageJson = JSON.parse(source(root, path));
-  packageJson.scripts.test = "true";
-  writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
-});
-
-assertRejected("an implicit package lifecycle hook", (root) => {
-  const path = "package.json";
-  const packageJson = JSON.parse(source(root, path));
-  packageJson.scripts.pretest = "node attacker.mjs";
-  writeFileSync(join(root, path), `${JSON.stringify(packageJson, null, 2)}\n`);
-});
-
-assertRejected("a package-only policy entrypoint bypass", (root) => {
-  const packagePath = "package.json";
-  const packageJson = JSON.parse(source(root, packagePath));
-  packageJson.scripts.policy = "true";
-  packageJson.scripts.test = "true";
-  writeFileSync(
-    join(root, packagePath),
-    `${JSON.stringify(packageJson, null, 2)}\n`,
-  );
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n",
-    "",
-  );
-});
-
-assertRejected("policy parser loading before lock authentication", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Authenticate isolated policy parser lock\n        run: node .github/policy-bootstrap.mjs\n",
-    "",
-  );
-});
-
-assertRejected("an install that enables dependency scripts", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "npm ci --ignore-scripts",
-    "npm ci",
-  );
-});
-
-assertRejected("a missing isolated parser dependency audit", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    "      - name: Audit authenticated policy parser dependencies\n        run: npm audit --audit-level=moderate --prefix .github/policy-parser\n",
-    "",
-  );
-});
-
-assertRejected(
-  "root dependency installation before structural policy",
-  (root) => {
-    replaceOnce(
-      root,
-      ".github/workflows/quality.yml",
-      "      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n      - name: Install locked dependencies without lifecycle scripts\n        run: npm ci --ignore-scripts\n",
-      "      - name: Install locked dependencies without lifecycle scripts\n        run: npm ci --ignore-scripts\n      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n",
+await expectRejected(
+  "rejects a wrapper SHA and input mismatch",
+  async (root) => {
+    const path = join(root, ".github/workflows/trusted.yml");
+    const source = await readFile(path, "utf8");
+    await writeFile(
+      path,
+      source.replace(
+        /coffee-trusted-gate\.yml@[0-9a-f]{40}/u,
+        `coffee-trusted-gate.yml@${"0".repeat(40)}`,
+      ),
     );
   },
 );
 
-assertRejected("a missing moderate dependency audit", (root) => {
-  replaceOnce(
+for (const relativePath of [
+  ".npmrc",
+  "npm-shrinkwrap.json",
+  ".github/policy-parser/.npmrc",
+  ".github/policy-parser/npm-shrinkwrap.json",
+]) {
+  await expectRejected(
+    `rejects alternate npm authority ${relativePath}`,
+    async (root) => {
+      const path = join(root, relativePath);
+      await mkdir(join(path, ".."), { recursive: true });
+      await writeFile(path, "{}\n");
+    },
+  );
+}
+
+await expectRejected("rejects a package script mutation", async (root) => {
+  await mutateJson(root, "package.json", (value) => {
+    const scriptName = Object.keys(value.scripts).at(0);
+    assert.ok(scriptName);
+    value.scripts[scriptName] = "true";
+  });
+});
+
+await expectRejected(
+  "rejects a protected-path policy weakening",
+  async (root) => {
+    await mutateJson(root, ".github/merge-policy.json", (value) => {
+      value.protected_paths.pop();
+    });
+  },
+);
+
+await expectRejected("rejects a dependency registry redirect", async (root) => {
+  await replaceOnce(
     root,
-    ".github/workflows/quality.yml",
-    "      - name: Audit dependencies\n        run: npm audit --audit-level=moderate\n",
-    "",
+    "package-lock.json",
+    "https://registry.npmjs.org/",
+    "https://attacker.invalid/",
   );
 });
 
-assertRejected("weakened dependency review thresholds", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/dependency-review.yml",
-    "          fail-on-severity: moderate\n",
-    "          fail-on-severity: critical\n",
-  );
-});
-
-assertRejected("weakened dependency review scopes", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/dependency-review.yml",
-    "          fail-on-scopes: runtime,development,unknown\n",
-    "          fail-on-scopes: runtime\n",
-  );
-});
-
-assertRejected("re-enabled merge-group dependency execution", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/dependency-review.yml",
-    "  pull_request:\n",
-    "  pull_request:\n  merge_group:\n",
-  );
-});
-
-assertRejected("an unconditional required aggregate", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/quality.yml",
-    '        run: test "$QUALITY_RESULT" = success\n',
-    [
-      "        run: |",
-      "          true",
-      "          # success)",
-      "          # skipped)",
-      "          # cancelled)",
-      "",
-    ].join("\n"),
-  );
-});
-
-assertRejected("a changed required-check integration identity", (root) => {
-  replaceOnce(
-    root,
-    ".github/merge-policy.json",
-    '"integration_id": 15368',
-    '"integration_id": 0',
-  );
-});
-
-assertRejected("a removed sensitive external-write path", (root) => {
-  replaceOnce(root, ".github/merge-policy.json", '    "/runtime/**",\n', "");
-});
-
-assertRejected("raw-blob secret scan removal", (root) => {
-  replaceOnce(
-    root,
-    ".github/workflows/secret-boundary.yml",
-    'git -C candidate cat-file blob "$object_id" > "$blob_dir/$object_id"',
-    "true",
-  );
-});
-
-assertRejected("routine semver-major dependency updates", (root) => {
-  replaceOnce(
-    root,
-    ".github/dependabot.yml",
-    "          - version-update:semver-patch\n",
-    "          - version-update:semver-patch\n          - version-update:semver-major\n",
-  );
-});
-
-assertRejected("a removed security-update group", (root) => {
-  const path = ".github/dependabot.yml";
-  const input = source(root, path);
-  const block =
-    '      security:\n        applies-to: security-updates\n        patterns:\n          - "*"\n';
-  assert.equal(input.includes(block), true);
-  writeFileSync(join(root, path), input.replace(block, ""), "utf8");
-});
-
-assertRejected(
-  "combined production and development version updates",
-  (root) => {
-    replaceOnce(
+await expectRejected(
+  "rejects routine major Dependabot updates",
+  async (root) => {
+    await replaceOnce(
       root,
       ".github/dependabot.yml",
-      "        dependency-type: production\n",
-      "",
+      "version-update:semver-minor",
+      "version-update:semver-major",
     );
   },
 );
+
+await expectRejected(
+  "rejects weakened Dependabot security grouping",
+  async (root) => {
+    await replaceOnce(
+      root,
+      ".github/dependabot.yml",
+      "applies-to: security-updates",
+      "applies-to: version-updates",
+    );
+  },
+);
+
+await expectRejected("bounds Dependabot YAML bytes", async (root) => {
+  const path = join(root, ".github/dependabot.yml");
+  await writeFile(
+    path,
+    `${await readFile(path, "utf8")}#${"x".repeat(256 * 1024)}\n`,
+  );
+});
+
+await expectRejected("bounds Dependabot YAML depth", async (root) => {
+  const path = join(root, ".github/dependabot.yml");
+  let nested = "resource_test:\n";
+  for (let depth = 0; depth < 40; depth += 1) {
+    nested += `${"  ".repeat(depth + 1)}level_${depth}:\n`;
+  }
+  nested += `${"  ".repeat(41)}value: bounded\n`;
+  await writeFile(path, `${await readFile(path, "utf8")}${nested}`);
+});
+
+await expectRejected("bounds Dependabot YAML aliases", async (root) => {
+  const path = join(root, ".github/dependabot.yml");
+  const aliases = Array.from({ length: 101 }, () => "*resource_anchor").join(
+    ", ",
+  );
+  await writeFile(
+    path,
+    `${await readFile(path, "utf8")}resource_anchor: &resource_anchor [one, two]\nresource_aliases: [${aliases}]\n`,
+  );
+});
