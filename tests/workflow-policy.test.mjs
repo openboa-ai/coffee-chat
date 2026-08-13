@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import {
   cpSync,
+  existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -11,9 +13,11 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { afterEach, test } from "node:test";
-import { parse } from "yaml";
+
+import { loadPolicyParser } from "../.github/policy-bootstrap.mjs";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const { parse } = loadPolicyParser(repositoryRoot);
 const checker = join(repositoryRoot, ".github", "ci-policy.mjs");
 const fixtures = [];
 
@@ -31,6 +35,7 @@ function fixtureRoot() {
     "AGENTS.md",
     "CODEOWNERS",
     "SECURITY.md",
+    "package-lock.json",
     "package.json",
   ]) {
     cpSync(join(repositoryRoot, path), join(root, path), { recursive: true });
@@ -48,11 +53,14 @@ function replaceOnce(root, path, before, after) {
   writeFileSync(join(root, path), input.replace(before, after), "utf8");
 }
 
-function runPolicy(root) {
-  return spawnSync(process.execPath, [checker], {
+function runPolicy(root, { candidateChecker = false, env = {} } = {}) {
+  const checkerPath = candidateChecker
+    ? join(root, ".github", "ci-policy.mjs")
+    : checker;
+  return spawnSync(process.execPath, [checkerPath], {
     cwd: repositoryRoot,
     encoding: "utf8",
-    env: { ...process.env, CI_POLICY_ROOT: root },
+    env: { ...process.env, ...env, CI_POLICY_ROOT: root },
   });
 }
 
@@ -77,6 +85,97 @@ test("repository policy accepts the canonical workflow set", () => {
     `policy failed\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
   );
 });
+
+test("quality enforces structural policy before root install and audits both dependency trees", () => {
+  const workflow = parse(
+    source(fixtureRoot(), ".github/workflows/quality.yml"),
+  );
+  const steps = workflow.jobs.quality.steps;
+  const indexOf = (name) => steps.findIndex((step) => step.name === name);
+
+  assert.ok(
+    indexOf("Enforce repository policy before delegated scripts") <
+      indexOf("Install locked dependencies without lifecycle scripts"),
+    "root dependencies must not be installed before structural policy passes",
+  );
+  assert.equal(
+    steps[indexOf("Audit authenticated policy parser dependencies")].run,
+    "npm audit --audit-level=moderate --prefix .github/policy-parser",
+  );
+  assert.equal(
+    steps[indexOf("Audit dependencies")].run,
+    "npm audit --audit-level=moderate",
+  );
+});
+
+test("policy authenticates its parser lock before loading candidate code", () => {
+  const root = fixtureRoot();
+  const marker = join(root, "candidate-parser-executed");
+  const parserRoot = join(root, ".github", "policy-parser");
+  mkdirSync(join(parserRoot, "node_modules", "yaml"), { recursive: true });
+  writeFileSync(
+    join(parserRoot, "package.json"),
+    `${JSON.stringify({
+      name: "@openboa-ai/coffee-policy-parser",
+      private: true,
+      version: "1.0.0",
+      dependencies: { yaml: "2.9.0" },
+    })}\n`,
+  );
+  writeFileSync(
+    join(parserRoot, "package-lock.json"),
+    `${JSON.stringify({ lockfileVersion: 3, integrity: "candidate" })}\n`,
+  );
+  for (const packageRoot of [
+    join(parserRoot, "node_modules", "yaml"),
+    join(root, "node_modules", "yaml"),
+  ]) {
+    mkdirSync(packageRoot, { recursive: true });
+    writeFileSync(
+      join(packageRoot, "package.json"),
+      `${JSON.stringify({ name: "yaml", version: "0.0.0", type: "module", exports: "./index.js" })}\n`,
+    );
+    writeFileSync(
+      join(packageRoot, "index.js"),
+      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.COFFEE_POLICY_MARKER, "executed\\n"); export function isAlias() {} export function isMap() {} export function isSeq() {} export function parseDocument() { throw new Error("candidate parser executed"); } export function visit() {}\n`,
+    );
+  }
+
+  const result = runPolicy(root, {
+    candidateChecker: true,
+    env: { COFFEE_POLICY_MARKER: marker },
+  });
+  assert.notEqual(result.status, 0);
+  assert.equal(
+    existsSync(marker),
+    false,
+    "candidate-selected parser code executed before lock authentication",
+  );
+  assert.match(result.stderr, /authenticated before loading/u);
+});
+
+test("policy rejects a competing parser shrinkwrap before loading code", () => {
+  const root = fixtureRoot();
+  writeFileSync(
+    join(root, ".github", "policy-parser", "npm-shrinkwrap.json"),
+    `${JSON.stringify({ lockfileVersion: 3, packages: {} })}\n`,
+  );
+  const result = runPolicy(root);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /npm-shrinkwrap\.json.*absent before loading/u);
+});
+
+assertRejected(
+  "a dependency lock redirected away from the npm registry",
+  (root) => {
+    replaceOnce(
+      root,
+      "package-lock.json",
+      "https://registry.npmjs.org/prettier/-/prettier-3.9.6.tgz",
+      "https://attacker.invalid/prettier-3.9.6.tgz",
+    );
+  },
+);
 
 test("canonical author gates admit only maintainers and Dependabot", () => {
   const quality = source(fixtureRoot(), ".github/workflows/quality.yml");
@@ -401,6 +500,15 @@ assertRejected("a package-only policy entrypoint bypass", (root) => {
   );
 });
 
+assertRejected("policy parser loading before lock authentication", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    "      - name: Authenticate isolated policy parser lock\n        run: node .github/policy-bootstrap.mjs\n",
+    "",
+  );
+});
+
 assertRejected("an install that enables dependency scripts", (root) => {
   replaceOnce(
     root,
@@ -409,6 +517,27 @@ assertRejected("an install that enables dependency scripts", (root) => {
     "npm ci",
   );
 });
+
+assertRejected("a missing isolated parser dependency audit", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    "      - name: Audit authenticated policy parser dependencies\n        run: npm audit --audit-level=moderate --prefix .github/policy-parser\n",
+    "",
+  );
+});
+
+assertRejected(
+  "root dependency installation before structural policy",
+  (root) => {
+    replaceOnce(
+      root,
+      ".github/workflows/quality.yml",
+      "      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n      - name: Install locked dependencies without lifecycle scripts\n        run: npm ci --ignore-scripts\n",
+      "      - name: Install locked dependencies without lifecycle scripts\n        run: npm ci --ignore-scripts\n      - name: Enforce repository policy before delegated scripts\n        run: node .github/ci-policy.mjs\n",
+    );
+  },
+);
 
 assertRejected("a missing moderate dependency audit", (root) => {
   replaceOnce(

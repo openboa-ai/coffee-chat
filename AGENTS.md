@@ -65,3 +65,7 @@ perform its documented user-scoped GitHub and Registry writes.
   data, including worktree, history, and raw blobs, before any candidate code is
   executed. Keep `pull_request_target` isolated from Node/npm execution and
   secrets.
+- Authenticate the exact isolated parser manifest and lock with built-in Node.js
+  code before installing or loading YAML, and audit that isolated dependency
+  tree independently. Structural policy must pass before root candidate
+  dependencies are installed or delegated package scripts run.
