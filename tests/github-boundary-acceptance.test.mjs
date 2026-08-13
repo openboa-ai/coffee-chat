@@ -8,12 +8,18 @@ import { createInitPreview, executeInit } from "../runtime/init.mjs";
 const SOURCE = "openboa-ai/coffee-chat-roastery";
 const TARGET = "example/coffee-chat";
 const OWNER_CODEOWNERS = `/.github/ @example
+/AGENTS.md @example
 /CODEOWNERS @example
 /SECURITY.md @example
+/src/ @example
+/dist/ @example
+/scripts/ @example
 /runtime/ @example
 /contract/ @example
 /package.json @example
 /package-lock.json @example
+/tsconfig.json @example
+/tsconfig.build.json @example
 `;
 
 function encoded(content) {
@@ -275,6 +281,120 @@ test("protection rejects a ruleset without owner review or trusted boundary cont
   );
 });
 
+test("protection rejects each missing trusted boundary context", async () => {
+  for (const missingContext of [
+    "Secret boundary",
+    "Roastery CodeQL JavaScript-TypeScript",
+  ]) {
+    const preview = createInitPreview({
+      owner: "example",
+      attribution: "Example Owner",
+    });
+    const transport = {
+      async enableAutoMerge() {
+        throw new Error(
+          "Auto-merge must not run while protection is configured",
+        );
+      },
+      async api({ method, path, body }) {
+        if (
+          method === "GET" &&
+          path === `repos/${TARGET}/git/commits/${preview.source.commit}`
+        ) {
+          return { tree: { sha: preview.source.tree } };
+        }
+        if (method === "POST" && path === `repos/${TARGET}/git/blobs`) {
+          return { sha: "codeowners-blob" };
+        }
+        if (method === "POST" && path === `repos/${TARGET}/git/trees`) {
+          return { sha: "codeowners-tree" };
+        }
+        if (method === "POST" && path === `repos/${TARGET}/git/commits`) {
+          return { sha: "codeowners-commit" };
+        }
+        if (
+          method === "PATCH" &&
+          path === `repos/${TARGET}/git/refs/heads/main`
+        ) {
+          return { object: { sha: "codeowners-commit" } };
+        }
+        if (method === "GET" && path === `repos/${TARGET}/git/ref/heads/main`) {
+          return { object: { sha: "codeowners-commit" } };
+        }
+        if (
+          method === "GET" &&
+          path === `repos/${TARGET}/contents/CODEOWNERS?ref=codeowners-commit`
+        ) {
+          return encoded(OWNER_CODEOWNERS);
+        }
+        if (method === "PATCH" && path === `repos/${TARGET}`) return body;
+        if (
+          method === "PUT" &&
+          path === `repos/${TARGET}/actions/permissions`
+        ) {
+          return body;
+        }
+        if (
+          method === "GET" &&
+          path === `repos/${TARGET}/actions/permissions`
+        ) {
+          return {
+            enabled: true,
+            allowed_actions: "selected",
+            sha_pinning_required: true,
+          };
+        }
+        if (
+          method === "PUT" &&
+          path === `repos/${TARGET}/actions/permissions/workflow`
+        ) {
+          return body;
+        }
+        if (
+          method === "GET" &&
+          path === `repos/${TARGET}/actions/permissions/workflow`
+        ) {
+          return {
+            default_workflow_permissions: "read",
+            can_approve_pull_request_reviews: false,
+          };
+        }
+        if (method === "POST" && path === `repos/${TARGET}/rulesets`) {
+          return {
+            id: 1,
+            ...body,
+            rules: body.rules.map((rule) =>
+              rule.type === "required_status_checks"
+                ? {
+                    ...rule,
+                    parameters: {
+                      ...rule.parameters,
+                      required_status_checks:
+                        rule.parameters.required_status_checks.filter(
+                          ({ context }) => context !== missingContext,
+                        ),
+                    },
+                  }
+                : rule,
+            ),
+          };
+        }
+        throw new Error(`Unexpected request: ${method} ${path}`);
+      },
+    };
+    const github = createGitHubBoundary({ transport });
+
+    await assert.rejects(
+      () => github.protect(preview),
+      (error) =>
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "protection_mismatch",
+    );
+  }
+});
+
 test("the GitHub boundary forks only the frozen seed and verifies protected public main", async () => {
   const preview = createInitPreview({
     owner: "example",
@@ -282,7 +402,8 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   });
   const writes = [];
   const blobs = new Map();
-  const files = new Map();
+  const bootstrapFiles = new Map();
+  const proposalFiles = new Map();
   let forked = false;
   let protectedMain = false;
   let activeRuleset;
@@ -364,19 +485,39 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (method === "POST" && path === `repos/${TARGET}/git/trees`) {
         writes.push("tree");
-        assert.equal(body.base_tree, preview.source.tree);
-        for (const entry of body.tree)
-          files.set(entry.path, blobs.get(entry.sha));
+        const isBootstrap = body.tree.some(
+          (entry) => entry.path === "CODEOWNERS",
+        );
+        if (isBootstrap) {
+          assert.equal(body.base_tree, preview.source.tree);
+          assert.deepEqual(
+            body.tree.map(({ path }) => path),
+            ["CODEOWNERS"],
+          );
+          bootstrapFiles.set("CODEOWNERS", blobs.get(body.tree[0].sha));
+          return { sha: "tree-bootstrap" };
+        }
+        assert.equal(body.base_tree, "tree-bootstrap");
+        assert.deepEqual(body.tree.map(({ path }) => path).sort(), [
+          "roastery/CONTENT_LICENSE.md",
+          "roastery/roastery.json",
+        ]);
+        for (const [path, content] of bootstrapFiles) {
+          proposalFiles.set(path, content);
+        }
+        for (const entry of body.tree) {
+          proposalFiles.set(entry.path, blobs.get(entry.sha));
+        }
         return { sha: "tree-initialized" };
       }
       if (method === "POST" && path === `repos/${TARGET}/git/commits`) {
         writes.push("commit");
         if (body.message === "Protect Coffee Chat owner controls") {
           assert.deepEqual(body.parents, [preview.source.commit]);
-          assert.equal(body.tree, "tree-initialized");
+          assert.equal(body.tree, "tree-bootstrap");
           return { sha: codeownersCommit };
         }
-        assert.deepEqual(body.parents, [preview.source.commit]);
+        assert.deepEqual(body.parents, [codeownersCommit]);
         assert.equal(body.tree, "tree-initialized");
         return { sha: head };
       }
@@ -395,6 +536,12 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         path === `repos/${TARGET}/contents/CODEOWNERS?ref=${codeownersCommit}`
       ) {
         return encoded(OWNER_CODEOWNERS);
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/git/commits/${codeownersCommit}`
+      ) {
+        return { tree: { sha: "tree-bootstrap" } };
       }
       if (method === "PUT" && path === `repos/${TARGET}/actions/permissions`) {
         writes.push("actions");
@@ -479,6 +626,16 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         assert.equal(body.base, "main");
         assert.match(body.head, /^init\//u);
         assert.match(body.body, new RegExp(preview.previewDigest, "u"));
+        assert.deepEqual(
+          [...proposalFiles.keys()].filter(
+            (path) => bootstrapFiles.get(path) !== proposalFiles.get(path),
+          ),
+          ["roastery/CONTENT_LICENSE.md", "roastery/roastery.json"],
+        );
+        assert.equal(
+          proposalFiles.get("CODEOWNERS"),
+          bootstrapFiles.get("CODEOWNERS"),
+        );
         return { number: 17, head: { sha: head } };
       }
       if (method === "GET" && path === `repos/${TARGET}/pulls/17`) {
@@ -516,7 +673,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         if (name === "roastery/index.json") {
           return encoded('{\n  "beans": []\n}\n');
         }
-        const content = files.get(name);
+        const content = proposalFiles.get(name);
         if (content === undefined && allowNotFound) return undefined;
         return encoded(content);
       }
@@ -593,8 +750,35 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   ]);
   assert.equal(
     createHash("sha256")
-      .update(files.get("roastery/CONTENT_LICENSE.md"))
+      .update(proposalFiles.get("roastery/CONTENT_LICENSE.md"))
       .digest("hex"),
     preview.declaration.digest.slice("sha256:".length),
   );
+  assert.deepEqual(
+    OWNER_CODEOWNERS.trim()
+      .split("\n")
+      .map((line) => line.split(" ")[0]),
+    [
+      "/.github/",
+      "/AGENTS.md",
+      "/CODEOWNERS",
+      "/SECURITY.md",
+      "/src/",
+      "/dist/",
+      "/scripts/",
+      "/runtime/",
+      "/contract/",
+      "/package.json",
+      "/package-lock.json",
+      "/tsconfig.json",
+      "/tsconfig.build.json",
+    ],
+  );
+  for (const normalRoasteryPath of [
+    "/roastery/CONTENT_LICENSE.md",
+    "/roastery/roastery.json",
+    "/roastery/beans/**",
+  ]) {
+    assert.equal(OWNER_CODEOWNERS.includes(normalRoasteryPath), false);
+  }
 });
