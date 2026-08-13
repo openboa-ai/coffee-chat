@@ -214,72 +214,6 @@ function protectedWorkflowPermissions(value) {
   );
 }
 
-async function bootstrapOwnerCodeowners({ preview, target, transport }) {
-  const content = ownerCodeowners(preview.target.owner);
-  const base = await transport.api({
-    method: "GET",
-    path: `repos/${target}/git/commits/${preview.source.commit}`,
-  });
-  if (base?.tree?.sha !== preview.source.tree) {
-    throw new GitHubBoundaryError("seed_tree_mismatch");
-  }
-  const blob = await transport.api({
-    method: "POST",
-    path: `repos/${target}/git/blobs`,
-    body: { content, encoding: "utf-8" },
-  });
-  if (typeof blob?.sha !== "string") {
-    throw new GitHubBoundaryError("codeowners_blob_creation_failed");
-  }
-  const tree = await transport.api({
-    method: "POST",
-    path: `repos/${target}/git/trees`,
-    body: {
-      base_tree: preview.source.tree,
-      tree: [
-        { path: "CODEOWNERS", mode: "100644", type: "blob", sha: blob.sha },
-      ],
-    },
-  });
-  if (typeof tree?.sha !== "string") {
-    throw new GitHubBoundaryError("codeowners_tree_creation_failed");
-  }
-  const commit = await transport.api({
-    method: "POST",
-    path: `repos/${target}/git/commits`,
-    body: {
-      message: "Protect Coffee Chat owner controls",
-      tree: tree.sha,
-      parents: [preview.source.commit],
-    },
-  });
-  if (typeof commit?.sha !== "string") {
-    throw new GitHubBoundaryError("codeowners_commit_creation_failed");
-  }
-  await transport.api({
-    method: "PATCH",
-    path: `repos/${target}/git/refs/heads/${preview.target.defaultBranch}`,
-    body: { sha: commit.sha, force: false },
-  });
-  const [reference, codeowners] = await Promise.all([
-    transport.api({
-      method: "GET",
-      path: `repos/${target}/git/ref/heads/${preview.target.defaultBranch}`,
-    }),
-    transport.api({
-      method: "GET",
-      path: `repos/${target}/contents/CODEOWNERS?ref=${encodeURIComponent(commit.sha)}`,
-    }),
-  ]);
-  if (
-    reference?.object?.sha !== commit.sha ||
-    decodeFile(codeowners, "invalid_codeowners") !== content
-  ) {
-    throw new GitHubBoundaryError("codeowners_bootstrap_mismatch");
-  }
-  return { commit: commit.sha, tree: tree.sha, content };
-}
-
 async function poll({ attempts, pause, read, accept, code }) {
   let attempt = 0;
   while (attempts === undefined || attempt < attempts) {
@@ -324,7 +258,7 @@ export function createGitHubBoundary({
   attempts = 90,
   mergeAttempts = undefined,
 } = {}) {
-  const protectedBootstraps = new Map();
+  const protectedBases = new Map();
 
   return {
     async preflight(preview) {
@@ -470,11 +404,6 @@ export function createGitHubBoundary({
           delete_branch_on_merge: true,
         },
       });
-      const bootstrap = await bootstrapOwnerCodeowners({
-        preview,
-        target,
-        transport,
-      });
       await transport.api({
         method: "PUT",
         path: `repos/${target}/actions/permissions`,
@@ -530,9 +459,9 @@ export function createGitHubBoundary({
       ) {
         throw new GitHubBoundaryError("protection_mismatch");
       }
-      protectedBootstraps.set(target, {
-        commit: bootstrap.commit,
-        tree: bootstrap.tree,
+      protectedBases.set(target, {
+        commit: preview.source.commit,
+        tree: preview.source.tree,
       });
       return {
         status: "protected",
@@ -544,30 +473,34 @@ export function createGitHubBoundary({
     async propose({ preview, acceptance, files }) {
       exactFiles(files);
       const target = repositorySlug(preview.target.repository);
-      const bootstrap = protectedBootstraps.get(target);
-      if (!bootstrap) {
+      const protectedBase = protectedBases.get(target);
+      if (!protectedBase) {
         throw new GitHubBoundaryError("protected_base_mismatch");
       }
       const reference = await transport.api({
         method: "GET",
         path: `repos/${target}/git/ref/heads/${preview.target.defaultBranch}`,
       });
-      if (reference?.object?.sha !== bootstrap.commit) {
+      if (reference?.object?.sha !== protectedBase.commit) {
         throw new GitHubBoundaryError("protected_base_mismatch");
       }
       const base = await transport.api({
         method: "GET",
-        path: `repos/${target}/git/commits/${bootstrap.commit}`,
+        path: `repos/${target}/git/commits/${protectedBase.commit}`,
       });
-      if (base?.tree?.sha !== bootstrap.tree) {
+      if (base?.tree?.sha !== protectedBase.tree) {
         throw new GitHubBoundaryError("protected_base_mismatch");
       }
       const entries = [];
-      for (const path of Object.keys(files).sort()) {
+      const proposedFiles = {
+        CODEOWNERS: ownerCodeowners(preview.target.owner),
+        ...files,
+      };
+      for (const path of Object.keys(proposedFiles).sort()) {
         const blob = await transport.api({
           method: "POST",
           path: `repos/${target}/git/blobs`,
-          body: { content: files[path], encoding: "utf-8" },
+          body: { content: proposedFiles[path], encoding: "utf-8" },
         });
         if (typeof blob?.sha !== "string") {
           throw new GitHubBoundaryError("blob_creation_failed");
@@ -577,7 +510,7 @@ export function createGitHubBoundary({
       const tree = await transport.api({
         method: "POST",
         path: `repos/${target}/git/trees`,
-        body: { base_tree: bootstrap.tree, tree: entries },
+        body: { base_tree: protectedBase.tree, tree: entries },
       });
       const commit = await transport.api({
         method: "POST",
@@ -585,7 +518,7 @@ export function createGitHubBoundary({
         body: {
           message: `Initialize Coffee Chat Roastery\n\nPreview: ${preview.previewDigest}`,
           tree: tree.sha,
-          parents: [bootstrap.commit],
+          parents: [protectedBase.commit],
         },
       });
       if (typeof commit?.sha !== "string") {

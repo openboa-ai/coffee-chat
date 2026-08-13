@@ -3,14 +3,36 @@
   "required_approvals": 0,
   "required_code_owner_reviews": 0,
   "required_last_push_approvals": 0,
+  "merge_queue": false,
+  "required_events": ["pull_request"],
   "eligible_author_associations": ["OWNER", "MEMBER"],
   "eligible_bot_logins": ["dependabot[bot]"],
   "custom_merge_controller": false,
   "required_checks": [
-    "Coffee Chat required",
-    "Coffee Chat dependency review",
-    "Secret boundary",
-    "Coffee Chat CodeQL JavaScript-TypeScript"
+    { "context": "Coffee Chat required", "integration_id": 15368 },
+    { "context": "Coffee Chat dependency review", "integration_id": 15368 },
+    { "context": "Secret boundary", "integration_id": 15368 },
+    {
+      "context": "Coffee Chat CodeQL JavaScript-TypeScript",
+      "integration_id": 15368
+    }
+  ],
+  "protected_paths": [
+    "/.github/**",
+    "/.githooks/**",
+    "/.gitleaksignore",
+    "/.gitleaks.toml",
+    "/.agents/**",
+    "/.codex-plugin/**",
+    "/AGENTS.md",
+    "/CODEOWNERS",
+    "/SECURITY.md",
+    "/contract/roastery-authority.json",
+    "/runtime/github.mjs",
+    "/runtime/init-cli.mjs",
+    "/runtime/init.mjs",
+    "/runtime/registry.mjs",
+    "/skills/coffee-init/**"
   ],
   "codeql_enforcement": "native_code_scanning",
   "sensitive_review": {

@@ -2,14 +2,12 @@ name: Coffee Chat quality
 
 on:
   pull_request:
-  merge_group:
 
 permissions: {}
 
 concurrency:
   group:
-    ${{ github.workflow }}-${{ github.event.pull_request.number ||
-    github.event.merge_group.head_sha || github.ref }}
+    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,43 +19,32 @@ jobs:
       contents: read
     steps:
       - name: Verify trusted pull request author
-        if: github.event_name == 'pull_request'
         env:
+          ACTOR: ${{ github.actor }}
           AUTHOR_ASSOCIATION:
             ${{ github.event.pull_request.author_association }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           case "$AUTHOR_ASSOCIATION" in
-            OWNER|MEMBER)
-              printf '%s\n' 'author=trusted_maintainer'
-              ;;
-            *)
-              if test "$PR_AUTHOR" = "dependabot[bot]"; then
-                printf '%s\n' 'author=trusted_dependabot'
-                exit 0
-              fi
-              printf '%s\n' 'author=untrusted' >&2
-              exit 1
-              ;;
+            OWNER|MEMBER) exit 0 ;;
           esac
+          test "$ACTOR" = "dependabot[bot]"
+          test "$PR_AUTHOR" = "dependabot[bot]"
+          test "$HEAD_REPOSITORY" = "$BASE_REPOSITORY"
       - name: Check out repository without persisted credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref:
-            ${{ github.event.pull_request.head.sha ||
-            github.event.merge_group.head_sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install immutable Gitleaks
         run: .github/scripts/install-gitleaks.sh
       - name: Scan complete history, tree, and raw blobs
         env:
-          BASE_SHA:
-            ${{ github.event.pull_request.base.sha ||
-            github.event.merge_group.base_sha || '' }}
-          HEAD_SHA:
-            ${{ github.event.pull_request.head.sha ||
-            github.event.merge_group.head_sha || github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -o pipefail
           test ! -e .gitleaks.toml
@@ -120,25 +107,4 @@ jobs:
       - name: Interpret required lane state
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
-        run: |
-          case "$QUALITY_RESULT" in
-            success)
-              printf '%s\n' 'quality=succeeded'
-              ;;
-            failure)
-              printf '%s\n' 'quality=failed' >&2
-              exit 1
-              ;;
-            skipped)
-              printf '%s\n' 'quality=skipped' >&2
-              exit 1
-              ;;
-            cancelled)
-              printf '%s\n' 'quality=unavailable' >&2
-              exit 1
-              ;;
-            *)
-              printf '%s\n' 'quality=invalid' >&2
-              exit 1
-              ;;
-          esac
+        run: test "$QUALITY_RESULT" = success

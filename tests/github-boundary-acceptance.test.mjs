@@ -74,6 +74,7 @@ test("protection rejects an incomplete selected-actions allowlist", async () => 
     owner: "example",
     attribution: "Example Owner",
   });
+  const defaultBranchWrites = [];
   const transport = {
     async enableAutoMerge() {
       throw new Error("Auto-merge must not run while protection is configured");
@@ -98,6 +99,7 @@ test("protection rejects an incomplete selected-actions allowlist", async () => 
         method === "PATCH" &&
         path === `repos/${TARGET}/git/refs/heads/main`
       ) {
+        defaultBranchWrites.push(body);
         return { object: { sha: "codeowners-commit" } };
       }
       if (method === "GET" && path === `repos/${TARGET}/git/ref/heads/main`) {
@@ -167,6 +169,7 @@ test("protection rejects an incomplete selected-actions allowlist", async () => 
       "code" in error &&
       error.code === "protection_mismatch",
   );
+  assert.deepEqual(defaultBranchWrites, []);
 });
 
 test("protection rejects a ruleset without owner review or trusted boundary controls", async () => {
@@ -455,7 +458,6 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   });
   const writes = [];
   const blobs = new Map();
-  const bootstrapFiles = new Map();
   const proposalFiles = new Map();
   let forked = false;
   let protectedMain = false;
@@ -465,7 +467,6 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   let blobSequence = 0;
   const head = "c".repeat(40);
   const mergeCommit = "d".repeat(40);
-  const codeownersCommit = "f".repeat(40);
   let forkHead = "e".repeat(40);
 
   const transport = {
@@ -538,26 +539,12 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (method === "POST" && path === `repos/${TARGET}/git/trees`) {
         writes.push("tree");
-        const isBootstrap = body.tree.some(
-          (entry) => entry.path === "CODEOWNERS",
-        );
-        if (isBootstrap) {
-          assert.equal(body.base_tree, preview.source.tree);
-          assert.deepEqual(
-            body.tree.map(({ path }) => path),
-            ["CODEOWNERS"],
-          );
-          bootstrapFiles.set("CODEOWNERS", blobs.get(body.tree[0].sha));
-          return { sha: "tree-bootstrap" };
-        }
-        assert.equal(body.base_tree, "tree-bootstrap");
+        assert.equal(body.base_tree, preview.source.tree);
         assert.deepEqual(body.tree.map(({ path }) => path).sort(), [
+          "CODEOWNERS",
           "roastery/CONTENT_LICENSE.md",
           "roastery/roastery.json",
         ]);
-        for (const [path, content] of bootstrapFiles) {
-          proposalFiles.set(path, content);
-        }
         for (const entry of body.tree) {
           proposalFiles.set(entry.path, blobs.get(entry.sha));
         }
@@ -565,36 +552,9 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (method === "POST" && path === `repos/${TARGET}/git/commits`) {
         writes.push("commit");
-        if (body.message === "Protect Coffee Chat owner controls") {
-          assert.deepEqual(body.parents, [preview.source.commit]);
-          assert.equal(body.tree, "tree-bootstrap");
-          return { sha: codeownersCommit };
-        }
-        assert.deepEqual(body.parents, [codeownersCommit]);
+        assert.deepEqual(body.parents, [preview.source.commit]);
         assert.equal(body.tree, "tree-initialized");
         return { sha: head };
-      }
-      if (
-        method === "PATCH" &&
-        path === `repos/${TARGET}/git/refs/heads/main` &&
-        body.sha === codeownersCommit
-      ) {
-        writes.push("codeowners-bootstrap");
-        assert.deepEqual(body, { sha: codeownersCommit, force: false });
-        forkHead = codeownersCommit;
-        return { object: { sha: forkHead } };
-      }
-      if (
-        method === "GET" &&
-        path === `repos/${TARGET}/contents/CODEOWNERS?ref=${codeownersCommit}`
-      ) {
-        return encoded(OWNER_CODEOWNERS);
-      }
-      if (
-        method === "GET" &&
-        path === `repos/${TARGET}/git/commits/${codeownersCommit}`
-      ) {
-        return { tree: { sha: "tree-bootstrap" } };
       }
       if (method === "PUT" && path === `repos/${TARGET}/actions/permissions`) {
         writes.push("actions");
@@ -701,16 +661,12 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         assert.equal(body.base, "main");
         assert.match(body.head, /^init\//u);
         assert.match(body.body, new RegExp(preview.previewDigest, "u"));
-        assert.deepEqual(
-          [...proposalFiles.keys()].filter(
-            (path) => bootstrapFiles.get(path) !== proposalFiles.get(path),
-          ),
-          ["roastery/CONTENT_LICENSE.md", "roastery/roastery.json"],
-        );
-        assert.equal(
-          proposalFiles.get("CODEOWNERS"),
-          bootstrapFiles.get("CODEOWNERS"),
-        );
+        assert.deepEqual([...proposalFiles.keys()].sort(), [
+          "CODEOWNERS",
+          "roastery/CONTENT_LICENSE.md",
+          "roastery/roastery.json",
+        ]);
+        assert.equal(proposalFiles.get("CODEOWNERS"), OWNER_CODEOWNERS);
         return { number: 17, head: { sha: head } };
       }
       if (method === "GET" && path === `repos/${TARGET}/pulls/17`) {
@@ -807,14 +763,11 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
     "fork",
     "anchor-seed",
     "repository-settings",
-    "blob",
-    "tree",
-    "commit",
-    "codeowners-bootstrap",
     "actions",
     "selected-actions",
     "workflow-permissions",
     "ruleset",
+    "blob",
     "blob",
     "blob",
     "tree",

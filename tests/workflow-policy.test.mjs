@@ -86,7 +86,12 @@ test("canonical author gates admit only maintainers and Dependabot", () => {
   const policy = JSON.parse(source(fixtureRoot(), ".github/merge-policy.json"));
   assert.match(quality, /dependabot\[bot\]/u);
   assert.match(boundary, /dependabot\[bot\]/u);
+  assert.match(quality, /github\.actor/u);
+  assert.match(quality, /head\.repo\.full_name/u);
+  assert.match(boundary, /github\.actor/u);
+  assert.match(boundary, /head\.repo\.full_name/u);
   assert.deepEqual(policy.eligible_bot_logins, ["dependabot[bot]"]);
+  assert.equal(policy.merge_queue, false);
   assert.doesNotMatch(quality, /COLLABORATOR|CONTRIBUTOR/u);
 });
 
@@ -211,12 +216,39 @@ assertRejected("a weakened author eligibility gate", (root) => {
   );
 });
 
+assertRejected("a failure-tolerant author eligibility gate", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    "      - name: Verify trusted pull request author\n",
+    "      - name: Verify trusted pull request author\n        continue-on-error: true\n",
+  );
+});
+
 assertRejected("a removed Dependabot identity gate", (root) => {
   replaceOnce(
     root,
     ".github/workflows/quality.yml",
-    'if test "$PR_AUTHOR" = "dependabot[bot]"; then',
-    "if true; then",
+    'test "$PR_AUTHOR" = "dependabot[bot]"',
+    "true",
+  );
+});
+
+assertRejected("a failure-tolerant quality secret scan", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    "      - name: Scan complete history, tree, and raw blobs\n",
+    "      - name: Scan complete history, tree, and raw blobs\n        continue-on-error: true\n",
+  );
+});
+
+assertRejected("a failure-tolerant trusted secret boundary", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/secret-boundary.yml",
+    "      - name: Scan candidate without executing it\n",
+    "      - name: Scan candidate without executing it\n        continue-on-error: true\n",
   );
 });
 
@@ -323,12 +355,46 @@ assertRejected("weakened dependency review scopes", (root) => {
   );
 });
 
-assertRejected("inexact merge-group dependency revisions", (root) => {
+assertRejected("re-enabled merge-group dependency execution", (root) => {
   replaceOnce(
     root,
     ".github/workflows/dependency-review.yml",
-    "${{ github.event.merge_group.base_sha }}",
-    "${{ github.sha }}",
+    "  pull_request:\n",
+    "  pull_request:\n  merge_group:\n",
+  );
+});
+
+assertRejected("an unconditional required aggregate", (root) => {
+  replaceOnce(
+    root,
+    ".github/workflows/quality.yml",
+    '        run: test "$QUALITY_RESULT" = success\n',
+    [
+      "        run: |",
+      "          true",
+      "          # success)",
+      "          # skipped)",
+      "          # cancelled)",
+      "",
+    ].join("\n"),
+  );
+});
+
+assertRejected("a changed required-check integration identity", (root) => {
+  replaceOnce(
+    root,
+    ".github/merge-policy.json",
+    '"integration_id": 15368',
+    '"integration_id": 0',
+  );
+});
+
+assertRejected("a removed sensitive external-write path", (root) => {
+  replaceOnce(
+    root,
+    ".github/merge-policy.json",
+    '    "/runtime/github.mjs",\n',
+    "",
   );
 });
 

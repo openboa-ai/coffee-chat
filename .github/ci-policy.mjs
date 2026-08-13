@@ -76,25 +76,15 @@ function stepIndex(job, name) {
 }
 
 function requireCommand(job, name, command) {
-  assert.equal(stepNamed(job, name).run, command, `${name}: exact command`);
+  const step = stepNamed(job, name);
+  exactKeys(step, ["name", "run"], `${name}: exact step`);
+  assert.equal(step.run, command, `${name}: exact command`);
 }
 
 function requireTriggers(name, workflow) {
-  assert.equal(
-    Object.hasOwn(workflow.on, "pull_request"),
-    true,
-    `${name}: pull_request`,
-  );
-  assert.equal(
-    Object.hasOwn(workflow.on, "merge_group"),
-    true,
-    `${name}: merge_group`,
-  );
-  assert.equal(
-    Object.hasOwn(workflow.on, "pull_request_target"),
-    false,
-    `${name}: candidate workflows cannot use pull_request_target`,
-  );
+  const expected =
+    name === "codeql.yml" ? ["push", "pull_request"] : ["pull_request"];
+  exactKeys(workflow.on, expected, `${name}: exact PR-only triggers`);
 }
 
 function requireConcurrency(name, workflow) {
@@ -102,7 +92,7 @@ function requireConcurrency(name, workflow) {
     workflow.concurrency,
     {
       group:
-        "${{ github.workflow }}-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.ref }}",
+        "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}",
       "cancel-in-progress": true,
     },
     `${name}: bounded concurrency`,
@@ -176,57 +166,80 @@ for (const [name, workflow] of workflows) {
 }
 
 const codeql = workflows.get("codeql.yml");
+exactKeys(
+  codeql,
+  ["name", "on", "permissions", "concurrency", "jobs"],
+  "CodeQL workflow",
+);
 assert.deepEqual(codeql.on.push, { branches: ["main"] });
 const codeqlJob = codeql.jobs.analyze;
 assert.deepEqual(Object.keys(codeql.jobs), ["analyze"]);
-const codeqlCheckout = stepNamed(
+exactKeys(
   codeqlJob,
-  "Check out repository without persisted credentials",
+  ["name", "runs-on", "timeout-minutes", "permissions", "steps"],
+  "CodeQL job",
 );
-assert.equal(codeqlCheckout.with["persist-credentials"], false);
-assert.equal(
-  stepNamed(codeqlJob, "Initialize CodeQL").with["build-mode"],
-  "none",
-);
-assert.equal(
-  stepNamed(codeqlJob, "Initialize CodeQL").with.languages,
-  "javascript-typescript",
-);
+assert.deepEqual(codeqlJob.steps, [
+  {
+    name: "Check out repository without persisted credentials",
+    uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+    with: { "persist-credentials": false },
+  },
+  {
+    name: "Initialize CodeQL",
+    uses: "github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3",
+    with: { languages: "javascript-typescript", "build-mode": "none" },
+  },
+  {
+    name: "Analyze with CodeQL",
+    uses: "github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3",
+  },
+]);
 
 const dependency = workflows.get("dependency-review.yml");
+exactKeys(
+  dependency,
+  ["name", "on", "permissions", "concurrency", "jobs"],
+  "dependency review workflow",
+);
 assert.deepEqual(Object.keys(dependency.jobs), ["dependency-review"]);
 const dependencyJob = dependency.jobs["dependency-review"];
+exactKeys(
+  dependencyJob,
+  ["name", "runs-on", "timeout-minutes", "permissions", "steps"],
+  "dependency review job",
+);
 exactPermissions(
   dependencyJob.permissions,
   { contents: "read" },
   "dependency review",
 );
-for (const name of [
-  "Review pull request dependencies",
-  "Review merge group dependencies",
-]) {
-  const step = stepNamed(dependencyJob, name);
-  assert.equal(step.with["comment-summary-in-pr"], "never");
-  assert.equal(step.with["fail-on-severity"], "moderate");
-  assert.equal(step.with["fail-on-scopes"], "runtime,development,unknown");
-  assert.equal(step.with["show-patched-versions"], true);
-}
-const mergeDependency = stepNamed(
-  dependencyJob,
-  "Review merge group dependencies",
-);
-assert.equal(
-  mergeDependency.with["base-ref"],
-  "${{ github.event.merge_group.base_sha }}",
-);
-assert.equal(
-  mergeDependency.with["head-ref"],
-  "${{ github.event.merge_group.head_sha }}",
-);
+assert.deepEqual(dependencyJob.steps, [
+  {
+    name: "Review pull request dependencies",
+    uses: "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+    with: {
+      "comment-summary-in-pr": "never",
+      "fail-on-severity": "moderate",
+      "fail-on-scopes": "runtime,development,unknown",
+      "show-patched-versions": true,
+    },
+  },
+]);
 
 const qualityWorkflow = workflows.get("quality.yml");
+exactKeys(
+  qualityWorkflow,
+  ["name", "on", "permissions", "concurrency", "jobs"],
+  "quality workflow",
+);
 exactKeys(qualityWorkflow.jobs, ["quality", "aggregate"], "quality jobs");
 const quality = qualityWorkflow.jobs.quality;
+exactKeys(
+  quality,
+  ["name", "runs-on", "timeout-minutes", "permissions", "steps"],
+  "quality job",
+);
 exactPermissions(quality.permissions, { contents: "read" }, "quality job");
 const gateIndex = stepIndex(quality, "Verify trusted pull request author");
 const checkoutIndex = stepIndex(
@@ -235,23 +248,35 @@ const checkoutIndex = stepIndex(
 );
 assert.ok(gateIndex < checkoutIndex, "author gate must precede checkout");
 const gate = quality.steps[gateIndex];
-assert.equal(gate.if, "github.event_name == 'pull_request'");
-assert.deepEqual(gate.env, {
-  AUTHOR_ASSOCIATION: "${{ github.event.pull_request.author_association }}",
-  PR_AUTHOR: "${{ github.event.pull_request.user.login }}",
+assert.deepEqual(gate, {
+  name: "Verify trusted pull request author",
+  env: {
+    ACTOR: "${{ github.actor }}",
+    AUTHOR_ASSOCIATION: "${{ github.event.pull_request.author_association }}",
+    BASE_REPOSITORY: "${{ github.repository }}",
+    HEAD_REPOSITORY: "${{ github.event.pull_request.head.repo.full_name }}",
+    PR_AUTHOR: "${{ github.event.pull_request.user.login }}",
+  },
+  run: [
+    'case "$AUTHOR_ASSOCIATION" in',
+    "  OWNER|MEMBER) exit 0 ;;",
+    "esac",
+    'test "$ACTOR" = "dependabot[bot]"',
+    'test "$PR_AUTHOR" = "dependabot[bot]"',
+    'test "$HEAD_REPOSITORY" = "$BASE_REPOSITORY"',
+    "",
+  ].join("\n"),
 });
-assert.match(gate.run, /case "\$AUTHOR_ASSOCIATION" in/u);
-assert.match(gate.run, /OWNER\|MEMBER\)/u);
-assert.match(gate.run, /test "\$PR_AUTHOR" = "dependabot\[bot\]"/u);
-assert.match(gate.run, /exit 1/u);
-assert.doesNotMatch(gate.run, /COLLABORATOR|CONTRIBUTOR|openboa/u);
 const checkout = quality.steps[checkoutIndex];
-assert.equal(checkout.with["fetch-depth"], 0);
-assert.equal(checkout.with["persist-credentials"], false);
-assert.equal(
-  checkout.with.ref,
-  "${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}",
-);
+assert.deepEqual(checkout, {
+  name: "Check out repository without persisted credentials",
+  uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+  with: {
+    "fetch-depth": 0,
+    "persist-credentials": false,
+    ref: "${{ github.event.pull_request.head.sha }}",
+  },
+});
 requireCommand(
   quality,
   "Install immutable Gitleaks",
@@ -261,21 +286,49 @@ const secretScan = stepNamed(
   quality,
   "Scan complete history, tree, and raw blobs",
 );
-for (const fragment of [
-  "gitleaks git",
-  "gitleaks dir",
-  'git rev-list --objects "$object_range"',
-  "git cat-file --batch-check='%(objectname) %(objecttype)'",
-  'git cat-file blob "$object_id" > "$blob_dir/$object_id"',
-  "--ignore-gitleaks-allow",
-]) {
-  assert.ok(
-    secretScan.run.includes(fragment),
-    `quality secret scan: ${fragment}`,
-  );
-}
+exactKeys(secretScan, ["name", "env", "run"], "quality secret scan step");
+assert.deepEqual(secretScan.env, {
+  BASE_SHA: "${{ github.event.pull_request.base.sha || '' }}",
+  HEAD_SHA: "${{ github.event.pull_request.head.sha }}",
+});
+assert.equal(
+  secretScan.run,
+  [
+    "set -o pipefail",
+    "test ! -e .gitleaks.toml",
+    "test ! -e .gitleaksignore",
+    'gitleaks git --config "$GITLEAKS_TRUSTED_CONFIG" \\',
+    "  --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \\",
+    "  --redact --no-banner .",
+    'gitleaks dir --config "$GITLEAKS_TRUSTED_CONFIG" \\',
+    "  --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \\",
+    "  --redact --no-banner .",
+    'blob_dir="$(mktemp -d)"',
+    'if test -n "$BASE_SHA"; then',
+    '  object_range="$BASE_SHA..$HEAD_SHA"',
+    "else",
+    '  object_range="$HEAD_SHA"',
+    "fi",
+    'git rev-list --objects "$object_range" |',
+    "  cut -d' ' -f1 |",
+    "  git cat-file --batch-check='%(objectname) %(objecttype)' |",
+    "  awk '$2 == \"blob\" { print $1 }' |",
+    "  while read -r object_id; do",
+    '    git cat-file blob "$object_id" > "$blob_dir/$object_id"',
+    "  done",
+    'gitleaks dir --config "$GITLEAKS_TRUSTED_CONFIG" \\',
+    "  --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \\",
+    '  --redact --no-banner "$blob_dir"',
+    "",
+  ].join("\n"),
+  "quality secret scan: exact trusted command",
+);
 const setupNode = stepNamed(quality, "Set up Node.js");
-assert.deepEqual(setupNode.with, { "node-version": 24, cache: "npm" });
+assert.deepEqual(setupNode, {
+  name: "Set up Node.js",
+  uses: "actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+  with: { "node-version": 24, cache: "npm" },
+});
 const commandSteps = [
   [
     "Install locked dependencies without lifecycle scripts",
@@ -292,68 +345,159 @@ const commandSteps = [
 ];
 for (const [name, command] of commandSteps)
   requireCommand(quality, name, command);
-const orderedNames = commandSteps.map(([name]) => stepIndex(quality, name));
 assert.deepEqual(
-  orderedNames,
-  [...orderedNames].sort((left, right) => left - right),
+  quality.steps.map((step) => step.name),
+  [
+    "Verify trusted pull request author",
+    "Check out repository without persisted credentials",
+    "Install immutable Gitleaks",
+    "Scan complete history, tree, and raw blobs",
+    "Set up Node.js",
+    ...commandSteps.map(([name]) => name),
+  ],
+  "quality job: exact ordered steps",
 );
 const aggregate = qualityWorkflow.jobs.aggregate;
+exactKeys(
+  aggregate,
+  ["name", "if", "needs", "runs-on", "timeout-minutes", "permissions", "steps"],
+  "aggregate job",
+);
 exactPermissions(aggregate.permissions, { contents: "read" }, "aggregate job");
 assert.equal(aggregate.if, "always()");
 assert.equal(aggregate.needs, "quality");
-assert.match(
-  stepNamed(aggregate, "Interpret required lane state").run,
-  /success\)/u,
-);
-assert.match(
-  stepNamed(aggregate, "Interpret required lane state").run,
-  /skipped\)/u,
-);
-assert.match(
-  stepNamed(aggregate, "Interpret required lane state").run,
-  /cancelled\)/u,
-);
+assert.deepEqual(aggregate.steps, [
+  {
+    name: "Interpret required lane state",
+    env: { QUALITY_RESULT: "${{ needs.quality.result }}" },
+    run: 'test "$QUALITY_RESULT" = success',
+  },
+]);
 
-const boundarySource = read(".github/workflows/secret-boundary.yml");
 const boundary = workflows.get("secret-boundary.yml");
+exactKeys(
+  boundary,
+  ["name", "on", "permissions", "concurrency", "jobs"],
+  "secret workflow",
+);
 exactKeys(
   boundary.on,
   ["pull_request_target", "workflow_dispatch"],
   "secret triggers",
 );
+assert.deepEqual(boundary.on, {
+  pull_request_target: {
+    types: ["opened", "synchronize", "reopened", "ready_for_review"],
+  },
+  workflow_dispatch: null,
+});
 exactPermissions(boundary.permissions, { contents: "read" }, "secret workflow");
 assert.deepEqual(Object.keys(boundary.jobs), ["secret-boundary"]);
 const boundaryJob = boundary.jobs["secret-boundary"];
-assert.match(boundaryJob.if, /OWNER/u);
-assert.match(boundaryJob.if, /MEMBER/u);
-assert.match(boundaryJob.if, /dependabot\[bot\]/u);
-for (const fragment of [
-  "path: trusted",
-  "path: candidate",
-  "gitleaks git",
-  "gitleaks dir",
-  "git -C candidate rev-list --objects",
-  "git -C candidate cat-file --batch-check",
-  'git -C candidate cat-file blob "$object_id" > "$blob_dir/$object_id"',
-]) {
-  assert.ok(boundarySource.includes(fragment), `secret boundary: ${fragment}`);
-}
-assert.doesNotMatch(boundarySource, /npm |node |secrets\./u);
+exactKeys(
+  boundaryJob,
+  ["name", "if", "runs-on", "timeout-minutes", "steps"],
+  "secret boundary job",
+);
+assert.equal(
+  boundaryJob.if,
+  "github.event_name == 'workflow_dispatch' || github.event.pull_request.author_association == 'OWNER' || github.event.pull_request.author_association == 'MEMBER' || (github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository)",
+);
+assert.equal(boundaryJob["runs-on"], "ubuntu-24.04");
 const trustedCheckout = stepNamed(
   boundaryJob,
   "Check out trusted security controls",
 );
-assert.equal(
-  trustedCheckout.with.ref,
-  "${{ github.event.pull_request.base.sha || github.sha }}",
+assert.deepEqual(trustedCheckout, {
+  name: "Check out trusted security controls",
+  uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+  with: {
+    ref: "${{ github.event.pull_request.base.sha || github.sha }}",
+    "fetch-depth": 1,
+    "persist-credentials": false,
+    path: "trusted",
+  },
+});
+requireCommand(
+  boundaryJob,
+  "Install immutable Gitleaks from trusted base",
+  "trusted/.github/scripts/install-gitleaks.sh",
 );
-assert.equal(trustedCheckout.with["persist-credentials"], false);
 const candidateCheckout = stepNamed(
   boundaryJob,
   "Check out candidate as data only",
 );
-assert.equal(candidateCheckout.with["fetch-depth"], 0);
-assert.equal(candidateCheckout.with["persist-credentials"], false);
+assert.deepEqual(candidateCheckout, {
+  name: "Check out candidate as data only",
+  uses: "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+  with: {
+    repository:
+      "${{ github.event.pull_request.head.repo.full_name || github.repository }}",
+    ref: "${{ github.event.pull_request.head.sha || github.sha }}",
+    "fetch-depth": 0,
+    "persist-credentials": false,
+    path: "candidate",
+  },
+});
+const boundaryScan = stepNamed(
+  boundaryJob,
+  "Scan candidate without executing it",
+);
+exactKeys(boundaryScan, ["name", "env", "run"], "secret boundary scan step");
+assert.deepEqual(boundaryScan.env, {
+  BASE_SHA: "${{ github.event.pull_request.base.sha || '' }}",
+  BASE_REPOSITORY: "${{ github.repository }}",
+  HEAD_SHA: "${{ github.event.pull_request.head.sha || github.sha }}",
+});
+assert.equal(
+  boundaryScan.run,
+  [
+    "set -o pipefail",
+    "test ! -e candidate/.gitleaks.toml",
+    "test ! -e candidate/.gitleaksignore",
+    "ignore_path=/dev/null",
+    'gitleaks git --config "$GITLEAKS_TRUSTED_CONFIG" \\',
+    '  --gitleaks-ignore-path "$ignore_path" --ignore-gitleaks-allow \\',
+    '  --redact --no-banner "$GITHUB_WORKSPACE/candidate"',
+    'gitleaks dir --config "$GITLEAKS_TRUSTED_CONFIG" \\',
+    '  --gitleaks-ignore-path "$ignore_path" --ignore-gitleaks-allow \\',
+    '  --redact --no-banner "$GITHUB_WORKSPACE/candidate"',
+    'blob_dir="$(mktemp -d)"',
+    'if test -n "$BASE_SHA"; then',
+    "  git -C candidate fetch --no-tags --depth=1 \\",
+    '    "https://github.com/$BASE_REPOSITORY.git" "$BASE_SHA"',
+    '  object_range="$BASE_SHA..$HEAD_SHA"',
+    "else",
+    '  object_range="$HEAD_SHA"',
+    "fi",
+    'git -C candidate rev-list --objects "$object_range" |',
+    "  cut -d' ' -f1 |",
+    "  git -C candidate cat-file --batch-check='%(objectname) %(objecttype)' |",
+    "  awk '$2 == \"blob\" { print $1 }' |",
+    "  while read -r object_id; do",
+    '    git -C candidate cat-file blob "$object_id" > "$blob_dir/$object_id"',
+    "  done",
+    'gitleaks dir --config "$GITLEAKS_TRUSTED_CONFIG" \\',
+    '  --gitleaks-ignore-path "$ignore_path" --ignore-gitleaks-allow \\',
+    '  --redact --no-banner "$blob_dir"',
+    "",
+  ].join("\n"),
+  "secret boundary: exact trusted command",
+);
+assert.deepEqual(
+  boundaryJob.steps.map((step) => step.name),
+  [
+    "Check out trusted security controls",
+    "Install immutable Gitleaks from trusted base",
+    "Check out candidate as data only",
+    "Scan candidate without executing it",
+  ],
+  "secret boundary: exact ordered steps",
+);
+assert.doesNotMatch(
+  read(".github/workflows/secret-boundary.yml"),
+  /npm |node |secrets\./u,
+);
 
 const packageJson = JSON.parse(read("package.json"));
 assert.equal(
@@ -417,18 +561,62 @@ assert.deepEqual(updateByEcosystem.get("github-actions").groups, {
 });
 
 const mergePolicy = JSON.parse(read(".github/merge-policy.json"));
+exactKeys(
+  mergePolicy,
+  [
+    "merge_method",
+    "required_approvals",
+    "required_code_owner_reviews",
+    "required_last_push_approvals",
+    "merge_queue",
+    "required_events",
+    "eligible_author_associations",
+    "eligible_bot_logins",
+    "custom_merge_controller",
+    "required_checks",
+    "protected_paths",
+    "codeql_enforcement",
+    "sensitive_review",
+  ],
+  "merge policy",
+);
 assert.equal(mergePolicy.merge_method, "squash");
 assert.equal(mergePolicy.required_approvals, 0);
+assert.equal(mergePolicy.required_code_owner_reviews, 0);
+assert.equal(mergePolicy.required_last_push_approvals, 0);
+assert.equal(mergePolicy.merge_queue, false);
+assert.deepEqual(mergePolicy.required_events, ["pull_request"]);
 assert.deepEqual(mergePolicy.eligible_author_associations, ["OWNER", "MEMBER"]);
 assert.deepEqual(mergePolicy.eligible_bot_logins, ["dependabot[bot]"]);
 assert.equal("eligible_author_logins" in mergePolicy, false);
 assert.equal(mergePolicy.custom_merge_controller, false);
 assert.deepEqual(mergePolicy.required_checks, [
-  "Coffee Chat required",
-  "Coffee Chat dependency review",
-  "Secret boundary",
-  "Coffee Chat CodeQL JavaScript-TypeScript",
+  { context: "Coffee Chat required", integration_id: 15368 },
+  { context: "Coffee Chat dependency review", integration_id: 15368 },
+  { context: "Secret boundary", integration_id: 15368 },
+  {
+    context: "Coffee Chat CodeQL JavaScript-TypeScript",
+    integration_id: 15368,
+  },
 ]);
+assert.deepEqual(mergePolicy.protected_paths, [
+  "/.github/**",
+  "/.githooks/**",
+  "/.gitleaksignore",
+  "/.gitleaks.toml",
+  "/.agents/**",
+  "/.codex-plugin/**",
+  "/AGENTS.md",
+  "/CODEOWNERS",
+  "/SECURITY.md",
+  "/contract/roastery-authority.json",
+  "/runtime/github.mjs",
+  "/runtime/init-cli.mjs",
+  "/runtime/init.mjs",
+  "/runtime/registry.mjs",
+  "/skills/coffee-init/**",
+]);
+assert.equal(mergePolicy.codeql_enforcement, "native_code_scanning");
 assert.deepEqual(mergePolicy.sensitive_review, {
   enforcement: "github_repository_ruleset",
   required_team: "security-maintainers",

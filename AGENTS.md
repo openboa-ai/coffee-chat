@@ -49,9 +49,10 @@ perform its documented user-scoped GitHub and Registry writes.
   squash auto-merge only after the exact head passes the local verification
   contract and all required GitHub checks.
 - Candidate-executing workflows accept only `OWNER` or `MEMBER` authors and the
-  exact GitHub identity `dependabot[bot]`. Do not widen that set. Never add
-  custom write-token merge automation or treat a passing candidate-controlled
-  check as authorization for a sensitive change.
+  exact in-repository GitHub identity `dependabot[bot]`, with matching actor,
+  pull-request author, and head repository. Do not widen that set. Merge queue
+  is disabled. Never add custom write-token merge automation or treat a passing
+  candidate-controlled check as authorization for a sensitive change.
 - Mark the pull request's sensitive-path declaration accurately. The
   organization ruleset—not the agent or candidate workflow—decides whether the
   human-only `security-maintainers` team must review it.
