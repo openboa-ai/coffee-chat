@@ -6,7 +6,20 @@ const SOURCE = "openboa-ai/coffee-chat-roastery";
 const REQUIRED_CHECKS = Object.freeze([
   "Roastery required",
   "Roastery dependency review",
+  "Secret boundary",
+  "Roastery CodeQL JavaScript-TypeScript",
 ]);
+
+function ownerCodeowners(owner) {
+  return `/.github/ @${owner}
+/CODEOWNERS @${owner}
+/SECURITY.md @${owner}
+/runtime/ @${owner}
+/contract/ @${owner}
+/package.json @${owner}
+/package-lock.json @${owner}
+`;
+}
 
 /**
  * @typedef {object} GitHubApiRequest
@@ -61,8 +74,8 @@ function ruleset() {
         type: "pull_request",
         parameters: {
           allowed_merge_methods: ["squash"],
-          dismiss_stale_reviews_on_push: false,
-          require_code_owner_review: false,
+          dismiss_stale_reviews_on_push: true,
+          require_code_owner_review: true,
           require_last_push_approval: false,
           required_approving_review_count: 0,
           required_review_thread_resolution: true,
@@ -126,7 +139,8 @@ function protectedRuleset(value) {
   if (
     !pull ||
     JSON.stringify(pull.allowed_merge_methods) !== JSON.stringify(["squash"]) ||
-    pull.require_code_owner_review !== false ||
+    pull.dismiss_stale_reviews_on_push !== true ||
+    pull.require_code_owner_review !== true ||
     pull.require_last_push_approval !== false ||
     pull.required_approving_review_count !== 0 ||
     pull.required_review_thread_resolution !== true
@@ -171,7 +185,84 @@ function protectedRepository(value) {
 }
 
 function protectedActions(value) {
-  return value?.enabled === true && value?.allowed_actions === "all";
+  return (
+    value?.enabled === true &&
+    value?.allowed_actions === "selected" &&
+    value?.sha_pinning_required === true
+  );
+}
+
+function protectedWorkflowPermissions(value) {
+  return (
+    value?.default_workflow_permissions === "read" &&
+    value?.can_approve_pull_request_reviews === false
+  );
+}
+
+async function bootstrapOwnerCodeowners({ preview, target, transport }) {
+  const content = ownerCodeowners(preview.target.owner);
+  const base = await transport.api({
+    method: "GET",
+    path: `repos/${target}/git/commits/${preview.source.commit}`,
+  });
+  if (base?.tree?.sha !== preview.source.tree) {
+    throw new GitHubBoundaryError("seed_tree_mismatch");
+  }
+  const blob = await transport.api({
+    method: "POST",
+    path: `repos/${target}/git/blobs`,
+    body: { content, encoding: "utf-8" },
+  });
+  if (typeof blob?.sha !== "string") {
+    throw new GitHubBoundaryError("codeowners_blob_creation_failed");
+  }
+  const tree = await transport.api({
+    method: "POST",
+    path: `repos/${target}/git/trees`,
+    body: {
+      base_tree: preview.source.tree,
+      tree: [
+        { path: "CODEOWNERS", mode: "100644", type: "blob", sha: blob.sha },
+      ],
+    },
+  });
+  if (typeof tree?.sha !== "string") {
+    throw new GitHubBoundaryError("codeowners_tree_creation_failed");
+  }
+  const commit = await transport.api({
+    method: "POST",
+    path: `repos/${target}/git/commits`,
+    body: {
+      message: "Protect Coffee Chat owner controls",
+      tree: tree.sha,
+      parents: [preview.source.commit],
+    },
+  });
+  if (typeof commit?.sha !== "string") {
+    throw new GitHubBoundaryError("codeowners_commit_creation_failed");
+  }
+  await transport.api({
+    method: "PATCH",
+    path: `repos/${target}/git/refs/heads/${preview.target.defaultBranch}`,
+    body: { sha: commit.sha, force: false },
+  });
+  const [reference, codeowners] = await Promise.all([
+    transport.api({
+      method: "GET",
+      path: `repos/${target}/git/ref/heads/${preview.target.defaultBranch}`,
+    }),
+    transport.api({
+      method: "GET",
+      path: `repos/${target}/contents/CODEOWNERS?ref=${encodeURIComponent(commit.sha)}`,
+    }),
+  ]);
+  if (
+    reference?.object?.sha !== commit.sha ||
+    decodeFile(codeowners, "invalid_codeowners") !== content
+  ) {
+    throw new GitHubBoundaryError("codeowners_bootstrap_mismatch");
+  }
+  return { commit: commit.sha, content };
 }
 
 async function poll({ attempts, pause, read, accept, code }) {
@@ -362,15 +453,34 @@ export function createGitHubBoundary({
           delete_branch_on_merge: true,
         },
       });
+      await bootstrapOwnerCodeowners({ preview, target, transport });
       await transport.api({
         method: "PUT",
         path: `repos/${target}/actions/permissions`,
-        body: { enabled: true, allowed_actions: "all" },
+        body: {
+          enabled: true,
+          allowed_actions: "selected",
+          sha_pinning_required: true,
+        },
       });
-      const actionPermissions = await transport.api({
-        method: "GET",
-        path: `repos/${target}/actions/permissions`,
+      await transport.api({
+        method: "PUT",
+        path: `repos/${target}/actions/permissions/workflow`,
+        body: {
+          default_workflow_permissions: "read",
+          can_approve_pull_request_reviews: false,
+        },
       });
+      const [actionPermissions, workflowPermissions] = await Promise.all([
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/actions/permissions`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/actions/permissions/workflow`,
+        }),
+      ]);
       const createdRuleset = await transport.api({
         method: "POST",
         path: `repos/${target}/rulesets`,
@@ -379,6 +489,7 @@ export function createGitHubBoundary({
       if (
         !protectedRepository(repository) ||
         !protectedActions(actionPermissions) ||
+        !protectedWorkflowPermissions(workflowPermissions) ||
         !protectedRuleset(createdRuleset)
       ) {
         throw new GitHubBoundaryError("protection_mismatch");
@@ -509,19 +620,28 @@ export function createGitHubBoundary({
 
     async verifyOwned({ preview, merge }) {
       const target = repositorySlug(preview.target.repository);
-      const [repository, reference, activeRulesets, actionPermissions] =
-        await Promise.all([
-          transport.api({ method: "GET", path: `repos/${target}` }),
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/git/ref/heads/${preview.target.defaultBranch}`,
-          }),
-          transport.api({ method: "GET", path: `repos/${target}/rulesets` }),
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/actions/permissions`,
-          }),
-        ]);
+      const [
+        repository,
+        reference,
+        activeRulesets,
+        actionPermissions,
+        workflowPermissions,
+      ] = await Promise.all([
+        transport.api({ method: "GET", path: `repos/${target}` }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/git/ref/heads/${preview.target.defaultBranch}`,
+        }),
+        transport.api({ method: "GET", path: `repos/${target}/rulesets` }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/actions/permissions`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/actions/permissions/workflow`,
+        }),
+      ]);
       const activeRuleset = Array.isArray(activeRulesets)
         ? activeRulesets.find(
             (entry) =>
@@ -545,31 +665,41 @@ export function createGitHubBoundary({
         reference?.object?.sha !== merge.commit ||
         !protectedRepository(repository) ||
         !protectedActions(actionPermissions) ||
+        !protectedWorkflowPermissions(workflowPermissions) ||
         !protectedRuleset(rulesetDetail)
       ) {
         throw new GitHubBoundaryError("owned_verification_failed");
       }
       const query = `?ref=${encodeURIComponent(merge.commit)}`;
-      const [manifestResponse, indexResponse, licenseResponse, beans] =
-        await Promise.all([
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/contents/roastery/roastery.json${query}`,
-          }),
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/contents/roastery/index.json${query}`,
-          }),
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/contents/roastery/CONTENT_LICENSE.md${query}`,
-          }),
-          transport.api({
-            method: "GET",
-            path: `repos/${target}/contents/roastery/beans${query}`,
-            allowNotFound: true,
-          }),
-        ]);
+      const [
+        manifestResponse,
+        indexResponse,
+        licenseResponse,
+        codeownersResponse,
+        beans,
+      ] = await Promise.all([
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/contents/roastery/roastery.json${query}`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/contents/roastery/index.json${query}`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/contents/roastery/CONTENT_LICENSE.md${query}`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/contents/CODEOWNERS${query}`,
+        }),
+        transport.api({
+          method: "GET",
+          path: `repos/${target}/contents/roastery/beans${query}`,
+          allowNotFound: true,
+        }),
+      ]);
       const expectedManifest = `${JSON.stringify(
         {
           repository: preview.target.repository,
@@ -581,10 +711,15 @@ export function createGitHubBoundary({
       const manifest = decodeFile(manifestResponse, "invalid_owned_manifest");
       const index = decodeFile(indexResponse, "invalid_owned_index");
       const license = decodeFile(licenseResponse, "invalid_owned_license");
+      const codeowners = decodeFile(
+        codeownersResponse,
+        "invalid_owned_codeowners",
+      );
       if (
         manifest !== expectedManifest ||
         index !== '{\n  "beans": []\n}\n' ||
         license !== preview.declaration.content ||
+        codeowners !== ownerCodeowners(preview.target.owner) ||
         beans !== undefined ||
         parseContentLicense(license).digest !== preview.declaration.digest
       ) {

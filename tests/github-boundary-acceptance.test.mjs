@@ -7,6 +7,14 @@ import { createInitPreview, executeInit } from "../runtime/init.mjs";
 
 const SOURCE = "openboa-ai/coffee-chat-roastery";
 const TARGET = "example/coffee-chat";
+const OWNER_CODEOWNERS = `/.github/ @example
+/CODEOWNERS @example
+/SECURITY.md @example
+/runtime/ @example
+/contract/ @example
+/package.json @example
+/package-lock.json @example
+`;
 
 function encoded(content) {
   return {
@@ -65,15 +73,192 @@ test("protection rejects an incomplete active ruleset", async () => {
       throw new Error("Auto-merge must not run while protection is configured");
     },
     async api({ method, path, body }) {
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/git/commits/${preview.source.commit}`
+      ) {
+        return { tree: { sha: preview.source.tree } };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/git/blobs`) {
+        return { sha: "codeowners-blob" };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/git/trees`) {
+        return { sha: "codeowners-tree" };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/git/commits`) {
+        return { sha: "codeowners-commit" };
+      }
+      if (
+        method === "PATCH" &&
+        path === `repos/${TARGET}/git/refs/heads/main`
+      ) {
+        return { object: { sha: "codeowners-commit" } };
+      }
+      if (method === "GET" && path === `repos/${TARGET}/git/ref/heads/main`) {
+        return { object: { sha: "codeowners-commit" } };
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/contents/CODEOWNERS?ref=codeowners-commit`
+      ) {
+        return encoded(OWNER_CODEOWNERS);
+      }
       if (method === "PATCH" && path === `repos/${TARGET}`) return body;
       if (method === "PUT" && path === `repos/${TARGET}/actions/permissions`) {
         return body;
       }
       if (method === "GET" && path === `repos/${TARGET}/actions/permissions`) {
-        return { enabled: true, allowed_actions: "all" };
+        return {
+          enabled: true,
+          allowed_actions: "selected",
+          sha_pinning_required: true,
+        };
+      }
+      if (
+        method === "PUT" &&
+        path === `repos/${TARGET}/actions/permissions/workflow`
+      ) {
+        return body;
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/actions/permissions/workflow`
+      ) {
+        return {
+          default_workflow_permissions: "read",
+          can_approve_pull_request_reviews: false,
+        };
       }
       if (method === "POST" && path === `repos/${TARGET}/rulesets`) {
         return { id: 1, name: body.name, enforcement: "active", rules: [] };
+      }
+      throw new Error(`Unexpected request: ${method} ${path}`);
+    },
+  };
+  const github = createGitHubBoundary({ transport });
+
+  await assert.rejects(
+    () => github.protect(preview),
+    (error) =>
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "protection_mismatch",
+  );
+});
+
+test("protection rejects a ruleset without owner review or trusted boundary controls", async () => {
+  const preview = createInitPreview({
+    owner: "example",
+    attribution: "Example Owner",
+  });
+  const transport = {
+    async enableAutoMerge() {
+      throw new Error("Auto-merge must not run while protection is configured");
+    },
+    async api({ method, path, body }) {
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/git/commits/${preview.source.commit}`
+      ) {
+        return { tree: { sha: preview.source.tree } };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/git/blobs`) {
+        assert.equal(body.content, OWNER_CODEOWNERS);
+        return { sha: "codeowners-blob" };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/git/trees`) {
+        assert.deepEqual(body, {
+          base_tree: preview.source.tree,
+          tree: [
+            {
+              path: "CODEOWNERS",
+              mode: "100644",
+              type: "blob",
+              sha: "codeowners-blob",
+            },
+          ],
+        });
+        return { sha: "codeowners-tree" };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/git/commits`) {
+        assert.deepEqual(body, {
+          message: "Protect Coffee Chat owner controls",
+          tree: "codeowners-tree",
+          parents: [preview.source.commit],
+        });
+        return { sha: "codeowners-commit" };
+      }
+      if (
+        method === "PATCH" &&
+        path === `repos/${TARGET}/git/refs/heads/main`
+      ) {
+        assert.deepEqual(body, { sha: "codeowners-commit", force: false });
+        return { object: { sha: "codeowners-commit" } };
+      }
+      if (method === "GET" && path === `repos/${TARGET}/git/ref/heads/main`) {
+        return { object: { sha: "codeowners-commit" } };
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/contents/CODEOWNERS?ref=codeowners-commit`
+      ) {
+        return encoded(OWNER_CODEOWNERS);
+      }
+      if (method === "PATCH" && path === `repos/${TARGET}`) return body;
+      if (method === "PUT" && path === `repos/${TARGET}/actions/permissions`) {
+        assert.deepEqual(body, {
+          enabled: true,
+          allowed_actions: "selected",
+          sha_pinning_required: true,
+        });
+        return body;
+      }
+      if (method === "GET" && path === `repos/${TARGET}/actions/permissions`) {
+        return {
+          enabled: true,
+          allowed_actions: "selected",
+          sha_pinning_required: true,
+        };
+      }
+      if (
+        method === "PUT" &&
+        path === `repos/${TARGET}/actions/permissions/workflow`
+      ) {
+        assert.deepEqual(body, {
+          default_workflow_permissions: "read",
+          can_approve_pull_request_reviews: false,
+        });
+        return body;
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/actions/permissions/workflow`
+      ) {
+        return {
+          default_workflow_permissions: "read",
+          can_approve_pull_request_reviews: false,
+        };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/rulesets`) {
+        const pullRequest = body.rules.find(
+          ({ type }) => type === "pull_request",
+        );
+        return {
+          id: 1,
+          ...body,
+          rules: body.rules.map((rule) =>
+            rule === pullRequest
+              ? {
+                  ...rule,
+                  parameters: {
+                    ...rule.parameters,
+                    require_code_owner_review: false,
+                  },
+                }
+              : rule,
+          ),
+        };
       }
       throw new Error(`Unexpected request: ${method} ${path}`);
     },
@@ -106,6 +291,7 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
   let blobSequence = 0;
   const head = "c".repeat(40);
   const mergeCommit = "d".repeat(40);
+  const codeownersCommit = "f".repeat(40);
   let forkHead = "e".repeat(40);
 
   const transport = {
@@ -154,7 +340,8 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (
         method === "PATCH" &&
-        path === `repos/${TARGET}/git/refs/heads/main`
+        path === `repos/${TARGET}/git/refs/heads/main` &&
+        body.sha === preview.source.commit
       ) {
         writes.push("anchor-seed");
         assert.deepEqual(body, { sha: preview.source.commit, force: true });
@@ -168,35 +355,6 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         assert.equal(body.allow_merge_commit, false);
         assert.equal(body.allow_rebase_merge, false);
         return { full_name: TARGET, ...body };
-      }
-      if (method === "PUT" && path === `repos/${TARGET}/actions/permissions`) {
-        writes.push("actions");
-        assert.deepEqual(body, { enabled: true, allowed_actions: "all" });
-        return {};
-      }
-      if (method === "GET" && path === `repos/${TARGET}/actions/permissions`) {
-        return { enabled: true, allowed_actions: "all" };
-      }
-      if (method === "POST" && path === `repos/${TARGET}/rulesets`) {
-        writes.push("ruleset");
-        protectedMain = true;
-        assert.equal(body.enforcement, "active");
-        assert.deepEqual(body.bypass_actors, []);
-        assert.deepEqual(
-          body.rules
-            .find(({ type }) => type === "required_status_checks")
-            .parameters.required_status_checks.map(({ context }) => context),
-          ["Roastery required", "Roastery dependency review"],
-        );
-        assert.ok(body.rules.some(({ type }) => type === "pull_request"));
-        activeRuleset = { id: 1, ...body };
-        return activeRuleset;
-      }
-      if (
-        method === "GET" &&
-        path === `repos/${TARGET}/git/commits/${preview.source.commit}`
-      ) {
-        return { tree: { sha: preview.source.tree } };
       }
       if (method === "POST" && path === `repos/${TARGET}/git/blobs`) {
         writes.push("blob");
@@ -213,9 +371,102 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
       }
       if (method === "POST" && path === `repos/${TARGET}/git/commits`) {
         writes.push("commit");
+        if (body.message === "Protect Coffee Chat owner controls") {
+          assert.deepEqual(body.parents, [preview.source.commit]);
+          assert.equal(body.tree, "tree-initialized");
+          return { sha: codeownersCommit };
+        }
         assert.deepEqual(body.parents, [preview.source.commit]);
         assert.equal(body.tree, "tree-initialized");
         return { sha: head };
+      }
+      if (
+        method === "PATCH" &&
+        path === `repos/${TARGET}/git/refs/heads/main` &&
+        body.sha === codeownersCommit
+      ) {
+        writes.push("codeowners-bootstrap");
+        assert.deepEqual(body, { sha: codeownersCommit, force: false });
+        forkHead = codeownersCommit;
+        return { object: { sha: forkHead } };
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/contents/CODEOWNERS?ref=${codeownersCommit}`
+      ) {
+        return encoded(OWNER_CODEOWNERS);
+      }
+      if (method === "PUT" && path === `repos/${TARGET}/actions/permissions`) {
+        writes.push("actions");
+        assert.deepEqual(body, {
+          enabled: true,
+          allowed_actions: "selected",
+          sha_pinning_required: true,
+        });
+        return {};
+      }
+      if (method === "GET" && path === `repos/${TARGET}/actions/permissions`) {
+        return {
+          enabled: true,
+          allowed_actions: "selected",
+          sha_pinning_required: true,
+        };
+      }
+      if (
+        method === "PUT" &&
+        path === `repos/${TARGET}/actions/permissions/workflow`
+      ) {
+        writes.push("workflow-permissions");
+        assert.deepEqual(body, {
+          default_workflow_permissions: "read",
+          can_approve_pull_request_reviews: false,
+        });
+        return {};
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/actions/permissions/workflow`
+      ) {
+        return {
+          default_workflow_permissions: "read",
+          can_approve_pull_request_reviews: false,
+        };
+      }
+      if (method === "POST" && path === `repos/${TARGET}/rulesets`) {
+        writes.push("ruleset");
+        protectedMain = true;
+        assert.equal(body.enforcement, "active");
+        assert.deepEqual(body.bypass_actors, []);
+        assert.deepEqual(
+          body.rules
+            .find(({ type }) => type === "required_status_checks")
+            .parameters.required_status_checks.map(({ context }) => context),
+          [
+            "Roastery required",
+            "Roastery dependency review",
+            "Secret boundary",
+            "Roastery CodeQL JavaScript-TypeScript",
+          ],
+        );
+        assert.deepEqual(
+          body.rules.find(({ type }) => type === "pull_request").parameters,
+          {
+            allowed_merge_methods: ["squash"],
+            dismiss_stale_reviews_on_push: true,
+            require_code_owner_review: true,
+            require_last_push_approval: false,
+            required_approving_review_count: 0,
+            required_review_thread_resolution: true,
+          },
+        );
+        activeRuleset = { id: 1, ...body };
+        return activeRuleset;
+      }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/git/commits/${preview.source.commit}`
+      ) {
+        return { tree: { sha: preview.source.tree } };
       }
       if (method === "POST" && path === `repos/${TARGET}/git/refs`) {
         writes.push("ref");
@@ -269,6 +520,12 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
         if (content === undefined && allowNotFound) return undefined;
         return encoded(content);
       }
+      if (
+        method === "GET" &&
+        path === `repos/${TARGET}/contents/CODEOWNERS?ref=${mergeCommit}`
+      ) {
+        return encoded(OWNER_CODEOWNERS);
+      }
       throw new Error(`Unexpected request: ${method} ${path}`);
     },
     async enableAutoMerge({ repository, number, expectedHead }) {
@@ -318,7 +575,12 @@ test("the GitHub boundary forks only the frozen seed and verifies protected publ
     "fork",
     "anchor-seed",
     "repository-settings",
+    "blob",
+    "tree",
+    "commit",
+    "codeowners-bootstrap",
     "actions",
+    "workflow-permissions",
     "ruleset",
     "blob",
     "blob",
