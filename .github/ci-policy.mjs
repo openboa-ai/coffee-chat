@@ -118,6 +118,11 @@ const trustedControlSha = trustedWorkflowSource.match(
 )?.[1];
 assert.ok(trustedControlSha, "trusted wrapper must use one full control SHA");
 assert.equal(
+  trustedControlSha,
+  "f2e0db9ee5fc67c63fe789d0e80bb3061436bc6c",
+  "trusted wrapper must use the approved central control SHA",
+);
+assert.equal(
   trustedWorkflowSource,
   `name: OpenBoa Coffee trusted gate
 
@@ -298,6 +303,8 @@ assert.deepEqual(mergePolicy.protected_paths, [
   "/SECURITY.md",
   "/.npmrc",
   "/contract/**",
+  "/package.json",
+  "/package-lock.json",
   "/npm-shrinkwrap.json",
   "/runtime/**",
   "/scripts/**",

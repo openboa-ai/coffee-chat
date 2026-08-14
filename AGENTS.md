@@ -57,10 +57,11 @@ perform its documented user-scoped GitHub and Registry writes.
 - Mark the pull request's sensitive-path declaration accurately. The central
   classifier and repository ruleset—not the agent or candidate checkout—decide
   whether the protected `coffee-security` Environment must confirm it.
-- Normal code, documentation, tests, and vetted compatible dependency updates
-  remain eligible for native auto-merge. Changes to repository automation,
-  security policy, hooks, external-write boundaries, or executable authority
-  wait for the Environment confirmation.
+- Normal code, documentation, tests, and exact in-repository Dependabot package
+  updates that pass the base policy remain eligible for native auto-merge.
+  Changes to repository automation, security policy, hooks, external-write
+  boundaries, or executable authority—including OWNER or MEMBER changes to
+  `package.json` or `package-lock.json`—wait for the Environment confirmation.
 - The reusable workflow in `openboa-ai/.github` is the authorization boundary.
   It loads controls and the YAML parser only from its own workflow SHA and this
   repository's base SHA, and treats the pull-request checkout as data. Local and

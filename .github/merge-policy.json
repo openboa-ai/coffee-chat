@@ -26,6 +26,8 @@
     "/SECURITY.md",
     "/.npmrc",
     "/contract/**",
+    "/package.json",
+    "/package-lock.json",
     "/npm-shrinkwrap.json",
     "/runtime/**",
     "/scripts/**",
