@@ -18,6 +18,7 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const checker = join(repositoryRoot, ".github/ci-policy.mjs");
+const trustedControlSha = "f2e0db9ee5fc67c63fe789d0e80bb3061436bc6c";
 
 async function withFixture(mutate, check) {
   const fixture = await mkdtemp(join(tmpdir(), "coffee-chat-policy-"));
@@ -102,6 +103,25 @@ test("merge policy binds the trusted aggregate and protected Environment", async
     prevent_self_review: false,
   });
   assert.equal(mergePolicy.codeql_enforcement, "trusted_central_aggregate");
+  assert.deepEqual(mergePolicy.protected_paths, [
+    "/.github/**",
+    "/.githooks/**",
+    "/.gitleaksignore",
+    "/.gitleaks.toml",
+    "/.agents/**",
+    "/.codex-plugin/**",
+    "/AGENTS.md",
+    "/CODEOWNERS",
+    "/SECURITY.md",
+    "/.npmrc",
+    "/contract/**",
+    "/package.json",
+    "/package-lock.json",
+    "/npm-shrinkwrap.json",
+    "/runtime/**",
+    "/scripts/**",
+    "/skills/**",
+  ]);
 });
 
 test("target repository exposes only the exact trusted wrapper", async () => {
@@ -110,6 +130,18 @@ test("target repository exposes only the exact trusted wrapper", async () => {
       .filter((name) => /\.ya?ml$/u.test(name))
       .sort(),
     ["trusted.yml"],
+  );
+  const trustedWrapper = await readFile(
+    join(repositoryRoot, ".github/workflows/trusted.yml"),
+    "utf8",
+  );
+  assert.match(
+    trustedWrapper,
+    new RegExp(`coffee-trusted-gate\\.yml@${trustedControlSha}`, "u"),
+  );
+  assert.match(
+    trustedWrapper,
+    new RegExp(`control_sha: ${trustedControlSha}`, "u"),
   );
   const result = await runChecker(repositoryRoot);
   assert.equal(result.status, 0, result.output);
@@ -144,6 +176,21 @@ await expectRejected(
   },
 );
 
+await expectRejected("rejects a stale central workflow pin", async (root) => {
+  await replaceOnce(
+    root,
+    ".github/workflows/trusted.yml",
+    trustedControlSha,
+    "0".repeat(40),
+  );
+  await replaceOnce(
+    root,
+    ".github/workflows/trusted.yml",
+    trustedControlSha,
+    "0".repeat(40),
+  );
+});
+
 for (const relativePath of [
   ".npmrc",
   "npm-shrinkwrap.json",
@@ -176,6 +223,19 @@ await expectRejected(
     });
   },
 );
+
+for (const protectedPath of ["/package.json", "/package-lock.json"]) {
+  await expectRejected(
+    `rejects removal of protected path ${protectedPath}`,
+    async (root) => {
+      await mutateJson(root, ".github/merge-policy.json", (value) => {
+        value.protected_paths = value.protected_paths.filter(
+          (path) => path !== protectedPath,
+        );
+      });
+    },
+  );
+}
 
 await expectRejected("rejects a dependency registry redirect", async (root) => {
   await replaceOnce(
