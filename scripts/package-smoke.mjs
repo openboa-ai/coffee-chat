@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,6 +24,21 @@ try {
   }
   const files = await collectFiles(plugin);
   await writeFile(join(temporaryRoot, "coffee-chat.zip"), packageZip(files));
+
+  const capabilityContract = JSON.parse(
+    await readFile(join(plugin, "config", "capabilities.json"), "utf8"),
+  );
+  assert.equal(capabilityContract.schema, "coffee-chat-capabilities-v1");
+  assert.deepEqual(
+    capabilityContract.capabilities.map(({ id }) => id),
+    capabilities,
+  );
+  assert.deepEqual(
+    Object.fromEntries(
+      capabilityContract.capabilities.map(({ id, skill }) => [id, skill]),
+    ),
+    skillNames,
+  );
 
   const init = spawnSync(
     process.execPath,

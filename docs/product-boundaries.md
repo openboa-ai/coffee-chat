@@ -6,6 +6,12 @@ The package exposes one CalVer identity and seven Skills. Init is available as a
 bounded Build mine flow. Sync, Unsync, Roast, Brew, Coffee Chat, and Coffee
 Blend return an explicit `not_implemented` result without side effects.
 
+`config/capabilities.json` is the product-owned, read-only discovery contract
+for this state. It lists exactly those seven Skill names, their
+package-contained entrypoints, and their availability under the same CalVer as
+both Plugin manifests and runtime results. Reading it does not execute a Skill
+or imply that a deferred capability is supported.
+
 This state proves deterministic package mechanics and synthetic boundary
 behavior. It does not prove a live Codex host, marketplace acceptance, output
 quality, value, utility, efficiency, or benchmark performance.
