@@ -1,33 +1,25 @@
 #!/usr/bin/env node
 import { pathToFileURL } from "node:url";
 
-export const capabilities = Object.freeze([
-  "init",
-  "sync",
-  "unsync",
-  "roast",
-  "brew",
-  "coffee-chat",
-  "coffee-blend",
-]);
+import {
+  calver,
+  capabilities,
+  capabilityDefinitions,
+  skillNames,
+} from "./product-contract.mjs";
 
-export const skillNames = Object.freeze({
-  init: "coffee-init",
-  sync: "coffee-sync",
-  unsync: "coffee-unsync",
-  roast: "coffee-roast",
-  brew: "coffee-brew",
-  "coffee-chat": "coffee-chat",
-  "coffee-blend": "coffee-blend",
-});
+export { capabilities, skillNames };
 
-const capabilitySet = new Set(capabilities);
+const capabilityById = new Map(
+  capabilityDefinitions.map((definition) => [definition.id, definition]),
+);
 
 export function dispatch(capability) {
-  if (!capabilitySet.has(capability)) {
+  const definition = capabilityById.get(capability);
+  if (!definition) {
     return {
       schema: "coffee-chat-capability-result",
-      calver: "2026.8.13",
+      calver,
       capability,
       status: "invalid_capability",
       allowedCapabilities: capabilities,
@@ -37,18 +29,18 @@ export function dispatch(capability) {
   if (capability === "init") {
     return {
       schema: "coffee-chat-capability-result",
-      calver: "2026.8.13",
+      calver,
       capability,
       status: "available",
       workflow: "preview_then_explicit_apply",
-      entrypoint: "skills/coffee-init/scripts/run.mjs",
+      entrypoint: definition.entrypoint,
       writesOnlyAfterAcceptedPreview: true,
     };
   }
 
   return {
     schema: "coffee-chat-capability-result",
-    calver: "2026.8.13",
+    calver,
     capability,
     status: "not_implemented",
     implementationOwner: "later capability Goal",

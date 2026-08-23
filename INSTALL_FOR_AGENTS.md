@@ -10,7 +10,7 @@ current host cannot perform.
 - **Plugin:** `coffee-chat`
 - **Official source:** `https://github.com/openboa-ai/coffee-chat`
 - **Official Codex marketplace:** `openboa-ai`
-- **Official CalVer:** `2026.8.13`
+- **Official CalVer:** `2026.8.23`
 
 Do not install from a personal fork, a Roastery, or a third-party mirror. Do not
 clone or copy Plugin files as a substitute for supported Plugin installation.

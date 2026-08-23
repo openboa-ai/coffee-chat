@@ -11,6 +11,10 @@ Roast, Brew, Coffee Chat, and Coffee Blend remain explicit deferred surfaces.
   coffee-blend. Coffee Init is available; the other six must return
   `not_implemented` without side effects. Internal machine-readable capability
   values remain init, sync, unsync, roast, brew, coffee-chat, and coffee-blend.
+- Keep `config/capabilities.json` as the public, read-only capability discovery
+  contract. Its one CalVer, exact seven Skill names, contained entrypoints, and
+  states must match both manifests, Skill metadata, runtime dispatch, and the
+  built package. Discovery never activates or executes a Skill.
 - Keep portable root `plugin.json` and OpenAI `.codex-plugin/plugin.json` as
   separate projections of `config/plugin-metadata.json` under one CalVer.
 - Plugin installation and discovery perform no fork, fetch, Registry, target, or

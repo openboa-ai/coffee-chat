@@ -38,6 +38,17 @@ Install Coffee Chat. Follow this guide:
 https://raw.githubusercontent.com/openboa-ai/coffee-chat/main/INSTALL_FOR_AGENTS.md
 ```
 
+## Discover current capabilities
+
+The package publishes one read-only, machine-readable
+[capability contract](config/capabilities.json). It identifies the seven shipped
+Skills, their contained entrypoints, and their current availability under the
+same Coffee Chat CalVer as both Plugin manifests.
+
+Reading this contract does not activate or execute a Skill. In this release,
+only Init is available; the other six first-release Skills remain explicitly
+`not_implemented`.
+
 ## Store judgment, not just information.
 
 A **Bean** stores your approved judgment—not a copy of what you read.

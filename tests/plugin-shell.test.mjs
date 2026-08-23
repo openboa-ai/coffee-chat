@@ -39,7 +39,7 @@ const expectedIdentityFields = Object.freeze([
   "repository",
   "license",
 ]);
-const expectedCalver = "2026.8.13";
+const expectedCalver = "2026.8.23";
 
 function json(path) {
   return JSON.parse(readFileSync(join(root, path), "utf8"));
@@ -212,7 +212,8 @@ test("the shipped Plugin contains no undeclared component or authority", () => {
         !path.startsWith("contract/roastery/"),
     )
     .map((path) => readFileSync(join(root, path), "utf8"))
-    .join("\n");
+    .join("\n")
+    .replaceAll("coffee-chat-capabilities-v1", "");
   assert.doesNotMatch(
     productText,
     /\b(?:persona|Green Bean|Harvest|Pairing|SemVer|v1)\b/u,

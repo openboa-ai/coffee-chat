@@ -5,6 +5,7 @@ import { join, sep } from "node:path";
 export const packageRoots = Object.freeze([
   ".agents",
   ".codex-plugin",
+  "config/capabilities.json",
   "config/plugin-metadata.json",
   "contract",
   "docs/assets/readme/coffee-chat-hero.png",

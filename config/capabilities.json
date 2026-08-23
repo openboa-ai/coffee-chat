@@ -1,0 +1,50 @@
+{
+  "schema": "coffee-chat-capabilities-v1",
+  "product": "coffee-chat",
+  "calver": "2026.8.23",
+  "interface": "skills",
+  "capabilities": [
+    {
+      "id": "init",
+      "skill": "coffee-init",
+      "entrypoint": "skills/coffee-init/scripts/run.mjs",
+      "state": "available"
+    },
+    {
+      "id": "sync",
+      "skill": "coffee-sync",
+      "entrypoint": "skills/coffee-sync/scripts/run.mjs",
+      "state": "not_implemented"
+    },
+    {
+      "id": "unsync",
+      "skill": "coffee-unsync",
+      "entrypoint": "skills/coffee-unsync/scripts/run.mjs",
+      "state": "not_implemented"
+    },
+    {
+      "id": "roast",
+      "skill": "coffee-roast",
+      "entrypoint": "skills/coffee-roast/scripts/run.mjs",
+      "state": "not_implemented"
+    },
+    {
+      "id": "brew",
+      "skill": "coffee-brew",
+      "entrypoint": "skills/coffee-brew/scripts/run.mjs",
+      "state": "not_implemented"
+    },
+    {
+      "id": "coffee-chat",
+      "skill": "coffee-chat",
+      "entrypoint": "skills/coffee-chat/scripts/run.mjs",
+      "state": "not_implemented"
+    },
+    {
+      "id": "coffee-blend",
+      "skill": "coffee-blend",
+      "entrypoint": "skills/coffee-blend/scripts/run.mjs",
+      "state": "not_implemented"
+    }
+  ]
+}
