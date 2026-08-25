@@ -1,5 +1,12 @@
 # Coffee Chat product boundaries
 
+This document reports current availability and release claims. The
+[product thesis](https://github.com/openboa-ai/coffee-chat/blob/main/PRODUCT-THESIS.md)
+owns the research basis and product rationale; the
+[system design](https://github.com/openboa-ai/coffee-chat/blob/main/docs/engineering/coffee-chat-system-design.md)
+owns the product-facing architecture and activation gates. Neither document can
+override the machine-readable capability contract or runtime behavior.
+
 ## Current capability state
 
 The package exposes one CalVer identity and seven Skills. Init is available as a
