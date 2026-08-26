@@ -83,6 +83,8 @@ Nothing becomes public without your approval.
 
 ## Go deeper.
 
+- [Product thesis and research basis](https://github.com/openboa-ai/coffee-chat/blob/main/PRODUCT-THESIS.md)
+- [Product-owned system design](https://github.com/openboa-ai/coffee-chat/blob/main/docs/engineering/coffee-chat-system-design.md)
 - [Product and release boundaries](docs/product-boundaries.md)
 - [Roastery contract, storage, and rights](contract/roastery/README.md)
 - [Quality map](docs/quality-map.md)
