@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 const root = resolve(process.env.CI_POLICY_ROOT ?? ".");
 const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
-const TRUSTED_CONTROL_SHA = "f556732d4fdc447f94b5e7adca33ad84c4accb95";
+const TRUSTED_CONTROL_SHA = "f33da6bbcdfebd0693ff7673d750f369629e000e";
 
 assert.equal(existsSync(resolve(root, ".npmrc")), false);
 assert.equal(existsSync(resolve(root, "npm-shrinkwrap.json")), false);
