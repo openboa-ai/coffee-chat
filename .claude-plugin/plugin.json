@@ -9,5 +9,6 @@
   },
   "homepage": "https://github.com/openboa-ai/coffee-chat",
   "repository": "https://github.com/openboa-ai/coffee-chat",
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": ["coffee-chat", "perspective", "taste", "skills"]
 }

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 const root = resolve(process.env.CI_POLICY_ROOT ?? ".");
 const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
+const TRUSTED_CONTROL_SHA = "d6d8b73b4c1da5f57daa46d32a9f253cd0ef6a4a";
 
 assert.equal(existsSync(resolve(root, ".npmrc")), false);
 assert.equal(existsSync(resolve(root, "npm-shrinkwrap.json")), false);
@@ -13,6 +14,49 @@ assert.deepEqual(
     .sort(),
   ["trusted.yml"],
 );
+assert.equal(
+  readFileSync(resolve(root, ".github/workflows/trusted.yml"), "utf8"),
+  `name: OpenBoa Coffee trusted gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  trusted:
+    name: OpenBoa Coffee trusted required
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: openboa-ai/.github/.github/workflows/coffee-trusted-gate.yml@${TRUSTED_CONTROL_SHA}
+    with:
+      control_sha: ${TRUSTED_CONTROL_SHA}
+`,
+  "trusted wrapper must remain exact",
+);
+
+assert.deepEqual(readdirSync(root).sort(), [
+  ".claude-plugin",
+  ".codex-plugin",
+  ".editorconfig",
+  ".git",
+  ".gitattributes",
+  ".githooks",
+  ".github",
+  ".gitignore",
+  "AGENTS.md",
+  "CODEOWNERS",
+  "LICENSE",
+  "README.md",
+  "SECURITY.md",
+  "package-lock.json",
+  "package.json",
+  "plugin.json",
+  "skills",
+]);
 
 const portable = readJson("plugin.json");
 assert.equal(
@@ -45,8 +89,50 @@ for (const [label, manifest] of [
   assert.equal(manifest.name, portable.name, label);
   assert.equal(manifest.version, portable.version, label);
   assert.equal(manifest.description, portable.description, label);
+  assert.deepEqual(manifest.keywords, portable.keywords, label);
 }
 assert.equal(codex.skills, "./skills/");
+
+assert.deepEqual(readJson(".github/merge-policy.json"), {
+  merge_method: "squash",
+  required_approvals: 0,
+  required_code_owner_reviews: 0,
+  required_last_push_approvals: 0,
+  merge_queue: false,
+  required_events: ["pull_request"],
+  eligible_author_associations: ["OWNER", "MEMBER"],
+  eligible_bot_logins: ["dependabot[bot]"],
+  custom_merge_controller: false,
+  required_checks: [
+    {
+      context: "OpenBoa Coffee trusted required / OpenBoa Coffee trusted required",
+      integration_id: 15368,
+    },
+  ],
+  protected_paths: [
+    "/.github/**",
+    "/.githooks/**",
+    "/.gitleaksignore",
+    "/.gitleaks.toml",
+    "/.codex-plugin/**",
+    "/.claude-plugin/**",
+    "/AGENTS.md",
+    "/CODEOWNERS",
+    "/SECURITY.md",
+    "/.npmrc",
+    "/package.json",
+    "/package-lock.json",
+    "/npm-shrinkwrap.json",
+    "/skills/**",
+  ],
+  codeql_enforcement: "trusted_central_aggregate",
+  sensitive_review: {
+    enforcement: "github_environment",
+    environment: "coffee-security",
+    required_approvals: 1,
+    prevent_self_review: false,
+  },
+});
 
 for (const forbidden of [
   "mcp.json",
