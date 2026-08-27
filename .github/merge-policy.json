@@ -15,6 +15,7 @@
     }
   ],
   "protected_paths": [
+    "/plugin.json",
     "/.github/**",
     "/.githooks/**",
     "/.gitleaksignore",

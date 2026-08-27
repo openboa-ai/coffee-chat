@@ -86,10 +86,18 @@ for (const [label, manifest] of [
   ["codex", codex],
   ["claude", claude],
 ]) {
-  assert.equal(manifest.name, portable.name, label);
-  assert.equal(manifest.version, portable.version, label);
-  assert.equal(manifest.description, portable.description, label);
-  assert.deepEqual(manifest.keywords, portable.keywords, label);
+  for (const key of [
+    "name",
+    "version",
+    "description",
+    "author",
+    "homepage",
+    "repository",
+    "license",
+    "keywords",
+  ]) {
+    assert.deepEqual(manifest[key], portable[key], `${label}.${key}`);
+  }
 }
 assert.equal(codex.skills, "./skills/");
 
@@ -110,6 +118,7 @@ assert.deepEqual(readJson(".github/merge-policy.json"), {
     },
   ],
   protected_paths: [
+    "/plugin.json",
     "/.github/**",
     "/.githooks/**",
     "/.gitleaksignore",
