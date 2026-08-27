@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseDocument } from "yaml";
 
 const root = resolve(process.env.CI_POLICY_ROOT ?? ".");
 const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -87,6 +88,7 @@ assert.deepEqual(readJson("package.json"), {
     "hooks:install": "git config core.hooksPath .githooks",
     verify: "node .github/ci-policy.mjs",
   },
+  dependencies: { yaml: "2.9.0" },
 });
 assert.deepEqual(readJson("package-lock.json"), {
   name: "@openboa-ai/coffee-chat",
@@ -97,6 +99,15 @@ assert.deepEqual(readJson("package-lock.json"), {
     "": {
       name: "@openboa-ai/coffee-chat",
       version: "0.0.0",
+      dependencies: { yaml: "2.9.0" },
+    },
+    "node_modules/yaml": {
+      version: "2.9.0",
+      resolved: "https://registry.npmjs.org/yaml/-/yaml-2.9.0.tgz",
+      integrity: "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==",
+      bin: { yaml: "bin.mjs" },
+      engines: { node: ">= 14.6" },
+      funding: { url: "https://github.com/sponsors/eemeli" },
     },
   },
 });
@@ -434,35 +445,25 @@ function parseSkillFrontmatter(source, skill) {
   assert.equal(lines[0], "---", `${skill}: frontmatter must start at line 1`);
   const closing = lines.findIndex((line, index) => index > 0 && line === "---");
   assert.notEqual(closing, -1, `${skill}: bounded frontmatter block`);
-  const fields = new Map();
-  for (const line of lines.slice(1, closing)) {
-    const field = line.match(/^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u);
-    assert.ok(field, `${skill}: valid frontmatter field`);
-    assert.equal(fields.has(field[1]), false, `${skill}: duplicate frontmatter field`);
-    const value = field[2];
-    if (value.startsWith('"')) {
-      let parsed;
-      try {
-        parsed = JSON.parse(value);
-      } catch {
-        assert.fail(`${skill}: valid YAML double-quoted scalar`);
-      }
-      assert.equal(typeof parsed, "string", `${skill}: YAML scalar must be a string`);
-      fields.set(field[1], parsed);
-      continue;
-    }
-    if (value.startsWith("'")) {
-      assert.match(value, /^'(?:[^']|'')*'$/u, `${skill}: valid YAML single-quoted scalar`);
-      fields.set(field[1], value.slice(1, -1).replaceAll("''", "'"));
-      continue;
-    }
-    assert.match(
-      value,
-      /^(?![-?:,\[\]{}#&*!|>%@`~]|(?:null|true|false|yes|no|on|off)$|[-+]?\d(?:[\d_]*(?:\.\d[\d_]*)?)?(?:e[-+]?\d+)?$)[^\t\r\n:#]+$/iu,
-      `${skill}: valid YAML plain string scalar`,
-    );
-    fields.set(field[1], value.trimEnd());
+  const yamlSource = `${lines.slice(1, closing).join("\n")}\n`;
+  assert.ok(Buffer.byteLength(yamlSource, "utf8") <= 32 * 1024, `${skill}: frontmatter size limit`);
+  const document = parseDocument(yamlSource, {
+    prettyErrors: true,
+    strict: true,
+    uniqueKeys: true,
+  });
+  assert.deepEqual(document.errors, [], `${skill}: valid YAML frontmatter`);
+  let fields;
+  try {
+    fields = document.toJS({ maxAliasCount: 0 });
+  } catch {
+    assert.fail(`${skill}: YAML aliases are not permitted`);
   }
+  assert.equal(fields !== null && typeof fields === "object" && !Array.isArray(fields), true, `${skill}: YAML mapping required`);
+  assert.deepEqual(Object.keys(fields).sort(), ["description", "name"]);
+  assert.equal(typeof fields.name, "string", `${skill}: YAML name scalar`);
+  assert.equal(typeof fields.description, "string", `${skill}: YAML description scalar`);
+  assert.ok(fields.description.trim(), `${skill}: YAML description content`);
   return fields;
 }
 for (const skill of skills) {
@@ -471,9 +472,7 @@ for (const skill of skills) {
   assert.deepEqual(readdirSync(resolve(skillRoot, skill)).sort(), ["SKILL.md"], skill);
   const source = readFileSync(path, "utf8");
   const fields = parseSkillFrontmatter(source, skill);
-  assert.deepEqual([...fields.keys()].sort(), ["description", "name"]);
-  assert.equal(fields.get("name"), skill, `${skill}: frontmatter name`);
-  assert.ok(fields.get("description")?.trim(), `${skill}: frontmatter description`);
+  assert.equal(fields.name, skill, `${skill}: frontmatter name`);
 }
 
 console.log("Coffee Chat structure and manifest policy passed.");
