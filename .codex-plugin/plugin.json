@@ -19,6 +19,11 @@
     "developerName": "Openboa AI",
     "category": "Productivity",
     "capabilities": ["Skills"],
+    "defaultPrompt": [
+      "Capture my perspective from this source for my confirmation.",
+      "Help me understand this person through their confirmed perspective.",
+      "Apply my confirmed perspective to this decision or task."
+    ],
     "websiteURL": "https://github.com/openboa-ai/coffee-chat"
   }
 }

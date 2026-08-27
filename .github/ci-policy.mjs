@@ -281,6 +281,7 @@ assert.equal(codex.skills, "./skills/");
 assert.deepEqual(Object.keys(codex.interface).sort(), [
   "capabilities",
   "category",
+  "defaultPrompt",
   "developerName",
   "displayName",
   "longDescription",
@@ -291,6 +292,18 @@ assert.equal(codex.interface.displayName, "Coffee Chat");
 assert.equal(codex.interface.developerName, portable.author.name);
 assert.equal(codex.interface.category, "Productivity");
 assert.deepEqual(codex.interface.capabilities, ["Skills"]);
+assert.deepEqual(codex.interface.defaultPrompt, [
+  "Capture my perspective from this source for my confirmation.",
+  "Help me understand this person through their confirmed perspective.",
+  "Apply my confirmed perspective to this decision or task.",
+]);
+assert.equal(
+  codex.interface.defaultPrompt.every(
+    (prompt) => typeof prompt === "string" && prompt.trim().length > 0 && prompt.length <= 128,
+  ),
+  true,
+  "codex.interface.defaultPrompt entries must be bounded strings",
+);
 assert.equal(typeof codex.interface.shortDescription, "string");
 assert.equal(typeof codex.interface.longDescription, "string");
 assertHttpsUrl(codex.interface.websiteURL, "codex.interface.websiteURL");
