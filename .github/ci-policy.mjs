@@ -425,20 +425,26 @@ assert.match(
 const skillRoot = resolve(root, "skills");
 const skills = readdirSync(skillRoot).sort();
 assert.deepEqual(skills, ["brew", "roast"]);
-for (const skill of skills) {
-  const path = resolve(skillRoot, skill, "SKILL.md");
-  assert.equal(existsSync(path), true, skill);
-  assert.deepEqual(readdirSync(resolve(skillRoot, skill)).sort(), ["SKILL.md"], skill);
-  const source = readFileSync(path, "utf8");
-  const frontmatter = source.match(/^---\n([\s\S]*?)\n---(?:\n|$)/u);
-  assert.ok(frontmatter, `${skill}: bounded frontmatter block`);
+function parseSkillFrontmatter(source, skill) {
+  const lines = source.split("\n");
+  assert.equal(lines[0], "---", `${skill}: frontmatter must start at line 1`);
+  const closing = lines.findIndex((line, index) => index > 0 && line === "---");
+  assert.notEqual(closing, -1, `${skill}: bounded frontmatter block`);
   const fields = new Map();
-  for (const line of frontmatter[1].split("\n")) {
+  for (const line of lines.slice(1, closing)) {
     const field = line.match(/^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u);
     assert.ok(field, `${skill}: valid frontmatter field`);
     assert.equal(fields.has(field[1]), false, `${skill}: duplicate frontmatter field`);
     fields.set(field[1], field[2]);
   }
+  return fields;
+}
+for (const skill of skills) {
+  const path = resolve(skillRoot, skill, "SKILL.md");
+  assert.equal(existsSync(path), true, skill);
+  assert.deepEqual(readdirSync(resolve(skillRoot, skill)).sort(), ["SKILL.md"], skill);
+  const source = readFileSync(path, "utf8");
+  const fields = parseSkillFrontmatter(source, skill);
   assert.deepEqual([...fields.keys()].sort(), ["description", "name"]);
   assert.equal(fields.get("name"), skill, `${skill}: frontmatter name`);
   assert.ok(fields.get("description")?.trim(), `${skill}: frontmatter description`);
