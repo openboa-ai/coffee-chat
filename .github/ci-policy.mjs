@@ -58,6 +58,33 @@ assert.deepEqual(readdirSync(root).sort(), [
   "skills",
 ]);
 
+assert.deepEqual(readJson("package.json"), {
+  name: "@openboa-ai/coffee-chat",
+  private: true,
+  type: "module",
+  scripts: { verify: "node .github/ci-policy.mjs" },
+});
+assert.deepEqual(readJson("package-lock.json"), {
+  name: "@openboa-ai/coffee-chat",
+  version: "0.0.0",
+  lockfileVersion: 3,
+  requires: true,
+  packages: {
+    "": {
+      name: "@openboa-ai/coffee-chat",
+      version: "0.0.0",
+    },
+  },
+});
+assert.deepEqual(readdirSync(resolve(root, ".github")).sort(), [
+  "PULL_REQUEST_TEMPLATE.md",
+  "ci-policy.mjs",
+  "dependabot.yml",
+  "merge-policy.json",
+  "workflows",
+]);
+assert.deepEqual(readdirSync(resolve(root, ".githooks")).sort(), ["pre-commit"]);
+
 const portable = readJson("plugin.json");
 assert.equal(
   portable.$schema,
@@ -161,6 +188,97 @@ for (const forbidden of [
 ]) {
   assert.equal(existsSync(resolve(root, forbidden)), false, forbidden);
 }
+
+assert.equal(
+  readFileSync(resolve(root, ".github/dependabot.yml"), "utf8"),
+  `version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      production-minor-patch:
+        applies-to: version-updates
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      development-minor-patch:
+        applies-to: version-updates
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      compatible-actions:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+`,
+  "Dependabot policy must remain bounded to approved update lanes",
+);
+assert.equal(
+  readFileSync(resolve(root, "CODEOWNERS"), "utf8"),
+  `# Ownership routes review context; GitHub requires zero human approvals.
+/.github/** @openboa
+/.codex-plugin/** @openboa
+/.claude-plugin/** @openboa
+/AGENTS.md @openboa
+/CODEOWNERS @openboa
+/.npmrc @openboa-ai/security-maintainers
+/LICENSE @openboa
+/SECURITY.md @openboa
+/skills/** @openboa
+/package.json @openboa
+/package-lock.json @openboa
+/npm-shrinkwrap.json @openboa-ai/security-maintainers
+/plugin.json @openboa
+`,
+  "CODEOWNERS must preserve the product ownership routes",
+);
+assert.match(
+  readFileSync(resolve(root, "SECURITY.md"), "utf8"),
+  /security@openboa\.ai/u,
+  "SECURITY.md must provide a private reporting channel",
+);
 
 const skillRoot = resolve(root, "skills");
 const skills = readdirSync(skillRoot).sort();

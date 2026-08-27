@@ -14,5 +14,5 @@ Unconfirmed Roast output is not a Bean. Do not commit personal or sample Beans
 to this repository. Evaluation outputs, traces, Judge responses, and timing
 belong to coffee-chat-eval.
 
-Report security issues privately to the repository maintainers. Do not include
+Report security issues privately to `security@openboa.ai`. Do not include
 secrets or personal content in a public issue.
