@@ -20,7 +20,6 @@ List the exact local commands and results.
 - [ ] No capability is reported as implemented or measured.
 - [ ] No network, external write, personal data, evaluation, or benchmark
       runtime was added.
-- [ ] Plugin install/uninstall and Roastery sync/unsync terminology remain
-      separate.
+- [ ] Product, Roastery, Bench, and Eval ownership boundaries remain separate.
 - [ ] The change is eligible for GitHub-native squash auto-merge after required
       checks and any organization-ruleset review pass.

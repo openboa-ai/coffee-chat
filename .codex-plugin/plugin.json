@@ -1,7 +1,7 @@
 {
   "name": "coffee-chat",
-  "version": "2026.8.23",
-  "description": "A Codex-first, Skills-only Plugin for explicit public Roastery journeys.",
+  "version": "0.1.0",
+  "description": "A Codex-first Agent Plugin for capturing confirmed perspectives and applying them to human understanding and agent judgment.",
   "author": {
     "name": "Openboa AI",
     "email": "support@openboa.ai",
@@ -10,22 +10,15 @@
   "homepage": "https://github.com/openboa-ai/coffee-chat",
   "repository": "https://github.com/openboa-ai/coffee-chat",
   "license": "MIT",
-  "keywords": ["coffee-chat", "taste", "skills", "roastery"],
+  "keywords": ["coffee-chat", "perspective", "taste", "skills"],
   "skills": "./skills/",
   "interface": {
     "displayName": "Coffee Chat",
-    "shortDescription": "Choose a public Roastery journey.",
-    "longDescription": "Build an owned public Roastery through exact Preview acceptance; six later Coffee Chat capabilities remain explicit and unavailable.",
+    "shortDescription": "Capture and apply a person's confirmed perspective.",
+    "longDescription": "Roast turns source material into a user-confirmed Bean. Brew applies that Bean to human understanding and agent judgment or action.",
     "developerName": "Openboa AI",
     "category": "Productivity",
     "capabilities": ["Skills"],
-    "websiteURL": "https://github.com/openboa-ai/coffee-chat",
-    "privacyPolicyURL": "https://github.com/openboa-ai/coffee-chat/blob/main/README.md",
-    "termsOfServiceURL": "https://github.com/openboa-ai/coffee-chat/blob/main/README.md",
-    "defaultPrompt": [
-      "Talk now with a public Roastery.",
-      "Build mine from the official public fork seed."
-    ],
-    "brandColor": "#6F4E37"
+    "websiteURL": "https://github.com/openboa-ai/coffee-chat"
   }
 }
