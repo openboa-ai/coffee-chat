@@ -24,6 +24,7 @@
     "/.claude-plugin/**",
     "/AGENTS.md",
     "/CODEOWNERS",
+    "/README.md",
     "/SECURITY.md",
     "/.npmrc",
     "/package.json",

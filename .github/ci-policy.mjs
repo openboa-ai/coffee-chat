@@ -1,9 +1,31 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(process.env.CI_POLICY_ROOT ?? ".");
 const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
+const trackedFiles = execFileSync("git", ["-C", root, "ls-files", "-z"], {
+  encoding: "utf8",
+})
+  .split("\0")
+  .filter(Boolean);
+function trackedEntries(directory = ".") {
+  const prefix = directory === "." ? "" : `${directory.replace(/\/$/u, "")}/`;
+  const entries = new Set();
+  for (const file of trackedFiles) {
+    if (!file.startsWith(prefix)) continue;
+    const remainder = file.slice(prefix.length);
+    if (!remainder) continue;
+    entries.add(remainder.split("/")[0]);
+  }
+  return [...entries].sort();
+}
+function checkoutEntries(directory = ".") {
+  const entries = trackedEntries(directory);
+  if (directory === ".") entries.push(".git");
+  return entries.sort();
+}
 const TRUSTED_CONTROL_SHA = "f33da6bbcdfebd0693ff7673d750f369629e000e";
 
 assert.equal(existsSync(resolve(root, ".npmrc")), false);
@@ -36,7 +58,7 @@ jobs:
   "trusted wrapper must remain exact",
 );
 
-assert.deepEqual(readdirSync(root).sort(), [
+assert.deepEqual(checkoutEntries(), [
   ".claude-plugin",
   ".codex-plugin",
   ".editorconfig",
@@ -83,6 +105,69 @@ assert.deepEqual(readdirSync(resolve(root, ".github")).sort(), [
   "workflows",
 ]);
 assert.deepEqual(readdirSync(resolve(root, ".githooks")).sort(), ["pre-commit"]);
+const expectedHook = [
+  "#!/bin/sh",
+  "set -eu",
+  "",
+  "scanner=${GITLEAKS_BIN:-gitleaks}",
+  'if ! command -v "$scanner" >/dev/null 2>&1; then',
+  "  printf '%s\\n' 'Gitleaks is required; install Gitleaks before committing.' >&2",
+  "  exit 1",
+  "fi",
+  "",
+  "if [ -e .gitleaks.toml ] || [ -e .gitleaksignore ]; then",
+  "  printf '%s\\n' 'Repository-local Gitleaks controls are not permitted.' >&2",
+  "  exit 1",
+  "fi",
+  "unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML",
+  '"$scanner" git --pre-commit --staged --gitleaks-ignore-path /dev/null \\',
+  "  --ignore-gitleaks-allow --redact --no-banner .",
+  'staged_dir="$(mktemp -d)"',
+  `trap 'rm -rf "$staged_dir"' EXIT HUP INT TERM`,
+  'git checkout-index --all --prefix="$staged_dir/"',
+  '"$scanner" dir --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \\',
+  '  --redact --no-banner "$staged_dir"',
+  "",
+].join("\n");
+assert.equal(readFileSync(resolve(root, ".githooks/pre-commit"), "utf8"), expectedHook);
+assert.notEqual(statSync(resolve(root, ".githooks/pre-commit")).mode & 0o111, 0);
+assert.equal(
+  readFileSync(resolve(root, ".gitignore"), "utf8"),
+  `node_modules/
+build/
+coverage/
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+
+# Local credentials
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+*.private.pem
+private-key.pem
+*.private.key
+private.key
+private-key.key
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+tls.key
+server.key
+server-key.pem
+*-private-key.pem
+*-private-key.key
+privkey*.pem
+*.p12
+*.pfx
+*.jks
+`,
+  ".gitignore must preserve the credential and local-artifact ignore contract",
+);
 
 const portable = readJson("plugin.json");
 const manifestKeys = [
@@ -189,6 +274,7 @@ assert.deepEqual(readJson(".github/merge-policy.json"), {
     "/.claude-plugin/**",
     "/AGENTS.md",
     "/CODEOWNERS",
+    "/README.md",
     "/SECURITY.md",
     "/.npmrc",
     "/package.json",
@@ -298,6 +384,7 @@ assert.equal(
 /.claude-plugin/** @openboa
 /AGENTS.md @openboa
 /CODEOWNERS @openboa
+/README.md @openboa
 /.npmrc @openboa-ai/security-maintainers
 /LICENSE @openboa
 /SECURITY.md @openboa
