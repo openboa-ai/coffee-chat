@@ -305,7 +305,9 @@ assert.equal(
   "codex.interface.defaultPrompt entries must be bounded strings",
 );
 assert.equal(typeof codex.interface.shortDescription, "string");
+assert.ok(codex.interface.shortDescription.trim().length > 0, "codex.interface.shortDescription must be non-empty");
 assert.equal(typeof codex.interface.longDescription, "string");
+assert.ok(codex.interface.longDescription.trim().length > 0, "codex.interface.longDescription must be non-empty");
 assertHttpsUrl(codex.interface.websiteURL, "codex.interface.websiteURL");
 
 assert.deepEqual(readJson(".github/merge-policy.json"), {
@@ -484,6 +486,7 @@ function parseSkillFrontmatter(source, skill) {
     uniqueKeys: true,
   });
   assert.deepEqual(document.errors, [], `${skill}: valid YAML frontmatter`);
+  assert.deepEqual(document.warnings, [], `${skill}: YAML frontmatter warnings are not permitted`);
   let fields;
   try {
     fields = document.toJS({ maxAliasCount: 0 });
