@@ -182,13 +182,33 @@ const manifestKeys = [
   "version",
 ];
 const hostManifestKeys = manifestKeys.filter((key) => key !== "$schema");
-const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
+function isSemver(value) {
+  const match = value.match(
+    /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/u,
+  );
+  if (!match || match.slice(1, 4).some((part) => part.length > 1 && part.startsWith("0"))) {
+    return false;
+  }
+  for (const [part, prerelease] of [
+    [match[4], true],
+    [match[5], false],
+  ]) {
+    if (!part) continue;
+    for (const identifier of part.split(".")) {
+      if (!/^[0-9A-Za-z-]+$/u.test(identifier)) return false;
+      if (prerelease && /^\d+$/u.test(identifier) && identifier.length > 1 && identifier.startsWith("0")) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
 const assertSharedManifest = (manifest, label) => {
   assert.equal(manifest !== null && typeof manifest === "object", true, `${label}: object required`);
   assert.equal(typeof manifest.name, "string", `${label}.name`);
   assert.match(manifest.name, /^[a-z0-9]+(?:-[a-z0-9]+)*$/u, `${label}.name`);
   assert.equal(typeof manifest.version, "string", `${label}.version`);
-  assert.match(manifest.version, semver, `${label}.version`);
+  assert.equal(isSemver(manifest.version), true, `${label}.version`);
   assert.equal(typeof manifest.description, "string", `${label}.description`);
   assert.ok(manifest.description.trim().length > 0, `${label}.description`);
   assert.equal(manifest.description.trim(), manifest.description, `${label}.description`);
