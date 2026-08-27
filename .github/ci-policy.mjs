@@ -119,7 +119,7 @@ const trustedControlSha = trustedWorkflowSource.match(
 assert.ok(trustedControlSha, "trusted wrapper must use one full control SHA");
 assert.equal(
   trustedControlSha,
-  "d6d8b73b4c1da5f57daa46d32a9f253cd0ef6a4a",
+  "f33da6bbcdfebd0693ff7673d750f369629e000e",
   "trusted wrapper must use the approved central control SHA",
 );
 assert.equal(
