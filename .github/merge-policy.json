@@ -25,6 +25,7 @@
     "/AGENTS.md",
     "/CODEOWNERS",
     "/README.md",
+    "/LICENSE",
     "/SECURITY.md",
     "/.npmrc",
     "/package.json",

@@ -298,6 +298,7 @@ assert.deepEqual(readJson(".github/merge-policy.json"), {
     "/AGENTS.md",
     "/CODEOWNERS",
     "/README.md",
+    "/LICENSE",
     "/SECURITY.md",
     "/.npmrc",
     "/package.json",
@@ -438,7 +439,29 @@ function parseSkillFrontmatter(source, skill) {
     const field = line.match(/^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u);
     assert.ok(field, `${skill}: valid frontmatter field`);
     assert.equal(fields.has(field[1]), false, `${skill}: duplicate frontmatter field`);
-    fields.set(field[1], field[2]);
+    const value = field[2];
+    if (value.startsWith('"')) {
+      let parsed;
+      try {
+        parsed = JSON.parse(value);
+      } catch {
+        assert.fail(`${skill}: valid YAML double-quoted scalar`);
+      }
+      assert.equal(typeof parsed, "string", `${skill}: YAML scalar must be a string`);
+      fields.set(field[1], parsed);
+      continue;
+    }
+    if (value.startsWith("'")) {
+      assert.match(value, /^'(?:[^']|'')*'$/u, `${skill}: valid YAML single-quoted scalar`);
+      fields.set(field[1], value.slice(1, -1).replaceAll("''", "'"));
+      continue;
+    }
+    assert.match(
+      value,
+      /^(?![-?:,\[\]{}#&*!|>%@`~]|(?:null|true|false|yes|no|on|off)$|[-+]?\d(?:[\d_]*(?:\.\d[\d_]*)?)?(?:e[-+]?\d+)?$)[^\t\r\n:#]+$/iu,
+      `${skill}: valid YAML plain string scalar`,
+    );
+    fields.set(field[1], value.trimEnd());
   }
   return fields;
 }
