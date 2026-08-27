@@ -126,9 +126,10 @@ the root `plugin.json` and `skills/`, while a host artifact adds that host's
 manifest and uses the same `skills/` directory.
 
 The repository contains no Roastery data, Coffee archive, benchmark cases,
-Ground Truth, evaluator evidence, runtime, MCP server, hooks, commands,
-agents, marketplace catalog, or budget configuration. Those concerns belong to
-the sibling repositories or to the executing host.
+Ground Truth, evaluator evidence, runtime, MCP server, product commands,
+agents, marketplace catalog, or budget configuration. The repository-local
+`.githooks/pre-commit` is only a security guard; it is not Product behavior.
+Other concerns belong to the sibling repositories or to the executing host.
 
 ## Repository boundaries
 
@@ -140,6 +141,12 @@ the sibling repositories or to the executing host.
 
 The Product repository owns Skills and their meaning. It does not own the data
 or the measurement of its own success.
+
+## Local security hook
+
+After cloning, run `npm run hooks:install` to configure Git to use the committed
+`.githooks/pre-commit` guard. This local hook is supplementary to the trusted
+central checks and grants no permission to publish, persist, or execute data.
 
 ## Status
 
