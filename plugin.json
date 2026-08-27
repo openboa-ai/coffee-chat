@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "coffee-chat",
-  "version": "2026.8.23",
-  "description": "A Codex-first, Skills-only Plugin for explicit public Roastery journeys.",
+  "version": "0.1.0",
+  "description": "A Codex-first Agent Plugin for capturing confirmed perspectives and applying them to human understanding and agent judgment.",
   "author": {
     "name": "Openboa AI",
     "email": "support@openboa.ai",
@@ -11,5 +11,5 @@
   "homepage": "https://github.com/openboa-ai/coffee-chat",
   "repository": "https://github.com/openboa-ai/coffee-chat",
   "license": "MIT",
-  "keywords": ["coffee-chat", "taste", "skills", "roastery"]
+  "keywords": ["coffee-chat", "perspective", "taste", "skills"]
 }

@@ -1,129 +1,42 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { parseDocument } from "yaml";
 
-import { loadPolicyParser } from "./policy-bootstrap.mjs";
-
-const controlRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const root = resolve(process.env.CI_POLICY_ROOT ?? controlRoot);
-const { parseDocument } = loadPolicyParser(controlRoot);
-assert.equal(
-  existsSync(resolve(root, ".npmrc")),
-  false,
-  "root .npmrc must be absent",
-);
-assert.equal(
-  existsSync(resolve(root, ".github/policy-parser/.npmrc")),
-  false,
-  "isolated policy parser .npmrc must be absent before install",
-);
-assert.equal(
-  existsSync(resolve(root, "npm-shrinkwrap.json")),
-  false,
-  "root npm-shrinkwrap.json must be absent",
-);
-assert.equal(
-  existsSync(resolve(root, ".github/policy-parser/npm-shrinkwrap.json")),
-  false,
-  "isolated policy parser npm-shrinkwrap.json must be absent before loading",
-);
-const pathAt = (path) => `${root}/${path}`;
-const workflowRoot = pathAt(".github/workflows");
-const YAML_MAX_BYTES = 256 * 1024;
-const YAML_MAX_ALIASES = 100;
-const YAML_MAX_DEPTH = 32;
-const YAML_MAX_NODES = 10_000;
-const YAML_MAX_STRING_BYTES = 256 * 1024;
-
-function read(path) {
-  return readFileSync(pathAt(path), "utf8");
-}
-
-function assertYamlResourceBudget(value, label) {
-  const pending = [{ value, depth: 0 }];
-  const seen = new WeakSet();
-  let nodes = 0;
-  let stringBytes = 0;
-  while (pending.length > 0) {
-    const current = pending.pop();
-    if (!current) break;
-    nodes += 1;
-    assert.ok(nodes <= YAML_MAX_NODES, `${label}: document node limit`);
-    assert.ok(
-      current.depth <= YAML_MAX_DEPTH,
-      `${label}: document depth limit`,
-    );
-    if (typeof current.value === "string") {
-      stringBytes += Buffer.byteLength(current.value, "utf8");
-      assert.ok(
-        stringBytes <= YAML_MAX_STRING_BYTES,
-        `${label}: document string limit`,
-      );
-      continue;
-    }
-    if (!current.value || typeof current.value !== "object") continue;
-    if (seen.has(current.value)) continue;
-    seen.add(current.value);
-    const children = Array.isArray(current.value)
-      ? current.value
-      : Object.entries(current.value).flat();
-    for (const child of children) {
-      pending.push({ value: child, depth: current.depth + 1 });
-    }
+const root = resolve(process.env.CI_POLICY_ROOT ?? ".");
+const readJson = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
+const trackedFiles = execFileSync("git", ["-C", root, "ls-files", "-z"], {
+  encoding: "utf8",
+})
+  .split("\0")
+  .filter(Boolean);
+function trackedEntries(directory = ".") {
+  const prefix = directory === "." ? "" : `${directory.replace(/\/$/u, "")}/`;
+  const entries = new Set();
+  for (const file of trackedFiles) {
+    if (!file.startsWith(prefix)) continue;
+    const remainder = file.slice(prefix.length);
+    if (!remainder) continue;
+    entries.add(remainder.split("/")[0]);
   }
+  return [...entries].sort();
 }
-
-function parseBoundedYaml(path, label) {
-  const source = read(path);
-  assert.ok(
-    Buffer.byteLength(source, "utf8") <= YAML_MAX_BYTES,
-    `${label}: document byte limit`,
-  );
-  const document = parseDocument(source, {
-    prettyErrors: true,
-    strict: true,
-    uniqueKeys: true,
-  });
-  assert.deepEqual(document.errors, [], `${label}: unique valid YAML`);
-  let value;
-  try {
-    value = document.toJS({ maxAliasCount: YAML_MAX_ALIASES });
-  } catch {
-    assert.fail(`${label}: alias resource limit`);
-  }
-  assertYamlResourceBudget(value, label);
-  return value;
+function checkoutEntries(directory = ".") {
+  const entries = trackedEntries(directory);
+  if (directory === ".") entries.push(".git");
+  return entries.sort();
 }
+const TRUSTED_CONTROL_SHA = "f33da6bbcdfebd0693ff7673d750f369629e000e";
 
-function exactKeys(value, keys, label) {
-  assert.equal(
-    value !== null && typeof value === "object" && !Array.isArray(value),
-    true,
-    `${label}: object required`,
-  );
-  assert.deepEqual(Object.keys(value).sort(), [...keys].sort(), label);
-}
-
+assert.equal(existsSync(resolve(root, ".npmrc")), false);
+assert.equal(existsSync(resolve(root, "npm-shrinkwrap.json")), false);
 assert.deepEqual(
-  readdirSync(workflowRoot)
-    .filter((name) => /\.ya?ml$/u.test(name))
-    .sort(),
+  readdirSync(resolve(root, ".github/workflows")).sort(),
   ["trusted.yml"],
-  "target repository must expose only the trusted wrapper",
-);
-const trustedWorkflowSource = read(".github/workflows/trusted.yml");
-const trustedControlSha = trustedWorkflowSource.match(
-  /uses: openboa-ai\/\.github\/\.github\/workflows\/coffee-trusted-gate\.yml@([0-9a-f]{40})/u,
-)?.[1];
-assert.ok(trustedControlSha, "trusted wrapper must use one full control SHA");
-assert.equal(
-  trustedControlSha,
-  "f33da6bbcdfebd0693ff7673d750f369629e000e",
-  "trusted wrapper must use the approved central control SHA",
 );
 assert.equal(
-  trustedWorkflowSource,
+  readFileSync(resolve(root, ".github/workflows/trusted.yml"), "utf8"),
   `name: OpenBoa Coffee trusted gate
 
 on:
@@ -139,207 +52,461 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    uses: openboa-ai/.github/.github/workflows/coffee-trusted-gate.yml@${trustedControlSha}
+    uses: openboa-ai/.github/.github/workflows/coffee-trusted-gate.yml@${TRUSTED_CONTROL_SHA}
     with:
-      control_sha: ${trustedControlSha}
+      control_sha: ${TRUSTED_CONTROL_SHA}
 `,
   "trusted wrapper must remain exact",
 );
 
-const packageJson = JSON.parse(read("package.json"));
-const packageLock = JSON.parse(read("package-lock.json"));
-assert.equal(
-  packageJson.scripts.policy,
-  "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
-);
-assert.deepEqual(packageJson.scripts, {
-  "format:check": "prettier --check .",
-  format: "prettier --write .",
-  typecheck: "tsc --noEmit",
-  test: "node --test tests/*.test.mjs",
-  "readme:assets:verify": "node scripts/verify-readme-assets.mjs",
-  "readme:assets:reproduce": "node scripts/reproduce-readme-assets.mjs",
-  build: "node scripts/build-package.mjs",
-  "package:smoke": "node scripts/package-smoke.mjs",
-  "hooks:install": "git config core.hooksPath .githooks",
-  policy:
-    "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
-  "security:scan": "gitleaks git --redact --no-banner .",
-  verify:
-    "npm run format:check && npm run typecheck && npm test && npm run readme:assets:verify && npm run build && npm run package:smoke && npm run policy",
-});
-assert.deepEqual(Object.keys(packageJson.devDependencies).sort(), [
-  "@types/node",
-  "prettier",
-  "typescript",
+assert.deepEqual(checkoutEntries(), [
+  ".claude-plugin",
+  ".codex-plugin",
+  ".editorconfig",
+  ".git",
+  ".gitattributes",
+  ".githooks",
+  ".github",
+  ".gitignore",
+  "AGENTS.md",
+  "CODEOWNERS",
+  "LICENSE",
+  "README.md",
+  "SECURITY.md",
+  "package-lock.json",
+  "package.json",
+  "plugin.json",
+  "skills",
 ]);
-assert.equal(packageLock.lockfileVersion, 3);
-assert.equal(packageLock.requires, true);
-assert.equal(packageLock.name, packageJson.name);
-assert.deepEqual(
-  packageLock.packages[""].devDependencies,
-  packageJson.devDependencies,
-);
-assert.deepEqual(packageLock.packages[""].engines, packageJson.engines);
-for (const [lockPath, entry] of Object.entries(packageLock.packages)) {
-  if (lockPath === "") continue;
-  const marker = "node_modules/";
-  const markerIndex = lockPath.lastIndexOf(marker);
-  assert.notEqual(markerIndex, -1, `${lockPath}: package identity`);
-  const name = lockPath.slice(markerIndex + marker.length);
-  const version = entry.version;
-  assert.match(version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u);
-  const tarballName = name.slice(name.lastIndexOf("/") + 1);
-  assert.equal(
-    entry.resolved,
-    `https://registry.npmjs.org/${name}/-/${tarballName}-${version}.tgz`,
-    `${name}: registry identity`,
-  );
-  assert.match(entry.integrity, /^sha512-[A-Za-z0-9+/]+={0,2}$/u);
-  assert.notEqual(entry.link, true, `${name}: linked dependency`);
-  assert.notEqual(entry.hasInstallScript, true, `${name}: install script`);
-}
 
-const dependabot = parseBoundedYaml(".github/dependabot.yml", "dependabot.yml");
-assert.equal(dependabot.version, 2);
-assert.equal(Array.isArray(dependabot.updates), true);
-assert.equal(dependabot.updates.length, 2);
-const updateByEcosystem = new Map(
-  dependabot.updates.map((update) => [update["package-ecosystem"], update]),
-);
-assert.deepEqual([...updateByEcosystem.keys()].sort(), [
-  "github-actions",
-  "npm",
-]);
-for (const [ecosystem, update] of updateByEcosystem) {
-  assert.equal(update.directory, "/", `${ecosystem}: root updates`);
-  assert.deepEqual(update.schedule, { interval: "weekly" });
-  assert.equal(update["open-pull-requests-limit"], 5);
-  assert.deepEqual(update["commit-message"], { prefix: "deps" });
-  assert.deepEqual(update.allow, [
-    {
-      "dependency-name": "*",
-      "update-types": [
-        "version-update:semver-minor",
-        "version-update:semver-patch",
-      ],
+assert.deepEqual(readJson("package.json"), {
+  name: "@openboa-ai/coffee-chat",
+  version: "0.0.0",
+  private: true,
+  type: "module",
+  scripts: {
+    "hooks:install": "git config core.hooksPath .githooks",
+    verify: "node .github/ci-policy.mjs",
+  },
+  dependencies: { yaml: "2.9.0" },
+});
+assert.deepEqual(readJson("package-lock.json"), {
+  name: "@openboa-ai/coffee-chat",
+  version: "0.0.0",
+  lockfileVersion: 3,
+  requires: true,
+  packages: {
+    "": {
+      name: "@openboa-ai/coffee-chat",
+      version: "0.0.0",
+      dependencies: { yaml: "2.9.0" },
     },
-  ]);
-  assert.deepEqual(update.groups.security, {
-    "applies-to": "security-updates",
-    patterns: ["*"],
-  });
-}
-assert.deepEqual(updateByEcosystem.get("npm").groups, {
-  security: { "applies-to": "security-updates", patterns: ["*"] },
-  "production-minor-patch": {
-    "applies-to": "version-updates",
-    "dependency-type": "production",
-    "update-types": ["minor", "patch"],
-    patterns: ["*"],
-  },
-  "development-minor-patch": {
-    "applies-to": "version-updates",
-    "dependency-type": "development",
-    "update-types": ["minor", "patch"],
-    patterns: ["*"],
+    "node_modules/yaml": {
+      version: "2.9.0",
+      resolved: "https://registry.npmjs.org/yaml/-/yaml-2.9.0.tgz",
+      integrity: "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==",
+      bin: { yaml: "bin.mjs" },
+      engines: { node: ">= 14.6" },
+      funding: { url: "https://github.com/sponsors/eemeli" },
+    },
   },
 });
-assert.deepEqual(updateByEcosystem.get("github-actions").groups, {
-  security: { "applies-to": "security-updates", patterns: ["*"] },
-  "compatible-actions": {
-    "applies-to": "version-updates",
-    "update-types": ["minor", "patch"],
-    patterns: ["*"],
-  },
-});
+assert.deepEqual(readdirSync(resolve(root, ".github")).sort(), [
+  "PULL_REQUEST_TEMPLATE.md",
+  "ci-policy.mjs",
+  "dependabot.yml",
+  "merge-policy.json",
+  "workflows",
+]);
+assert.deepEqual(readdirSync(resolve(root, ".githooks")).sort(), ["pre-commit"]);
+const expectedHook = [
+  "#!/bin/sh",
+  "set -eu",
+  "",
+  "scanner=${GITLEAKS_BIN:-gitleaks}",
+  'if ! command -v "$scanner" >/dev/null 2>&1; then',
+  "  printf '%s\\n' 'Gitleaks is required; install Gitleaks before committing.' >&2",
+  "  exit 1",
+  "fi",
+  "",
+  "if [ -e .gitleaks.toml ] || [ -e .gitleaksignore ]; then",
+  "  printf '%s\\n' 'Repository-local Gitleaks controls are not permitted.' >&2",
+  "  exit 1",
+  "fi",
+  "unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML",
+  '"$scanner" git --pre-commit --staged --gitleaks-ignore-path /dev/null \\',
+  "  --ignore-gitleaks-allow --redact --no-banner .",
+  'staged_dir="$(mktemp -d)"',
+  `trap 'rm -rf "$staged_dir"' EXIT HUP INT TERM`,
+  'git checkout-index --all --prefix="$staged_dir/"',
+  '"$scanner" dir --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \\',
+  '  --redact --no-banner "$staged_dir"',
+  "",
+].join("\n");
+assert.equal(readFileSync(resolve(root, ".githooks/pre-commit"), "utf8"), expectedHook);
+assert.notEqual(statSync(resolve(root, ".githooks/pre-commit")).mode & 0o111, 0);
+assert.equal(
+  readFileSync(resolve(root, ".gitignore"), "utf8"),
+  `node_modules/
+build/
+coverage/
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
 
-const mergePolicy = JSON.parse(read(".github/merge-policy.json"));
-exactKeys(
-  mergePolicy,
-  [
-    "merge_method",
-    "required_approvals",
-    "required_code_owner_reviews",
-    "required_last_push_approvals",
-    "merge_queue",
-    "required_events",
-    "eligible_author_associations",
-    "eligible_bot_logins",
-    "custom_merge_controller",
-    "required_checks",
-    "protected_paths",
-    "codeql_enforcement",
-    "sensitive_review",
-  ],
-  "merge policy",
+# Local credentials
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+*.private.pem
+private-key.pem
+*.private.key
+private.key
+private-key.key
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+tls.key
+server.key
+server-key.pem
+*-private-key.pem
+*-private-key.key
+privkey*.pem
+*.p12
+*.pfx
+*.jks
+`,
+  ".gitignore must preserve the credential and local-artifact ignore contract",
 );
-assert.equal(mergePolicy.merge_method, "squash");
-assert.equal(mergePolicy.required_approvals, 0);
-assert.equal(mergePolicy.required_code_owner_reviews, 0);
-assert.equal(mergePolicy.required_last_push_approvals, 0);
-assert.equal(mergePolicy.merge_queue, false);
-assert.deepEqual(mergePolicy.required_events, ["pull_request"]);
-assert.deepEqual(mergePolicy.eligible_author_associations, ["OWNER", "MEMBER"]);
-assert.deepEqual(mergePolicy.eligible_bot_logins, ["dependabot[bot]"]);
-assert.equal("eligible_author_logins" in mergePolicy, false);
-assert.equal(mergePolicy.custom_merge_controller, false);
-assert.deepEqual(mergePolicy.required_checks, [
-  {
-    context:
-      "OpenBoa Coffee trusted required / OpenBoa Coffee trusted required",
-    integration_id: 15368,
+
+const portable = readJson("plugin.json");
+const manifestKeys = [
+  "$schema",
+  "author",
+  "description",
+  "homepage",
+  "keywords",
+  "license",
+  "name",
+  "repository",
+  "version",
+];
+const hostManifestKeys = manifestKeys.filter((key) => key !== "$schema");
+function assertHttpsUrl(value, label) {
+  assert.equal(typeof value, "string", `${label}: URL string`);
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    assert.fail(`${label}: valid URL`);
+  }
+  assert.equal(parsed.protocol, "https:", `${label}: HTTPS URL`);
+  assert.ok(parsed.hostname, `${label}: URL host`);
+  assert.equal(parsed.username, "", `${label}: URL credentials are not permitted`);
+  assert.equal(parsed.password, "", `${label}: URL credentials are not permitted`);
+}
+function isSemver(value) {
+  const match = value.match(
+    /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/u,
+  );
+  if (!match || match.slice(1, 4).some((part) => part.length > 1 && part.startsWith("0"))) {
+    return false;
+  }
+  for (const [part, prerelease] of [
+    [match[4], true],
+    [match[5], false],
+  ]) {
+    if (!part) continue;
+    for (const identifier of part.split(".")) {
+      if (!/^[0-9A-Za-z-]+$/u.test(identifier)) return false;
+      if (prerelease && /^\d+$/u.test(identifier) && identifier.length > 1 && identifier.startsWith("0")) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+const assertSharedManifest = (manifest, label) => {
+  assert.equal(manifest !== null && typeof manifest === "object", true, `${label}: object required`);
+  assert.equal(typeof manifest.name, "string", `${label}.name`);
+  assert.match(manifest.name, /^[a-z0-9]+(?:-[a-z0-9]+)*$/u, `${label}.name`);
+  assert.equal(typeof manifest.version, "string", `${label}.version`);
+  assert.equal(isSemver(manifest.version), true, `${label}.version`);
+  assert.equal(typeof manifest.description, "string", `${label}.description`);
+  assert.ok(manifest.description.trim().length > 0, `${label}.description`);
+  assert.equal(manifest.description.trim(), manifest.description, `${label}.description`);
+  assert.equal(manifest.author !== null && typeof manifest.author === "object", true, `${label}.author`);
+  assert.deepEqual(Object.keys(manifest.author).sort(), ["email", "name", "url"], `${label}.author keys`);
+  assert.equal(typeof manifest.author.name, "string", `${label}.author.name`);
+  assert.ok(manifest.author.name.trim().length > 0, `${label}.author.name`);
+  assert.match(manifest.author.email, /^[^@\s]+@[^@\s]+\.[^@\s]+$/u, `${label}.author.email`);
+  assertHttpsUrl(manifest.author.url, `${label}.author.url`);
+  assertHttpsUrl(manifest.homepage, `${label}.homepage`);
+  assertHttpsUrl(manifest.repository, `${label}.repository`);
+  assert.equal(manifest.license, "MIT", `${label}.license`);
+  assert.equal(Array.isArray(manifest.keywords), true, `${label}.keywords`);
+  assert.ok(manifest.keywords.length > 0, `${label}.keywords`);
+  assert.equal(manifest.keywords.every((keyword) => typeof keyword === "string" && keyword.length > 0), true, `${label}.keywords`);
+  assert.equal(new Set(manifest.keywords).size, manifest.keywords.length, `${label}.keywords unique`);
+};
+assert.equal(
+  portable.$schema,
+  "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+);
+assert.equal(portable.name, "coffee-chat");
+assert.deepEqual(Object.keys(portable).sort(), manifestKeys);
+assertSharedManifest(portable, "portable");
+
+const codex = readJson(".codex-plugin/plugin.json");
+const claude = readJson(".claude-plugin/plugin.json");
+assert.deepEqual(readdirSync(resolve(root, ".codex-plugin")).sort(), ["plugin.json"]);
+assert.deepEqual(readdirSync(resolve(root, ".claude-plugin")).sort(), ["plugin.json"]);
+assert.deepEqual(Object.keys(codex).sort(), [...hostManifestKeys, "interface", "skills"].sort());
+assert.deepEqual(Object.keys(claude).sort(), hostManifestKeys);
+assertSharedManifest(codex, "codex");
+assertSharedManifest(claude, "claude");
+for (const [label, manifest] of [
+  ["codex", codex],
+  ["claude", claude],
+]) {
+  for (const key of manifestKeys.slice(1)) {
+    assert.deepEqual(manifest[key], portable[key], `${label}.${key}`);
+  }
+}
+assert.equal(codex.skills, "./skills/");
+assert.deepEqual(Object.keys(codex.interface).sort(), [
+  "capabilities",
+  "category",
+  "defaultPrompt",
+  "developerName",
+  "displayName",
+  "longDescription",
+  "shortDescription",
+  "websiteURL",
+]);
+assert.equal(codex.interface.displayName, "Coffee Chat");
+assert.equal(codex.interface.developerName, portable.author.name);
+assert.equal(codex.interface.category, "Productivity");
+assert.deepEqual(codex.interface.capabilities, ["Skills"]);
+assert.deepEqual(codex.interface.defaultPrompt, [
+  "Capture my perspective from this source for my confirmation.",
+  "Help me understand this person through their confirmed perspective.",
+  "Apply my confirmed perspective to this decision or task.",
+]);
+assert.equal(
+  codex.interface.defaultPrompt.every(
+    (prompt) => typeof prompt === "string" && prompt.trim().length > 0 && prompt.length <= 128,
+  ),
+  true,
+  "codex.interface.defaultPrompt entries must be bounded strings",
+);
+assert.equal(typeof codex.interface.shortDescription, "string");
+assert.ok(codex.interface.shortDescription.trim().length > 0, "codex.interface.shortDescription must be non-empty");
+assert.equal(typeof codex.interface.longDescription, "string");
+assert.ok(codex.interface.longDescription.trim().length > 0, "codex.interface.longDescription must be non-empty");
+assertHttpsUrl(codex.interface.websiteURL, "codex.interface.websiteURL");
+
+assert.deepEqual(readJson(".github/merge-policy.json"), {
+  merge_method: "squash",
+  required_approvals: 0,
+  required_code_owner_reviews: 0,
+  required_last_push_approvals: 0,
+  merge_queue: false,
+  required_events: ["pull_request"],
+  eligible_author_associations: ["OWNER", "MEMBER"],
+  eligible_bot_logins: ["dependabot[bot]"],
+  custom_merge_controller: false,
+  required_checks: [
+    {
+      context: "OpenBoa Coffee trusted required / OpenBoa Coffee trusted required",
+      integration_id: 15368,
+    },
+  ],
+  protected_paths: [
+    "/plugin.json",
+    "/.github/**",
+    "/.githooks/**",
+    "/.gitleaksignore",
+    "/.gitleaks.toml",
+    "/.codex-plugin/**",
+    "/.claude-plugin/**",
+    "/AGENTS.md",
+    "/CODEOWNERS",
+    "/README.md",
+    "/LICENSE",
+    "/SECURITY.md",
+    "/.npmrc",
+    "/package.json",
+    "/package-lock.json",
+    "/npm-shrinkwrap.json",
+    "/skills/**",
+  ],
+  codeql_enforcement: "trusted_central_aggregate",
+  sensitive_review: {
+    enforcement: "github_environment",
+    environment: "coffee-security",
+    required_approvals: 1,
+    prevent_self_review: false,
   },
-]);
-assert.deepEqual(mergePolicy.protected_paths, [
-  "/.github/**",
-  "/.githooks/**",
-  "/.gitleaksignore",
-  "/.gitleaks.toml",
-  "/.agents/**",
-  "/.codex-plugin/**",
-  "/AGENTS.md",
-  "/CODEOWNERS",
-  "/SECURITY.md",
-  "/.npmrc",
-  "/contract/**",
-  "/package.json",
-  "/package-lock.json",
-  "/npm-shrinkwrap.json",
-  "/runtime/**",
-  "/scripts/**",
-  "/skills/**",
-]);
-assert.equal(mergePolicy.codeql_enforcement, "trusted_central_aggregate");
-assert.deepEqual(mergePolicy.sensitive_review, {
-  enforcement: "github_environment",
-  environment: "coffee-security",
-  required_approvals: 1,
-  prevent_self_review: false,
 });
 
-const agents = read("AGENTS.md");
-assert.match(agents, /GitHub-native\s+squash auto-merge/u);
-assert.match(agents, /repository ruleset/u);
-assert.match(agents, /coffee-security/u);
-assert.match(agents, /Never add custom\s+write-token merge automation/u);
-const pullRequestTemplate = read(".github/PULL_REQUEST_TEMPLATE.md");
-assert.match(pullRequestTemplate, /Sensitive-path declaration/u);
-assert.match(pullRequestTemplate, /coffee-security/u);
-
-for (const path of [
-  "src",
-  "roastery",
-  "evaluation",
-  "benchmark",
-  "hooks",
-  "build",
-  "submission",
+for (const forbidden of [
   "mcp.json",
   ".mcp.json",
-  ".app.json",
-  "docs/migration",
+  "hooks",
+  "commands",
+  "agents",
+  "assets",
+  ".agents",
+  "config",
+  "contract",
+  "docs",
+  "marketplace",
+  "runtime",
+  "scripts",
+  "tests",
 ]) {
-  assert.equal(existsSync(pathAt(path)), false, `forbidden path: ${path}`);
+  assert.equal(existsSync(resolve(root, forbidden)), false, forbidden);
 }
-process.stdout.write(`${JSON.stringify({ status: "policy_passed" })}\n`);
+
+assert.equal(
+  readFileSync(resolve(root, ".github/dependabot.yml"), "utf8"),
+  `version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      production-minor-patch:
+        applies-to: version-updates
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      development-minor-patch:
+        applies-to: version-updates
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    allow:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-minor
+          - version-update:semver-patch
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      compatible-actions:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+`,
+  "Dependabot policy must remain bounded to approved update lanes",
+);
+assert.equal(
+  readFileSync(resolve(root, "CODEOWNERS"), "utf8"),
+  `# Ownership routes review context; GitHub requires zero human approvals.
+/.github/** @openboa
+/.codex-plugin/** @openboa
+/.claude-plugin/** @openboa
+/AGENTS.md @openboa
+/CODEOWNERS @openboa
+/README.md @openboa
+/.npmrc @openboa-ai/security-maintainers
+/LICENSE @openboa
+/SECURITY.md @openboa
+/skills/** @openboa
+/package.json @openboa
+/package-lock.json @openboa
+/npm-shrinkwrap.json @openboa-ai/security-maintainers
+/plugin.json @openboa
+`,
+  "CODEOWNERS must preserve the product ownership routes",
+);
+assert.match(
+  readFileSync(resolve(root, "SECURITY.md"), "utf8"),
+  /security@openboa\.ai/u,
+  "SECURITY.md must provide a private reporting channel",
+);
+
+const skillRoot = resolve(root, "skills");
+const skills = readdirSync(skillRoot).sort();
+assert.deepEqual(skills, ["brew", "roast"]);
+function parseSkillFrontmatter(source, skill) {
+  const lines = source.split("\n");
+  assert.equal(lines[0], "---", `${skill}: frontmatter must start at line 1`);
+  const closing = lines.findIndex((line, index) => index > 0 && line === "---");
+  assert.notEqual(closing, -1, `${skill}: bounded frontmatter block`);
+  const yamlSource = `${lines.slice(1, closing).join("\n")}\n`;
+  assert.ok(Buffer.byteLength(yamlSource, "utf8") <= 32 * 1024, `${skill}: frontmatter size limit`);
+  assert.equal(
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(yamlSource),
+    false,
+    `${skill}: frontmatter control characters are not permitted`,
+  );
+  const document = parseDocument(yamlSource, {
+    prettyErrors: true,
+    strict: true,
+    uniqueKeys: true,
+  });
+  assert.deepEqual(document.errors, [], `${skill}: valid YAML frontmatter`);
+  assert.deepEqual(document.warnings, [], `${skill}: YAML frontmatter warnings are not permitted`);
+  let fields;
+  try {
+    fields = document.toJS({ maxAliasCount: 0 });
+  } catch {
+    assert.fail(`${skill}: YAML aliases are not permitted`);
+  }
+  assert.equal(fields !== null && typeof fields === "object" && !Array.isArray(fields), true, `${skill}: YAML mapping required`);
+  assert.deepEqual(Object.keys(fields).sort(), ["description", "name"]);
+  assert.equal(typeof fields.name, "string", `${skill}: YAML name scalar`);
+  assert.equal(typeof fields.description, "string", `${skill}: YAML description scalar`);
+  assert.ok(fields.description.trim(), `${skill}: YAML description content`);
+  return fields;
+}
+for (const skill of skills) {
+  const path = resolve(skillRoot, skill, "SKILL.md");
+  assert.equal(existsSync(path), true, skill);
+  assert.deepEqual(readdirSync(resolve(skillRoot, skill)).sort(), ["SKILL.md"], skill);
+  const source = readFileSync(path, "utf8");
+  const fields = parseSkillFrontmatter(source, skill);
+  assert.equal(fields.name, skill, `${skill}: frontmatter name`);
+}
+
+console.log("Coffee Chat structure and manifest policy passed.");

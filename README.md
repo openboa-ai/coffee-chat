@@ -1,97 +1,161 @@
-> [!IMPORTANT] **WIP** — Coffee Chat is under active development. This README
-> shows the complete first release. Only `$coffee-init` is implemented today;
-> the rest of the first-release Skills are not yet available.
+# Coffee Chat
 
-![The Coffee Chat title between two illustrated coffee cups in the OpenBoa color palette.](docs/assets/readme/coffee-chat-hero.png)
+> Codex-first Agent Plugin for capturing confirmed perspectives and applying
+> them to human understanding and agent judgment.
 
-Coffee Chat is an **Agent Plugin** that turns your reviewed judgments into
-records people can explore through **Talk** and Agents can use in **Work**.
+## Essence
 
-## The same information can lead two people in different directions.
+Important judgment depends not only on what a person knows, but on what they
+consider important and which trade-offs they accept. Coffee Chat makes that
+perspective reusable without pretending that an AI inference is the person's
+view.
 
-Give two people the same news, paper, or plan. One may see an opportunity; the
-other may see a risk.
+## Role
 
-Neither has to be pretending. Each acts on what seems important and right from
-where they stand.
+Coffee Chat is the Product and Plugin layer. It owns the meaning and execution
+boundaries of Roast and Brew, while sibling repositories own data, benchmark
+criteria, and evaluation evidence.
 
-> **Same information. Different meaning. Different priority. Different next
-> move.**
+## Goal
 
-The source alone cannot tell an Agent which direction you would take. Coffee
-Chat records that missing layer:
+Capture a person's expressed perspective in a user-confirmed Bean, then apply
+that Bean so another person can understand the owner or an Agent can judge,
+create, or take a bounded action using the owner's priorities.
 
-> **What it meant to you → What mattered to you → What you would do**
+## Why
 
-You review and own each record. People can explore it through **Talk**. Agents
-can use it in **Work**.
+People publish abundant information in posts, interviews, documents, talks,
+and work records, yet the person's priorities and judgment remain difficult to
+understand because perspective signals are scattered. Coffee Chat addresses
+that gap; the problem is not that people never share viewpoints, but that
+others cannot reliably understand the viewpoint inside an information-heavy
+stream. These expressions are often public opinions rather than hidden
+personality data: an industry-change judgment, a news or event opinion, or an
+explanation of what matters in work can all be perspective signals. Coffee
+Chat is not a knowledge summarizer and it does not infer a hidden personality.
 
-> **As Agents make execution cheaper, deciding what matters becomes the
-> bottleneck.**
+## What
 
-## Install with your Agent
+The Product exposes two Skills. Roast captures a source-supported perspective
+for confirmation. Brew applies a confirmed perspective to a new situation and
+produces a human-understanding or agent-judgment/action result.
 
-Paste this into your Agent:
+## How
 
-```text
-Install Coffee Chat. Follow this guide:
-https://raw.githubusercontent.com/openboa-ai/coffee-chat/main/INSTALL_FOR_AGENTS.md
-```
+An Origin is source material. Roast produces a reviewable candidate, and only
+the user's explicit confirmation makes it a Bean. Brew consumes that confirmed
+Bean together with the current prompt and input and produces Coffee. Public
+content can be an Origin, but the confirmation boundary remains mandatory.
 
-## Discover current capabilities
+## Product model
 
-The package publishes one read-only, machine-readable
-[capability contract](config/capabilities.json). It identifies the seven shipped
-Skills, their contained entrypoints, and their current availability under the
-same Coffee Chat CalVer as both Plugin manifests.
+~~~text
+Origin (source, facts, context)
+  -> Roast
+  -> candidate
+  -> explicit user confirmation
+  -> Bean (confirmed perspective, taste, and needed factual context)
+  -> Brew
+  -> Coffee
+       ├─ Human Understanding
+       └─ Agent Judgment / Action
+~~~
 
-Reading this contract does not activate or execute a Skill. In this release,
-only Init is available; the other six first-release Skills remain explicitly
-`not_implemented`.
+Taste is the observed effect of a confirmed Bean acting as an Agent's choice
+criterion; it is not a separate file or schema.
 
-## Store judgment, not just information.
+### Roast
 
-A **Bean** stores your approved judgment—not a copy of what you read.
+Roast captures a person's expressed perspective from an Origin. It separates
+facts from a one-off opinion, identifies priorities and trade-offs, preserves
+scope and uncertainty, and presents a candidate for review. Only explicit
+confirmation makes the candidate a Bean.
 
-**Origin** keeps the source visible. **Roast** records what it meant, what
-mattered, and what you would do. What you approve becomes a **Bean**.
+### Brew
 
-![An unroasted coffee bean passes through Roast and becomes an owner-reviewed Bean.](docs/assets/readme/coffee-chat-judgment.png)
+Brew applies a confirmed Bean to a new prompt and input. It does not merely
+quote the Bean. It makes the perspective visible in an explanation, a choice,
+an artifact, or a bounded action result while preserving factual, safety, and
+authority constraints.
 
-Across Beans, recurring priorities reveal your **Taste**.
+## General Agent interface
 
-## Use it in Talk and Work.
+~~~text
+prompt + input -> output
+~~~
 
-The same reviewed Beans help people understand your thinking and Agents work
-from your priorities.
+prompt may be a request, purpose, question, situation, event, or trigger.
+input is the complete managed environment and context; it may contain text,
+files, directories, Origins, Beans, or task state. output may be text, files,
+directory state, a decision, or an action result.
 
-| **Talk**                          | **Work**                                                 |
-| --------------------------------- | -------------------------------------------------------- |
-| Understand what mattered and why. | Give Agents your priorities as they evaluate and create. |
+This repository keeps the general interface separate from the Coffee Chat
+vocabulary. Current evaluations use a small text/file/directory scope, but the
+product model is not limited to text.
 
-![Reviewed Beans pass through Brew to ground conversation and Agent work.](docs/assets/readme/coffee-chat-talk-work.png)
+## Plugin layout
 
-## You stay in control.
+The portable Agent Plugins manifest is the root plugin.json. The two
+discoverable Skills are shared by all supported hosts:
 
-Nothing becomes public without your approval.
+The layout follows the [Agent Plugins specification](https://agent-plugins.org/specification),
+the [OpenAI/Codex packaging contract](https://developers.openai.com/plugins/build/plugins),
+and the [Claude Code plugin structure](https://code.claude.com/docs/en/plugins).
 
-- Origins stay separate from your judgment.
-- Your Roastery stays versioned and under your control.
-- Other people's Roasteries stay read-only.
-- AI cites the Beans it uses. It never speaks as you, becomes a Bean, or
-  replaces your final decision.
+~~~text
+coffee-chat/
+├── plugin.json
+├── .codex-plugin/
+│   └── plugin.json
+├── .claude-plugin/
+│   └── plugin.json
+└── skills/
+    ├── roast/
+    │   └── SKILL.md
+    └── brew/
+        └── SKILL.md
+~~~
 
-## Go deeper.
+The root manifest is the portable source of truth. The Codex manifest is the
+primary OpenAI/ChatGPT host projection; the Claude manifest is a compatibility
+projection. Neither projection owns product meaning, and Skills are never
+duplicated by host.
 
-- [Product thesis and research basis](https://github.com/openboa-ai/coffee-chat/blob/main/PRODUCT-THESIS.md)
-- [Product-owned system design](https://github.com/openboa-ai/coffee-chat/blob/main/docs/engineering/coffee-chat-system-design.md)
-- [Product and release boundaries](docs/product-boundaries.md)
-- [Roastery contract, storage, and rights](contract/roastery/README.md)
-- [Quality map](docs/quality-map.md)
-- [Security policy](SECURITY.md)
+This source repository is the packaging superset: a portable artifact contains
+the root `plugin.json` and `skills/`, while a host artifact adds that host's
+manifest and uses the same `skills/` directory.
+
+The repository contains no Roastery data, Coffee archive, benchmark cases,
+Ground Truth, evaluator evidence, runtime, MCP server, product commands,
+agents, marketplace catalog, or budget configuration. The repository-local
+`.githooks/pre-commit` is only a security guard; it is not Product behavior.
+Other concerns belong to the sibling repositories or to the executing host.
+
+## Repository boundaries
+
+- coffee-chat-roastery owns Origins and explicitly confirmed Beans.
+- coffee-chat-bench owns candidate-independent cases, criteria, Ground Truth,
+  and graders.
+- coffee-chat-eval owns clean execution, isolation, outputs, traces, timing,
+  grading, and human feedback.
+
+The Product repository owns Skills and their meaning. It does not own the data
+or the measurement of its own success.
+
+## Local security hook
+
+After cloning, run `npm run hooks:install` to configure Git to use the committed
+`.githooks/pre-commit` guard. This local hook is supplementary to the trusted
+central checks and grants no permission to publish, persist, or execute data.
+
+## Status
+
+This repository defines the product skeleton and Skill contracts. Product
+behavior is not considered measured until coffee-chat-eval executes the frozen
+Product against the qualified coffee-chat-bench cases.
 
 ## License
 
-Coffee Chat is [MIT licensed](LICENSE), Copyright © 2026 Openboa AI. Bean
-content uses its owner's accepted CC BY 4.0 declaration; Origins remain outside
-that grant.
+Coffee Chat is MIT licensed, Copyright © 2026 Openboa AI. Origin and Bean
+content rights are determined by the owner and the Roastery's applicable
+policy.

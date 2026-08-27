@@ -1,27 +1,13 @@
 {
   "name": "@openboa-ai/coffee-chat",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=24"
-  },
   "scripts": {
-    "format:check": "prettier --check .",
-    "format": "prettier --write .",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs",
-    "readme:assets:verify": "node scripts/verify-readme-assets.mjs",
-    "readme:assets:reproduce": "node scripts/reproduce-readme-assets.mjs",
-    "build": "node scripts/build-package.mjs",
-    "package:smoke": "node scripts/package-smoke.mjs",
     "hooks:install": "git config core.hooksPath .githooks",
-    "policy": "node --test tests/workflow-policy.test.mjs && node .github/ci-policy.mjs",
-    "security:scan": "gitleaks git --redact --no-banner .",
-    "verify": "npm run format:check && npm run typecheck && npm test && npm run readme:assets:verify && npm run build && npm run package:smoke && npm run policy"
+    "verify": "node .github/ci-policy.mjs"
   },
-  "devDependencies": {
-    "@types/node": "24.13.3",
-    "prettier": "3.9.6",
-    "typescript": "7.0.2"
+  "dependencies": {
+    "yaml": "2.9.0"
   }
 }
