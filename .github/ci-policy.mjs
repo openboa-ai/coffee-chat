@@ -196,6 +196,19 @@ const manifestKeys = [
   "version",
 ];
 const hostManifestKeys = manifestKeys.filter((key) => key !== "$schema");
+function assertHttpsUrl(value, label) {
+  assert.equal(typeof value, "string", `${label}: URL string`);
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    assert.fail(`${label}: valid URL`);
+  }
+  assert.equal(parsed.protocol, "https:", `${label}: HTTPS URL`);
+  assert.ok(parsed.hostname, `${label}: URL host`);
+  assert.equal(parsed.username, "", `${label}: URL credentials are not permitted`);
+  assert.equal(parsed.password, "", `${label}: URL credentials are not permitted`);
+}
 function isSemver(value) {
   const match = value.match(
     /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/u,
@@ -231,9 +244,9 @@ const assertSharedManifest = (manifest, label) => {
   assert.equal(typeof manifest.author.name, "string", `${label}.author.name`);
   assert.ok(manifest.author.name.trim().length > 0, `${label}.author.name`);
   assert.match(manifest.author.email, /^[^@\s]+@[^@\s]+\.[^@\s]+$/u, `${label}.author.email`);
-  assert.match(manifest.author.url, /^https:\/\/[^\s]+$/u, `${label}.author.url`);
-  assert.match(manifest.homepage, /^https:\/\/[^\s]+$/u, `${label}.homepage`);
-  assert.match(manifest.repository, /^https:\/\/[^\s]+$/u, `${label}.repository`);
+  assertHttpsUrl(manifest.author.url, `${label}.author.url`);
+  assertHttpsUrl(manifest.homepage, `${label}.homepage`);
+  assertHttpsUrl(manifest.repository, `${label}.repository`);
   assert.equal(manifest.license, "MIT", `${label}.license`);
   assert.equal(Array.isArray(manifest.keywords), true, `${label}.keywords`);
   assert.ok(manifest.keywords.length > 0, `${label}.keywords`);
@@ -280,7 +293,7 @@ assert.equal(codex.interface.category, "Productivity");
 assert.deepEqual(codex.interface.capabilities, ["Skills"]);
 assert.equal(typeof codex.interface.shortDescription, "string");
 assert.equal(typeof codex.interface.longDescription, "string");
-assert.match(codex.interface.websiteURL, /^https:\/\/[^\s]+$/u);
+assertHttpsUrl(codex.interface.websiteURL, "codex.interface.websiteURL");
 
 assert.deepEqual(readJson(".github/merge-policy.json"), {
   merge_method: "squash",
@@ -447,6 +460,11 @@ function parseSkillFrontmatter(source, skill) {
   assert.notEqual(closing, -1, `${skill}: bounded frontmatter block`);
   const yamlSource = `${lines.slice(1, closing).join("\n")}\n`;
   assert.ok(Buffer.byteLength(yamlSource, "utf8") <= 32 * 1024, `${skill}: frontmatter size limit`);
+  assert.equal(
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(yamlSource),
+    false,
+    `${skill}: frontmatter control characters are not permitted`,
+  );
   const document = parseDocument(yamlSource, {
     prettyErrors: true,
     strict: true,
