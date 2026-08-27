@@ -9,9 +9,7 @@ const TRUSTED_CONTROL_SHA = "f33da6bbcdfebd0693ff7673d750f369629e000e";
 assert.equal(existsSync(resolve(root, ".npmrc")), false);
 assert.equal(existsSync(resolve(root, "npm-shrinkwrap.json")), false);
 assert.deepEqual(
-  readdirSync(resolve(root, ".github/workflows"))
-    .filter((name) => /\.ya?ml$/u.test(name))
-    .sort(),
+  readdirSync(resolve(root, ".github/workflows")).sort(),
   ["trusted.yml"],
 );
 assert.equal(
@@ -60,6 +58,7 @@ assert.deepEqual(readdirSync(root).sort(), [
 
 assert.deepEqual(readJson("package.json"), {
   name: "@openboa-ai/coffee-chat",
+  version: "0.0.0",
   private: true,
   type: "module",
   scripts: { verify: "node .github/ci-policy.mjs" },
@@ -86,14 +85,7 @@ assert.deepEqual(readdirSync(resolve(root, ".github")).sort(), [
 assert.deepEqual(readdirSync(resolve(root, ".githooks")).sort(), ["pre-commit"]);
 
 const portable = readJson("plugin.json");
-assert.equal(
-  portable.$schema,
-  "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-);
-assert.equal(portable.name, "coffee-chat");
-assert.equal(typeof portable.version, "string");
-assert.equal(typeof portable.description, "string");
-assert.deepEqual(Object.keys(portable).sort(), [
+const manifestKeys = [
   "$schema",
   "author",
   "description",
@@ -103,30 +95,73 @@ assert.deepEqual(Object.keys(portable).sort(), [
   "name",
   "repository",
   "version",
-]);
+];
+const hostManifestKeys = manifestKeys.filter((key) => key !== "$schema");
+const semver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
+const assertSharedManifest = (manifest, label) => {
+  assert.equal(manifest !== null && typeof manifest === "object", true, `${label}: object required`);
+  assert.equal(typeof manifest.name, "string", `${label}.name`);
+  assert.match(manifest.name, /^[a-z0-9]+(?:-[a-z0-9]+)*$/u, `${label}.name`);
+  assert.equal(typeof manifest.version, "string", `${label}.version`);
+  assert.match(manifest.version, semver, `${label}.version`);
+  assert.equal(typeof manifest.description, "string", `${label}.description`);
+  assert.ok(manifest.description.trim().length > 0, `${label}.description`);
+  assert.equal(manifest.description.trim(), manifest.description, `${label}.description`);
+  assert.equal(manifest.author !== null && typeof manifest.author === "object", true, `${label}.author`);
+  assert.deepEqual(Object.keys(manifest.author).sort(), ["email", "name", "url"], `${label}.author keys`);
+  assert.equal(typeof manifest.author.name, "string", `${label}.author.name`);
+  assert.ok(manifest.author.name.trim().length > 0, `${label}.author.name`);
+  assert.match(manifest.author.email, /^[^@\s]+@[^@\s]+\.[^@\s]+$/u, `${label}.author.email`);
+  assert.match(manifest.author.url, /^https:\/\/[^\s]+$/u, `${label}.author.url`);
+  assert.match(manifest.homepage, /^https:\/\/[^\s]+$/u, `${label}.homepage`);
+  assert.match(manifest.repository, /^https:\/\/[^\s]+$/u, `${label}.repository`);
+  assert.equal(manifest.license, "MIT", `${label}.license`);
+  assert.equal(Array.isArray(manifest.keywords), true, `${label}.keywords`);
+  assert.ok(manifest.keywords.length > 0, `${label}.keywords`);
+  assert.equal(manifest.keywords.every((keyword) => typeof keyword === "string" && keyword.length > 0), true, `${label}.keywords`);
+  assert.equal(new Set(manifest.keywords).size, manifest.keywords.length, `${label}.keywords unique`);
+};
+assert.equal(
+  portable.$schema,
+  "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+);
+assert.equal(portable.name, "coffee-chat");
+assert.deepEqual(Object.keys(portable).sort(), manifestKeys);
+assertSharedManifest(portable, "portable");
 
 const codex = readJson(".codex-plugin/plugin.json");
 const claude = readJson(".claude-plugin/plugin.json");
 assert.deepEqual(readdirSync(resolve(root, ".codex-plugin")).sort(), ["plugin.json"]);
 assert.deepEqual(readdirSync(resolve(root, ".claude-plugin")).sort(), ["plugin.json"]);
+assert.deepEqual(Object.keys(codex).sort(), [...hostManifestKeys, "interface", "skills"].sort());
+assert.deepEqual(Object.keys(claude).sort(), hostManifestKeys);
+assertSharedManifest(codex, "codex");
+assertSharedManifest(claude, "claude");
 for (const [label, manifest] of [
   ["codex", codex],
   ["claude", claude],
 ]) {
-  for (const key of [
-    "name",
-    "version",
-    "description",
-    "author",
-    "homepage",
-    "repository",
-    "license",
-    "keywords",
-  ]) {
+  for (const key of manifestKeys.slice(1)) {
     assert.deepEqual(manifest[key], portable[key], `${label}.${key}`);
   }
 }
 assert.equal(codex.skills, "./skills/");
+assert.deepEqual(Object.keys(codex.interface).sort(), [
+  "capabilities",
+  "category",
+  "developerName",
+  "displayName",
+  "longDescription",
+  "shortDescription",
+  "websiteURL",
+]);
+assert.equal(codex.interface.displayName, "Coffee Chat");
+assert.equal(codex.interface.developerName, portable.author.name);
+assert.equal(codex.interface.category, "Productivity");
+assert.deepEqual(codex.interface.capabilities, ["Skills"]);
+assert.equal(typeof codex.interface.shortDescription, "string");
+assert.equal(typeof codex.interface.longDescription, "string");
+assert.match(codex.interface.websiteURL, /^https:\/\/[^\s]+$/u);
 
 assert.deepEqual(readJson(".github/merge-policy.json"), {
   merge_method: "squash",
@@ -288,9 +323,18 @@ for (const skill of skills) {
   assert.equal(existsSync(path), true, skill);
   assert.deepEqual(readdirSync(resolve(skillRoot, skill)).sort(), ["SKILL.md"], skill);
   const source = readFileSync(path, "utf8");
-  assert.match(source, /^---\n/u, skill);
-  assert.match(source, new RegExp(`^name: ${skill}$`, "mu"), skill);
-  assert.match(source, /^description: .+$/mu, skill);
+  const frontmatter = source.match(/^---\n([\s\S]*?)\n---(?:\n|$)/u);
+  assert.ok(frontmatter, `${skill}: bounded frontmatter block`);
+  const fields = new Map();
+  for (const line of frontmatter[1].split("\n")) {
+    const field = line.match(/^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$/u);
+    assert.ok(field, `${skill}: valid frontmatter field`);
+    assert.equal(fields.has(field[1]), false, `${skill}: duplicate frontmatter field`);
+    fields.set(field[1], field[2]);
+  }
+  assert.deepEqual([...fields.keys()].sort(), ["description", "name"]);
+  assert.equal(fields.get("name"), skill, `${skill}: frontmatter name`);
+  assert.ok(fields.get("description")?.trim(), `${skill}: frontmatter description`);
 }
 
 console.log("Coffee Chat structure and manifest policy passed.");
