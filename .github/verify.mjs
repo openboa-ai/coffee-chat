@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseDocument } from "yaml";
 
@@ -11,46 +11,20 @@ const trackedFiles = execFileSync("git", ["-C", root, "ls-files", "-z"], {
 })
   .split("\0")
   .filter(Boolean);
-// Infrastructure directories are not an escape hatch for Product/data artifacts.
-// Central controls validate security semantics; this repository owns its layout.
-assert.deepEqual(
-  trackedFiles.filter((path) => path.startsWith(".github/") || path.startsWith(".githooks/")).sort(),
-  [
-    ".githooks/pre-commit",
-    ".github/PULL_REQUEST_TEMPLATE.md",
-    ".github/dependabot.yml",
-    ".github/merge-policy.json",
-    ".github/verify.mjs",
-    ".github/verify.test.mjs",
-    ".github/workflows/trusted.yml",
-  ],
-  "unexpected or missing infrastructure file",
-);
-
-function trackedEntries(directory = ".") {
-  const prefix = directory === "." ? "" : `${directory.replace(/\/$/u, "")}/`;
-  const entries = new Set();
-  for (const file of trackedFiles) {
-    if (!file.startsWith(prefix)) continue;
-    const remainder = file.slice(prefix.length);
-    if (!remainder) continue;
-    entries.add(remainder.split("/")[0]);
-  }
-  return [...entries].sort();
-}
-function checkoutEntries(directory = ".") {
-  const entries = trackedEntries(directory);
-  if (directory === ".") entries.push(".git");
-  return entries.sort();
-}
-assert.deepEqual(checkoutEntries(), [
-  ".claude-plugin",
-  ".codex-plugin",
+// Compare complete paths: a same-named directory is not an allowed file.
+// This is the published repository layout, not central security policy.
+assert.deepEqual(trackedFiles.slice().sort(), [
+  ".claude-plugin/plugin.json",
+  ".codex-plugin/plugin.json",
   ".editorconfig",
-  ".git",
   ".gitattributes",
-  ".githooks",
-  ".github",
+  ".githooks/pre-commit",
+  ".github/PULL_REQUEST_TEMPLATE.md",
+  ".github/dependabot.yml",
+  ".github/merge-policy.json",
+  ".github/verify.mjs",
+  ".github/verify.test.mjs",
+  ".github/workflows/trusted.yml",
   ".gitignore",
   "AGENTS.md",
   "CODEOWNERS",
@@ -60,8 +34,12 @@ assert.deepEqual(checkoutEntries(), [
   "package-lock.json",
   "package.json",
   "plugin.json",
-  "skills",
-]);
+  "skills/brew/SKILL.md",
+  "skills/roast/SKILL.md"
+], "unexpected or missing repository file");
+for (const path of trackedFiles) {
+  assert.equal(lstatSync(resolve(root, path)).isFile(), true, `${path}: regular file required`);
+}
 
 const portable = readJson("plugin.json");
 const manifestKeys = [
