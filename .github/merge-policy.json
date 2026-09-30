@@ -1,12 +1,19 @@
 {
   "merge_method": "squash",
   "required_approvals": 0,
-  "required_code_owner_reviews": 0,
+  "required_code_owner_reviews": 1,
   "required_last_push_approvals": 0,
   "merge_queue": false,
-  "required_events": ["pull_request"],
-  "eligible_author_associations": ["OWNER", "MEMBER"],
-  "eligible_bot_logins": ["dependabot[bot]"],
+  "required_events": [
+    "pull_request"
+  ],
+  "eligible_author_associations": [
+    "OWNER",
+    "MEMBER"
+  ],
+  "eligible_bot_logins": [
+    "dependabot[bot]"
+  ],
   "custom_merge_controller": false,
   "required_checks": [
     {
@@ -31,7 +38,9 @@
     "/package.json",
     "/package-lock.json",
     "/npm-shrinkwrap.json",
-    "/skills/**"
+    "/skills/**",
+    "/.gitignore",
+    "/.gitattributes"
   ],
   "codeql_enforcement": "trusted_central_aggregate",
   "sensitive_review": {

@@ -1,15 +1,15 @@
-# Ownership routes review context; GitHub requires zero human approvals.
-/.github/** @openboa
-/.codex-plugin/** @openboa
-/.claude-plugin/** @openboa
-/AGENTS.md @openboa
-/CODEOWNERS @openboa
-/README.md @openboa
-/.npmrc @openboa-ai/security-maintainers
-/LICENSE @openboa
-/SECURITY.md @openboa
-/skills/** @openboa
-/package.json @openboa
-/package-lock.json @openboa
-/npm-shrinkwrap.json @openboa-ai/security-maintainers
-/plugin.json @openboa
+# Ownership routes require independent review; existing owners are preserved.
+/.github/** @openboa @SonSangjoon
+/.codex-plugin/** @openboa @SonSangjoon
+/.claude-plugin/** @openboa @SonSangjoon
+/AGENTS.md @openboa @SonSangjoon
+/CODEOWNERS @openboa @SonSangjoon
+/README.md @openboa @SonSangjoon
+/.npmrc @openboa-ai/security-maintainers @SonSangjoon
+/LICENSE @openboa @SonSangjoon
+/SECURITY.md @openboa @SonSangjoon
+/skills/** @openboa @SonSangjoon
+/package.json @openboa @SonSangjoon
+/package-lock.json @openboa @SonSangjoon
+/npm-shrinkwrap.json @openboa-ai/security-maintainers @SonSangjoon
+/plugin.json @openboa @SonSangjoon
