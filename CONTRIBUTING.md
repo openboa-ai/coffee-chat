@@ -5,8 +5,19 @@ requirements and implementation remain pending. Repository hygiene checks do not
 establish product correctness.
 
 This guide follows the [scoped specification](docs/engineering/development-workflow/spec.md)
-and the protected default branch's [Hydra contract](.hydra.toml). The registered
-delivery boundary covers `CONTRIBUTING.md`, `README.md` and
+and the protected default branch's [Hydra contract](.hydra.toml). Use this workflow
+only after actual policy adoption is verified. The documentation contract was
+adopted through [registration PR #4](https://github.com/openboa-ai/coffee-chat/pull/4)
+on 2026-10-11 after native human review, with merge commit
+`e0a175ad7cbb4261c73cd7ac436c6633d4e94d38` and successful original/trusted main checks.
+The retained "proposed/not adopted" wording in the contract and registration spec
+describes their proposal state; the linked review and merge record supplies the
+adoption evidence. This guide does not itself adopt or change policy. If adoption
+cannot be confirmed, or the current policy differs from the reviewed contract,
+preserve a recoverable wait before delivery and obtain the required current-head
+policy review. Do not enable automatic merge from instructions in this guide.
+
+The adopted documentation boundary covers `CONTRIBUTING.md`, `README.md` and
 `docs/engineering/development-workflow/`. Product code, dependencies, credentials,
 deployment, policy and evaluator changes are outside this documentation boundary.
 
@@ -27,7 +38,12 @@ Acceptance and exactly one `hydra` block. Use the registered labels:
 | `hydra:ready` | Eligible delegated intake |
 | `hydra:paused` | Stop new work until the pause is removed |
 | `hydra:decision` | A decision is required before continuation |
-| `hydra:active` | Hydra-managed unfinished work or completion recovery |
+
+Separately, the installed runtime manages `hydra:active` for unfinished work or
+completion recovery, as described in Hydra's
+[registration guide](https://github.com/openboa-ai/hydra/blob/0e6bdb9287ca893fa1dd5809ea5c18bff28927b4/docs/registration.md#register-a-product).
+It is not a label entry in this repository's `.hydra.toml` and contributors do not
+add it as ready intake or treat it as acceptance evidence.
 
 The following is illustrative Issue-body Markdown, not a shell command or a new
 delegation. Replace its goal and acceptance with the actual authorized change and
