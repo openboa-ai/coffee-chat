@@ -1,0 +1,91 @@
+/* Coffee Chat presentation helpers built strictly on Yogurt design tokens. */
+.cc-shell {
+  min-height: 100vh;
+  background: var(--yg-canvas);
+  color: var(--yg-text);
+  font-family: var(--boa-font-family);
+}
+
+.cc-container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--boa-space-24) var(--boa-space-16);
+}
+
+.cc-widget-frame {
+  padding: var(--boa-space-16);
+  background: var(--yg-canvas);
+  color: var(--yg-text);
+  font-family: var(--boa-font-family);
+}
+
+.cc-card {
+  padding: var(--boa-space-16);
+  border-radius: var(--yg-radius-panel);
+  background: var(--yg-surface);
+  border: 1px solid var(--yg-hover);
+}
+
+.cc-quote {
+  margin: 0;
+  padding: var(--boa-space-8) var(--boa-space-12);
+  border-left: 3px solid var(--yg-action);
+  background: var(--yg-field);
+  border-radius: var(--yg-radius-small);
+  font-size: 0.875rem;
+}
+
+.cc-diff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--boa-space-16);
+}
+
+.cc-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--boa-space-16);
+  padding: var(--boa-space-12) var(--boa-space-24);
+  border-bottom: 1px solid var(--yg-hover);
+  background: var(--yg-surface);
+}
+
+.cc-nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--boa-space-16);
+  flex-wrap: wrap;
+}
+
+.cc-mono {
+  font-size: 0.8125rem;
+  padding: var(--boa-space-2) var(--boa-space-8);
+  border-radius: var(--yg-radius-small);
+  background: var(--yg-field);
+  word-break: break-all;
+}
+
+.cc-pre {
+  margin: 0;
+  padding: var(--boa-space-12);
+  border-radius: var(--yg-radius-control);
+  background: var(--yg-field);
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.cc-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--boa-space-12);
+  flex-wrap: wrap;
+}
+
+.cc-muted-box {
+  padding: var(--boa-space-12);
+  border-radius: var(--yg-radius-control);
+  background: var(--yg-field);
+}

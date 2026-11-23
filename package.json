@@ -1,0 +1,40 @@
+{
+  "name": "@coffee-chat/monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "evals"
+  ],
+  "scripts": {
+    "build:mcp-apps": "npm --workspace @coffee-chat/mcp-apps run build",
+    "build": "npm run build:mcp-apps && npm --workspace @coffee-chat/web run build",
+    "dev": "npm run build:mcp-apps && npm --workspace @coffee-chat/web run dev",
+    "typecheck": "npm --workspace @coffee-chat/core run typecheck && npm --workspace @coffee-chat/ui run typecheck && npm --workspace @coffee-chat/mcp-apps run typecheck && npm --workspace @coffee-chat/web run typecheck && npm --workspace @coffee-chat/evals run typecheck",
+    "test:core": "npm --workspace @coffee-chat/core run test",
+    "test:mcp-apps": "npm --workspace @coffee-chat/mcp-apps run test",
+    "test:web": "npm --workspace @coffee-chat/web run test",
+    "test:evals": "npm --workspace @coffee-chat/evals run test",
+    "test:e2e": "playwright test",
+    "test": "npm run build:mcp-apps && npm run test:core && npm run test:mcp-apps && npm run test:web && npm run test:evals",
+    "check:yogurt": "yogurt check",
+    "db:generate": "npm --workspace @coffee-chat/core run db:generate"
+  },
+  "dependencies": {
+    "@openboa/yogurt": "file:./vendor/openboa-yogurt-0.1.0-local.15.tgz",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.2",
+    "esbuild": "^0.25.12",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

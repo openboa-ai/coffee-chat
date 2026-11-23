@@ -1,23 +1,35 @@
-# coffee-chat
+# Coffee Chat
 
-Repository foundation only. Product requirements and implementation are pending.
+Knowledge is shared. What a person makes of it is personal.
 
-CI checks workflow syntax, whitespace and secrets. These checks do not validate product behavior.
-No deployment target, deployment credentials or release pipeline is configured.
+Coffee Chat lets you capture author-confirmed perspectives from reading or real work decisions and reuse them across agent work and human conversation. Perspectives stay private by default, preserve source facts separately from personal trade-offs and boundaries, and connect to any compatible agent host through universal Agent Skills, OAuth 2.1 MCP, interactive MCP Apps, and a Zero-AI web home.
 
-## Development entry
+## Quick start
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the supported development workflow.
+- Product intent: [docs/intent.md](docs/intent.md)
+- Technical specification: [docs/spec.md](docs/spec.md)
+- First-loop acceptance contract: [docs/acceptance/first-loop/spec.md](docs/acceptance/first-loop/spec.md)
+- Current verified status: [docs/status.md](docs/status.md)
 
-Start with a scoped specification and observable acceptance criteria before
-product implementation. Product goals and runtime build/test commands remain
-pending joint planning.
+## Monorepo layout
 
-The [CI contract](docs/engineering/reusable-baseline/spec.md) describes the
-installed original baseline and the separate, pinned trusted workflow. Both
-inspect repository hygiene; neither establishes product correctness.
+| Path | Responsibility |
+| --- | --- |
+| `packages/core` | Domain models, URL normalizer, RFC 8785 JCS digest, Drizzle Postgres schema (Neon + PGlite), privacy and concurrency services |
+| `packages/ui` | Shared `@openboa/yogurt` presentation components used by Web and MCP Apps |
+| `packages/mcp-apps` | Self-contained `text/html;profile=mcp-app` interactive widget bundles |
+| `apps/web` | Next.js App Router Zero-AI web home, Better Auth, and OAuth 2.1 `/api/mcp` Streamable HTTP endpoint |
+| `skills/` | Host-neutral `SKILL.md` definitions (`roast`, `brew`) and host packaging manifests |
+| `evals/` | Candidate-independent Taste evaluation harness and 6 frozen core scenarios |
 
-For a change, validate locally, open one reviewable PR, inspect both code and
-security review results, address findings, and verify the final commit's checks.
-Workflow and policy changes retain code-owner review. Confirm main-push checks
-after merge; a PR check alone does not establish successful delivery.
+## Local development
+
+```sh
+npm install
+npm run build:mcp-apps
+npm test
+npm run check:yogurt
+npm run build
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow and review expectations.

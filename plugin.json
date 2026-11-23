@@ -1,0 +1,20 @@
+{
+  "name": "coffee-chat",
+  "version": "0.1.0",
+  "description": "Capture author-confirmed perspectives from reading or real work decisions and reuse them across agent Work and human Talk via OAuth 2.1 MCP and MCP Apps.",
+  "skills": [
+    "skills/roast",
+    "skills/brew"
+  ],
+  "mcpServers": {
+    "coffee-chat": {
+      "transport": "streamable-http",
+      "url": "https://coffee-chat.openboa.ai/api/mcp",
+      "auth": {
+        "type": "oauth2.1",
+        "pkce": "S256",
+        "scopes": ["beans:read", "beans:write", "offline_access"]
+      }
+    }
+  }
+}

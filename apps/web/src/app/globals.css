@@ -1,0 +1,8 @@
+@import "@openboa/yogurt/styles.css";
+@import "@coffee-chat/ui/styles.css";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
