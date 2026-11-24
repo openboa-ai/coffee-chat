@@ -11,7 +11,7 @@
   "scripts": {
     "build:mcp-apps": "npm --workspace @coffee-chat/mcp-apps run build",
     "build": "npm run build:mcp-apps && npm --workspace @coffee-chat/web run build",
-    "dev": "npm run build:mcp-apps && npm --workspace @coffee-chat/web run dev",
+    "dev": "npm run build:mcp-apps && COFFEE_CHAT_ENABLE_TEST_AUTH=true COFFEE_CHAT_SEED_DEMO=true npm --workspace @coffee-chat/web run dev",
     "typecheck": "npm --workspace @coffee-chat/core run typecheck && npm --workspace @coffee-chat/ui run typecheck && npm --workspace @coffee-chat/mcp-apps run typecheck && npm --workspace @coffee-chat/web run typecheck && npm --workspace @coffee-chat/evals run typecheck",
     "test:core": "npm --workspace @coffee-chat/core run test",
     "test:mcp-apps": "npm --workspace @coffee-chat/mcp-apps run test",

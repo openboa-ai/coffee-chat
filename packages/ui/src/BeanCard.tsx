@@ -2,138 +2,170 @@
 
 import type { ReactNode } from "react";
 import {
+  Avatar,
   Badge,
   Divider,
   Heading,
   Inline,
+  Link,
+  Post,
   Stack,
   Surface,
   Text,
 } from "@openboa/yogurt";
-import type { UiBeanDetail } from "./types.js";
+import type { UiBeanDetail, UiRelationKind } from "./types.js";
+
+export function formatRelationHumanLabel(
+  kind: UiRelationKind,
+  direction?: "outgoing" | "incoming",
+): string {
+  if (kind === "supersedes") {
+    return direction === "incoming" ? "Updated later by" : "Updates earlier take";
+  }
+  if (kind === "refines") {
+    return direction === "incoming" ? "Expanded by" : "Builds on";
+  }
+  return "In tension with";
+}
 
 export interface BeanCardProps {
   bean: UiBeanDetail;
   actions?: ReactNode;
   showOwner?: boolean;
+  showVisibilityBadge?: boolean;
 }
 
 export function BeanCard({
   bean,
   actions,
   showOwner = true,
+  showVisibilityBadge = true,
 }: BeanCardProps) {
+  const firstSource = bean.origins.find((o) => o.kind === "source_excerpt");
+  const firstWork = bean.origins.find((o) => o.kind === "work_episode");
+
   return (
-    <Surface className="cc-card">
-      <Stack gap={12}>
-        <div className="cc-row-between">
-          <Inline gap={8}>
-            <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
-              {bean.visibility}
-            </Badge>
-            <Text variant="meta">
-              v{bean.version} · rev {bean.revisionNumber}
-            </Text>
-            {bean.supersededByBeanId ? (
-              <Badge tone="warning">Superseded</Badge>
-            ) : null}
-            {bean.hasTension ? <Badge tone="warning">Tension</Badge> : null}
-          </Inline>
-          {showOwner ? (
-            <Text variant="meta">
-              {bean.ownerDisplayName} (@{bean.ownerHandle})
-            </Text>
-          ) : null}
-        </div>
+    <Post>
+      <Surface className="cc-card">
+        <Stack gap={16}>
+          <div className="cc-row-between">
+            {showOwner ? (
+              <Inline gap={8}>
+                <Avatar label={bean.ownerDisplayName} size={28} />
+                <Stack gap={2}>
+                  <Link href={`/@${bean.ownerHandle}`}>
+                    <strong>{bean.ownerDisplayName}</strong>
+                  </Link>
+                  <Text variant="meta">@{bean.ownerHandle}</Text>
+                </Stack>
+              </Inline>
+            ) : (
+              <Inline gap={8}>
+                {showVisibilityBadge ? (
+                  <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
+                    {bean.visibility === "public" ? "Public" : "Private"}
+                  </Badge>
+                ) : null}
+                <Badge tone="neutral">
+                  {firstSource ? "From a read" : "From work"}
+                </Badge>
+              </Inline>
+            )}
 
-        <Heading level={3}>{bean.title}</Heading>
+            <Inline gap={8}>
+              {showOwner && showVisibilityBadge ? (
+                <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
+                  {bean.visibility === "public" ? "Public" : "Private"}
+                </Badge>
+              ) : null}
+              {bean.supersededByBeanId ? (
+                <Badge tone="warning">Updated later</Badge>
+              ) : null}
+              {bean.hasTension ? (
+                <Badge tone="warning">Has tension</Badge>
+              ) : null}
+            </Inline>
+          </div>
 
-        <Stack gap={8}>
-          <div>
-            <Text variant="meta">Take</Text>
-            <p>
+          <Stack gap={8}>
+            <Heading level={3}>{bean.title}</Heading>
+            <p className="cc-paragraph">
               <Text variant="body">{bean.take}</Text>
             </p>
-          </div>
-          <div>
-            <Text variant="meta">Priority &amp; Trade-off</Text>
-            <p>
-              <Text variant="body">{bean.tradeoff}</Text>
-            </p>
-          </div>
-          <div>
-            <Text variant="meta">Boundary</Text>
-            <p>
-              <Text variant="help">{bean.boundary}</Text>
-            </p>
-          </div>
-        </Stack>
-
-        {bean.origins.length > 0 ? (
-          <Stack gap={8}>
-            <Text variant="meta">Origins</Text>
-            {bean.origins.map((o, idx) => (
-              <div key={idx} className="cc-muted-box">
-                <Stack gap={4}>
-                  <Inline gap={8}>
-                    <Badge tone="neutral">
-                      {o.kind === "source_excerpt" ? "Source" : "Work Episode"}
-                    </Badge>
-                    {o.locator ? <Text variant="meta">{o.locator}</Text> : null}
-                  </Inline>
-                  {o.kind === "source_excerpt" ? (
-                    <>
-                      <Text variant="body">{o.sourceTitle ?? o.url}</Text>
-                      {o.url ? <Text variant="meta">{o.url}</Text> : null}
-                      {o.quotation ? (
-                        <blockquote className="cc-quote">
-                          &ldquo;{o.quotation}&rdquo;
-                        </blockquote>
-                      ) : null}
-                    </>
-                  ) : (
-                    <Text variant="body">{o.episodeSummary}</Text>
-                  )}
-                </Stack>
-              </div>
-            ))}
           </Stack>
-        ) : null}
 
-        {bean.relations.length > 0 ? (
-          <Stack gap={4}>
-            <Text variant="meta">Relations</Text>
-            <Inline gap={8}>
+          {firstSource?.quotation ? (
+            <blockquote className="cc-quote">
+              &ldquo;{firstSource.quotation}&rdquo;
+              {firstSource.sourceTitle ? (
+                <div>
+                  <Text variant="meta">
+                    — {firstSource.sourceTitle}
+                    {firstSource.locator ? ` · ${firstSource.locator}` : ""}
+                  </Text>
+                </div>
+              ) : null}
+            </blockquote>
+          ) : null}
+
+          <div className="cc-tradeoff-box">
+            <Stack gap={4}>
+              <Text variant="meta">What mattered more</Text>
+              <Text variant="body">
+                <strong>{bean.tradeoff}</strong>
+              </Text>
+            </Stack>
+          </div>
+
+          <div className="cc-boundary-box">
+            <Stack gap={4}>
+              <Text variant="meta">When it doesn&apos;t apply</Text>
+              <Text variant="help">{bean.boundary}</Text>
+            </Stack>
+          </div>
+
+          {firstWork?.episodeSummary ? (
+            <Text variant="meta">Context: {firstWork.episodeSummary}</Text>
+          ) : null}
+
+          {firstSource && !firstSource.quotation && firstSource.url ? (
+            <Text variant="meta">
+              Read: {firstSource.sourceTitle ?? firstSource.url}
+            </Text>
+          ) : null}
+
+          {bean.relations.length > 0 ? (
+            <div className="cc-chip-row">
               {bean.relations.map((rel, idx) => (
                 <Badge
                   key={rel.id ?? idx}
                   tone={rel.kind === "tensions_with" ? "warning" : "accent"}
                 >
-                  {rel.direction === "incoming" ? "← " : "→ "}
-                  {rel.kind}: {rel.relatedBeanTitle || rel.relatedBeanId}
+                  {formatRelationHumanLabel(rel.kind, rel.direction)}:{" "}
+                  {rel.relatedBeanTitle || rel.relatedBeanId}
                 </Badge>
               ))}
-            </Inline>
-          </Stack>
-        ) : null}
+            </div>
+          ) : null}
 
-        {bean.tags.length > 0 ? (
-          <Inline gap={4}>
-            {bean.tags.map((tag) => (
-              <Badge key={tag} tone="neutral">
-                #{tag}
-              </Badge>
-            ))}
-          </Inline>
-        ) : null}
+          {bean.tags.length > 0 ? (
+            <div className="cc-chip-row">
+              {bean.tags.map((tag) => (
+                <Badge key={tag} tone="neutral">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
 
-        {actions ? (
-          <>
-            <Divider />
-            <Inline gap={8}>{actions}</Inline>
-          </>
-        ) : null}
-      </Stack>
-    </Surface>
+          {actions ? (
+            <>
+              <Divider />
+              <Inline gap={8}>{actions}</Inline>
+            </>
+          ) : null}
+        </Stack>
+      </Surface>
+    </Post>
   );
 }

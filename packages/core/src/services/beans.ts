@@ -1327,19 +1327,112 @@ export async function getSourceCompare(
   };
 }
 
+export interface PublicPersonCard {
+  handle: string;
+  displayName: string;
+  publicCount: number;
+  privateCount: number;
+  signatureTradeoff: string | null;
+  topTags: string[];
+}
+
+export async function listPublicPeople(
+  db: CoffeeChatDb,
+  limit = 12,
+): Promise<PublicPersonCard[]> {
+  const allUsers = await db.select().from(users);
+  if (allUsers.length === 0) return [];
+
+  const allBeans = await db
+    .select({
+      ownerId: beans.ownerId,
+      visibility: beans.visibility,
+      currentRevisionId: beans.currentRevisionId,
+      updatedAt: beans.updatedAt,
+    })
+    .from(beans)
+    .orderBy(desc(beans.updatedAt));
+
+  const publicRevIds = allBeans
+    .filter((b) => b.visibility === "public" && b.currentRevisionId)
+    .map((b) => b.currentRevisionId!);
+
+  const revRows =
+    publicRevIds.length > 0
+      ? await db
+          .select({
+            id: beanRevisions.id,
+            tradeoff: beanRevisions.tradeoff,
+            tags: beanRevisions.tags,
+          })
+          .from(beanRevisions)
+          .where(inArray(beanRevisions.id, publicRevIds))
+      : [];
+  const revMap = new Map(revRows.map((r) => [r.id, r]));
+
+  const cards: PublicPersonCard[] = [];
+  for (const u of allUsers) {
+    const owned = allBeans.filter((b) => b.ownerId === u.id);
+    const pub = owned.filter((b) => b.visibility === "public");
+    if (pub.length === 0) continue;
+
+    const privCount = owned.length - pub.length;
+    const latestPubRev = pub[0]?.currentRevisionId
+      ? revMap.get(pub[0].currentRevisionId)
+      : undefined;
+
+    const tagCounts = new Map<string, number>();
+    for (const b of pub) {
+      const rev = b.currentRevisionId ? revMap.get(b.currentRevisionId) : undefined;
+      for (const t of (rev?.tags ?? []) as string[]) {
+        tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+      }
+    }
+    const topTags = Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([t]) => t);
+
+    cards.push({
+      handle: u.handle,
+      displayName: u.name,
+      publicCount: pub.length,
+      privateCount: privCount,
+      signatureTradeoff: latestPubRev?.tradeoff ?? null,
+      topTags,
+    });
+  }
+
+  return cards
+    .sort((a, b) => b.publicCount - a.publicCount)
+    .slice(0, limit);
+}
+
 export async function listPublicSources(
   db: CoffeeChatDb,
   limit = 20,
-): Promise<Array<{ originId: string; normalizedUrl: string; publicBeanCount: number }>> {
+): Promise<
+  Array<{
+    originId: string;
+    normalizedUrl: string;
+    sourceTitle: string | null;
+    publicBeanCount: number;
+    authorHandles: string[];
+  }>
+> {
   const rows = await db
     .select({
       originId: origins.id,
       normalizedUrl: origins.normalizedUrl,
       beanId: beans.id,
+      ownerHandle: users.handle,
+      originsJson: beanRevisions.originsJson,
     })
     .from(origins)
     .innerJoin(beanOrigins, eq(origins.id, beanOrigins.originId))
     .innerJoin(beans, eq(beanOrigins.beanId, beans.id))
+    .innerJoin(beanRevisions, eq(beans.currentRevisionId, beanRevisions.id))
+    .innerJoin(users, eq(beans.ownerId, users.id))
     .where(
       and(
         eq(origins.kind, "source_excerpt"),
@@ -1347,15 +1440,34 @@ export async function listPublicSources(
       ),
     );
 
-  const map = new Map<string, { originId: string; normalizedUrl: string; beanIds: Set<string> }>();
+  const map = new Map<
+    string,
+    {
+      originId: string;
+      normalizedUrl: string;
+      sourceTitle: string | null;
+      beanIds: Set<string>;
+      handles: Set<string>;
+    }
+  >();
+
   for (const r of rows) {
     if (!r.normalizedUrl) continue;
     const entry = map.get(r.originId) ?? {
       originId: r.originId,
       normalizedUrl: r.normalizedUrl,
+      sourceTitle: null,
       beanIds: new Set<string>(),
+      handles: new Set<string>(),
     };
     entry.beanIds.add(r.beanId);
+    entry.handles.add(r.ownerHandle);
+    if (!entry.sourceTitle) {
+      const match = ((r.originsJson ?? []) as NormalizedOrigin[]).find(
+        (o) => o.url === r.normalizedUrl && o.sourceTitle,
+      );
+      if (match?.sourceTitle) entry.sourceTitle = match.sourceTitle;
+    }
     map.set(r.originId, entry);
   }
 
@@ -1363,7 +1475,9 @@ export async function listPublicSources(
     .map((e) => ({
       originId: e.originId,
       normalizedUrl: e.normalizedUrl,
+      sourceTitle: e.sourceTitle,
       publicBeanCount: e.beanIds.size,
+      authorHandles: Array.from(e.handles),
     }))
     .sort((a, b) => b.publicBeanCount - a.publicBeanCount)
     .slice(0, limit);

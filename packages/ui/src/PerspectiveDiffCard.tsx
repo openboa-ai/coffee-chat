@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  Avatar,
   Badge,
   Button,
   Divider,
   EmptyResult,
   Heading,
   Inline,
+  Link,
   Stack,
   Surface,
   Text,
@@ -15,36 +17,42 @@ import type { UiBeanDetail } from "./types.js";
 
 export interface PerspectiveDiffCardProps {
   subject: string;
+  subtitle?: string;
   perspectives: UiBeanDetail[];
   onSaveToShelf?: (bean: UiBeanDetail) => void;
   onOpenUrl?: (url: string) => void;
   savedIds?: string[];
+  linkAuthors?: boolean;
 }
 
 export function PerspectiveDiffCard({
   subject,
+  subtitle,
   perspectives,
   onSaveToShelf,
   onOpenUrl,
   savedIds = [],
+  linkAuthors = false,
 }: PerspectiveDiffCardProps) {
   return (
     <Surface className="cc-card">
       <Stack gap={16}>
         <div className="cc-row-between">
           <Stack gap={4}>
-            <Badge tone="accent">Perspective Diff</Badge>
-            <Heading level={3}>{subject}</Heading>
+            <Badge tone="accent">Same Read · Different Takes</Badge>
+            <Heading level={2}>{subject}</Heading>
+            {subtitle ? <Text variant="meta">{subtitle}</Text> : null}
           </Stack>
-          <Text variant="meta">{perspectives.length} confirmed perspectives</Text>
+          <Badge tone="neutral">{perspectives.length} confirmed perspectives</Badge>
         </div>
 
         <Text variant="help">
-          Compare what different authors noticed, prioritized, and bounded on the same subject.
+          Notice how different people highlight different lines, prioritize different trade-offs, and
+          draw different boundaries on the exact same read.
         </Text>
 
         {perspectives.length === 0 ? (
-          <EmptyResult empty="No public perspectives found for this subject yet." />
+          <EmptyResult empty="No public perspectives on this read yet." />
         ) : (
           <div className="cc-diff-grid">
             {perspectives.map((bean) => {
@@ -53,21 +61,30 @@ export function PerspectiveDiffCard({
                 (o) => o.kind === "source_excerpt",
               );
               return (
-                <div key={bean.id} className="cc-muted-box">
+                <div key={bean.id} className="cc-card-compact">
                   <Stack gap={12}>
                     <div className="cc-row-between">
-                      <Stack gap={2}>
-                        <Text variant="body">
-                          <strong>{bean.ownerDisplayName}</strong>
-                        </Text>
-                        <Text variant="meta">@{bean.ownerHandle} · rev {bean.revisionNumber}</Text>
-                      </Stack>
-                      <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
-                        {bean.visibility}
-                      </Badge>
+                      <Inline gap={8}>
+                        <Avatar label={bean.ownerDisplayName} size={28} />
+                        <Stack gap={2}>
+                          {linkAuthors ? (
+                            <Link href={`/@${bean.ownerHandle}`}>
+                              <strong>{bean.ownerDisplayName}</strong>
+                            </Link>
+                          ) : (
+                            <Text variant="body">
+                              <strong>{bean.ownerDisplayName}</strong>
+                            </Text>
+                          )}
+                          <Text variant="meta">@{bean.ownerHandle}</Text>
+                        </Stack>
+                      </Inline>
+                      {bean.supersededByBeanId ? (
+                        <Badge tone="warning">Updated later</Badge>
+                      ) : null}
                     </div>
 
-                    <Heading level={4}>{bean.title}</Heading>
+                    <Heading level={3}>{bean.title}</Heading>
 
                     {firstSource?.quotation ? (
                       <blockquote className="cc-quote">
@@ -75,20 +92,25 @@ export function PerspectiveDiffCard({
                       </blockquote>
                     ) : null}
 
-                    <Stack gap={4}>
-                      <Text variant="meta">Take</Text>
+                    <p className="cc-paragraph">
                       <Text variant="body">{bean.take}</Text>
-                    </Stack>
+                    </p>
 
-                    <Stack gap={4}>
-                      <Text variant="meta">Priority &amp; Trade-off</Text>
-                      <Text variant="body">{bean.tradeoff}</Text>
-                    </Stack>
+                    <div className="cc-tradeoff-box">
+                      <Stack gap={4}>
+                        <Text variant="meta">What mattered more</Text>
+                        <Text variant="body">
+                          <strong>{bean.tradeoff}</strong>
+                        </Text>
+                      </Stack>
+                    </div>
 
-                    <Stack gap={4}>
-                      <Text variant="meta">Boundary</Text>
-                      <Text variant="help">{bean.boundary}</Text>
-                    </Stack>
+                    <div className="cc-boundary-box">
+                      <Stack gap={4}>
+                        <Text variant="meta">When it doesn&apos;t apply</Text>
+                        <Text variant="help">{bean.boundary}</Text>
+                      </Stack>
+                    </div>
 
                     <Divider />
 
@@ -109,7 +131,7 @@ export function PerspectiveDiffCard({
                           size="compact"
                           onClick={() => onOpenUrl(firstSource.url!)}
                         >
-                          Open Source
+                          Read original
                         </Button>
                       ) : null}
                     </Inline>

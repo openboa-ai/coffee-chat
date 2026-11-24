@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Inline, Link, Text } from "@openboa/yogurt";
+import {
+  AgentAvatar,
+  Avatar,
+  Button,
+  Inline,
+  Link,
+  Text,
+} from "@openboa/yogurt";
 
 export interface NavHeaderProps {
   user: { handle: string; name: string } | null;
@@ -22,36 +29,50 @@ export function NavHeader({ user }: NavHeaderProps) {
   };
 
   return (
-    <header className="cc-nav">
-      <div className="cc-nav-links">
-        <Link href="/">
-          <strong>Coffee Chat</strong>
-        </Link>
-        <Badge tone="neutral">Zero-AI Web</Badge>
-        <Link href="/connect">Connect Agent</Link>
-        <Link href="/sources">Sources</Link>
-        <Link href="/me">My Roastery</Link>
-      </div>
+    <div className="cc-nav-wrap">
+      <header className="cc-nav">
+        <div className="cc-nav-links">
+          <Link href="/" className="cc-brand-link">
+            <AgentAvatar
+              agent="bean-top"
+              state="ready"
+              animated={false}
+              size={24}
+              label="Coffee Chat"
+            />
+            <span>Coffee Chat</span>
+          </Link>
+          <Link href="/sources">Tables</Link>
+          <Link href="/me">My Table</Link>
+          <Link href="/connect">Use with AI</Link>
+        </div>
 
-      <Inline gap={12}>
-        {user ? (
-          <>
-            <Link href={`/@${user.handle}`}>
-              <Text variant="meta">@{user.handle}</Text>
-            </Link>
-            <Button
-              emphasis="quiet"
-              size="compact"
-              pending={signingOut}
-              onClick={handleSignOut}
-            >
-              Sign out
+        <Inline gap={12}>
+          <Link href={user ? "/me?compose=1" : "/signin?returnTo=/me?compose=1"}>
+            <Button emphasis="filled" tone="brand" size="compact">
+              Share a take
             </Button>
-          </>
-        ) : (
-          <Link href="/signin">Sign in</Link>
-        )}
-      </Inline>
-    </header>
+          </Link>
+          {user ? (
+            <>
+              <Link href={`/@${user.handle}`} className="cc-brand-link">
+                <Avatar label={user.name} size={24} />
+                <Text variant="meta">@{user.handle}</Text>
+              </Link>
+              <Button
+                emphasis="quiet"
+                size="compact"
+                pending={signingOut}
+                onClick={handleSignOut}
+              >
+                Sign out
+              </Button>
+            </>
+          ) : (
+            <Link href="/signin">Sign in</Link>
+          )}
+        </Inline>
+      </header>
+    </div>
   );
 }

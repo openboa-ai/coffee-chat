@@ -8,3 +8,4 @@ export * from "./services/beans.js";
 export * from "./services/shelf.js";
 export * from "./services/oauth.js";
 export * from "./services/accounts.js";
+export * from "./services/seed.js";

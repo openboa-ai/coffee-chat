@@ -71,7 +71,7 @@ export function SignInPanel({
       });
       if (!res.ok) {
         const data = (await res.json()) as { message?: string };
-        throw new Error(data.message ?? "Local test sign-in failed.");
+        throw new Error(data.message ?? "Local sign-in failed.");
       }
       window.location.href = returnTo;
     } catch (err) {
@@ -85,11 +85,11 @@ export function SignInPanel({
     <Surface className="cc-card">
       <Stack gap={16}>
         <Stack gap={4}>
-          <Badge tone="brand">Authentication</Badge>
-          <Heading level={2}>Sign in to Coffee Chat</Heading>
+          <Badge tone="brand">Welcome to Coffee Chat</Badge>
+          <Heading level={1}>Pull up a chair</Heading>
           <Text variant="help">
-            Sign in with GitHub or Google. Additional providers can be linked explicitly later in
-            your Roastery settings.
+            Sign in to save your perspectives privately, share selected takes publicly, and bring
+            other people&apos;s voices into your AI work.
           </Text>
         </Stack>
 
@@ -119,8 +119,7 @@ export function SignInPanel({
 
         {!hasGithub && !hasGoogle ? (
           <Text variant="meta">
-            Configure GITHUB_CLIENT_ID/SECRET or GOOGLE_CLIENT_ID/SECRET in environment variables to
-            enable production social sign-in.
+            Social login activates automatically once GitHub or Google OAuth keys are configured.
           </Text>
         ) : null}
 
@@ -129,11 +128,27 @@ export function SignInPanel({
             <Divider />
             <Stack gap={12}>
               <Inline gap={8}>
-                <Badge tone="warning">Local Dev / Test Adapter</Badge>
-                <Text variant="meta">Disabled automatically in production</Text>
+                <Badge tone="accent">Instant Local Preview</Badge>
+                <Text variant="meta">Dev/test only — disabled in production</Text>
               </Inline>
 
-              <Inline gap={8}>
+              <div className="cc-chip-row">
+                <Button
+                  emphasis="soft"
+                  size="compact"
+                  disabled={loading}
+                  onClick={() => handleTestLogin("mina", "Mina Seo")}
+                >
+                  Try as @mina
+                </Button>
+                <Button
+                  emphasis="soft"
+                  size="compact"
+                  disabled={loading}
+                  onClick={() => handleTestLogin("jun", "Jun Park")}
+                >
+                  Try as @jun
+                </Button>
                 <Button
                   emphasis="soft"
                   size="compact"
@@ -150,10 +165,10 @@ export function SignInPanel({
                 >
                   Quick sign in as @bob
                 </Button>
-              </Inline>
+              </div>
 
               <TextField
-                label="Custom test handle"
+                label="Or start with your own handle"
                 value={handle}
                 onChange={(e) => setHandle(e.target.value)}
               />
@@ -169,7 +184,7 @@ export function SignInPanel({
                   pending={loading}
                   onClick={() => handleTestLogin()}
                 >
-                  Sign in with local test account
+                  Enter Coffee Chat
                 </Button>
               </div>
             </Stack>

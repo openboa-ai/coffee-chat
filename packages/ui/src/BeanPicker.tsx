@@ -64,31 +64,31 @@ export function BeanPicker({
       <Stack gap={16}>
         <div className="cc-row-between">
           <Stack gap={4}>
-            <Badge tone="brand">Brew Bean Picker</Badge>
+            <Badge tone="brand">Choose Perspectives</Badge>
             <Heading level={3}>Choose perspectives for this task</Heading>
           </Stack>
           <Text variant="meta">{selectedIds.length} selected</Text>
         </div>
 
         {reason || hasTensionInList ? (
-          <Notice title="Perspective tension or choice needed" tone="warning">
+          <Notice title="Two of your criteria pull in different directions" tone="warning">
             {reason ??
-              "Some candidate Beans are marked tensions_with each other. Pick which criteria should guide this task."}
+              "Some matching takes are in tension with each other. Pick which ones should lead here."}
           </Notice>
         ) : null}
 
         <SearchField
-          label="Filter candidate Beans"
+          label="Filter perspectives"
           value={query}
           onValueChange={setQuery}
-          placeholder="Search title, trade-off, tag, or @handle"
+          placeholder="Search headline, trade-off, tag, or @person"
         />
 
         {filtered.length === 0 ? (
           <EmptyResult
             query={query}
             onClear={() => setQuery("")}
-            empty="No accessible Beans matched."
+            empty="No matching perspectives found."
           />
         ) : (
           <Stack gap={8}>
@@ -105,24 +105,21 @@ export function BeanPicker({
                       />
                       <Inline gap={4}>
                         <Badge tone="neutral">@{bean.ownerHandle}</Badge>
-                        <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
-                          {bean.visibility}
-                        </Badge>
                         {bean.hasTension ? <Badge tone="warning">tension</Badge> : null}
                         {bean.supersededByBeanId ? (
-                          <Badge tone="danger">superseded</Badge>
+                          <Badge tone="danger">updated later</Badge>
                         ) : null}
                       </Inline>
                     </div>
                     <Text variant="help">{bean.tradeoffPreview}</Text>
                     {bean.tags.length > 0 ? (
-                      <Inline gap={4}>
+                      <div className="cc-chip-row">
                         {bean.tags.map((tag) => (
                           <Badge key={tag} tone="neutral">
                             #{tag}
                           </Badge>
                         ))}
-                      </Inline>
+                      </div>
                     ) : null}
                   </Stack>
                 </div>

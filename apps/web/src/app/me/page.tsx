@@ -12,10 +12,13 @@ import { RoasteryClient } from "@/components/RoasteryClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function MyRoasteryPage() {
+export default async function MyRoasteryPage(props: {
+  searchParams: Promise<{ compose?: string }>;
+}) {
   const user = await getCurrentUser();
+  const params = await props.searchParams;
   if (!user) {
-    redirect("/signin?returnTo=/me");
+    redirect(params.compose === "1" ? "/signin?returnTo=/me?compose=1" : "/signin?returnTo=/me");
   }
 
   const db = await getDb();
@@ -34,6 +37,7 @@ export default async function MyRoasteryPage() {
       initialShelf={shelf}
       initialGrants={grants}
       initialAccounts={linkedAccounts}
+      startComposing={params.compose === "1"}
     />
   );
 }

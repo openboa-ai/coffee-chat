@@ -1,58 +1,76 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Coffee Chat Zero-AI Web & MCP Apps E2E", () => {
-  test("verifies Landing, Connect, My Roastery, Person Page counts/privacy, Source Compare A vs B, and Shelf", async ({
+test.describe("Coffee Chat Service Web & MCP Apps E2E", () => {
+  test("verifies Landing, 30s Connect, 1-step Capture in My Table, Person Page counts/privacy, Source Compare A vs B, and Shelf", async ({
     page,
     context,
   }) => {
-    // 1. Landing & Connect pages
+    // 1. Landing & 30-second Connect pages
     await page.goto("/");
     await expect(
       page.getByText("Knowledge is shared. What a person makes of it is personal."),
     ).toBeVisible();
 
     await page.goto("/connect");
-    await expect(page.getByText("Connect Your Agent Host")).toBeVisible();
-    await expect(page.getByText("/api/mcp").first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Use Coffee Chat Inside Your AI" }),
+    ).toBeVisible();
+    await page.getByText("Codex", { exact: true }).click();
+    await expect(page.getByText("Codex CLI & Codex App")).toBeVisible();
 
     // 2. Sign in as @alice via test-only local auth adapter
     await page.goto("/signin");
     await page.getByRole("button", { name: "Quick sign in as @alice" }).click();
     await page.waitForURL("**/me");
-    await expect(page.getByRole("heading", { name: "My Roastery" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "My Table" })).toBeVisible();
 
-    // 3. Create a private work_episode Bean via UI (defaults to private!)
-    await page.getByRole("button", { name: "New Confirmed Bean" }).click();
-    await page.getByText("Work Decision / Correction").click();
-    await page.getByLabel("Title").fill("Secret internal work judgment");
-    await page.getByLabel("Take").fill("Keep auth errors loud during refactors.");
-    await page.getByLabel("Priority & Trade-off").fill("Explicit failure over silent convenience.");
-    await page.getByLabel("Boundary").fill("Security paths only.");
+    // 3. Capture a private work decision in ONE click (defaults to private!)
+    await page.getByRole("button", { name: "Capture a take" }).click();
+    await page.getByText("A call I made at work").click();
     await page
-      .getByLabel("Work episode summary (no secrets or private code)")
+      .getByLabel("What situation sparked this? (keep it free of secrets or private code)")
       .fill("Corrected silent fallback in auth helper.");
-    await page.getByRole("button", { name: "Prepare Confirmation Card" }).click();
-
+    await page
+      .getByLabel("Headline — your take in one line")
+      .fill("Secret internal work judgment");
+    await page
+      .getByLabel("What it meant to you")
+      .fill("Keep auth errors loud during refactors.");
+    await page
+      .getByLabel("What mattered more (the trade-off)")
+      .fill("Explicit failure over silent convenience.");
+    await page
+      .getByLabel("When it doesn't apply (the exception)")
+      .fill("Security paths only.");
     await expect(page.getByText("Private (default)")).toBeVisible();
-    await page.getByRole("button", { name: "Confirm & Save Bean" }).click();
+    await page.getByRole("button", { name: "Save Perspective" }).click();
     await expect(
       page.getByRole("heading", { name: "Secret internal work judgment" }),
     ).toBeVisible();
 
-    // 4. Create a shared-URL Bean for Alice and publish it
+    // 4. Capture a shared-URL take for Alice and publish it in ONE click
     const sharedUrl = "https://example.com/shared-architecture-essay";
-    await page.getByRole("button", { name: "New Confirmed Bean" }).click();
-    await page.getByLabel("Title").fill("Alice favors modular monoliths");
-    await page.getByLabel("Take").fill("Deploy simplicity accelerates iteration.");
+    await page.getByRole("button", { name: "Capture a take" }).click();
+    await page.getByLabel("Article or link URL").fill(sharedUrl);
     await page
-      .getByLabel("Priority & Trade-off")
+      .getByLabel("Line that stood out (optional quote)")
+      .fill("Network calls have tax.");
+    await page
+      .getByLabel("Headline — your take in one line")
+      .fill("Alice favors modular monoliths");
+    await page
+      .getByLabel("What it meant to you")
+      .fill("Deploy simplicity accelerates iteration.");
+    await page
+      .getByLabel("What mattered more (the trade-off)")
       .fill("Single deployment over independent service deploys.");
-    await page.getByLabel("Boundary").fill("Teams under 30 engineers.");
-    await page.getByLabel("Source URL").fill(sharedUrl);
-    await page.getByLabel("Selected quotation (optional)").fill("Network calls have tax.");
-    await page.getByRole("button", { name: "Prepare Confirmation Card" }).click();
-    await page.getByRole("switch", { name: "Make this Bean public" }).click();
-    await page.getByRole("button", { name: "Confirm & Save Bean" }).click();
+    await page
+      .getByLabel("When it doesn't apply (the exception)")
+      .fill("Teams under 30 engineers.");
+    await page
+      .getByRole("switch", { name: "Share publicly on my Coffee Chat page" })
+      .click();
+    await page.getByRole("button", { name: "Save Perspective" }).click();
     await expect(
       page.getByRole("heading", { name: "Alice favors modular monoliths" }),
     ).toBeVisible();
@@ -69,54 +87,65 @@ test.describe("Coffee Chat Zero-AI Web & MCP Apps E2E", () => {
 
     // 5. Open Alice's public Person Page /@alice in a fresh unauthenticated context!
     const anonPage = await context.browser()!.newPage();
-    await anonPage.goto(`${page.url().replace(/\/me$/, "")}/@alice`);
+    await anonPage.goto(`${page.url().replace(/\/me.*$/, "")}/@alice`);
     await expect(anonPage.getByText("1 public")).toBeVisible();
     await expect(anonPage.getByText("1 private")).toBeVisible();
-    await expect(anonPage.getByText("Alice favors modular monoliths")).toBeVisible();
+    await expect(
+      anonPage.getByRole("heading", { name: "Alice favors modular monoliths" }),
+    ).toBeVisible();
     // Private Bean content MUST NEVER appear publicly!
     await expect(anonPage.getByText("Secret internal work judgment")).toHaveCount(0);
     await anonPage.close();
 
-    // 6. Sign out Alice, sign in as Bob, publish opposing Bean on the SAME URL, save Alice to Shelf
+    // 6. Sign out Alice, sign in as Bob, save @alice to Shelf, and add contrasting take RIGHT ON the shared Source Compare table!
     await page.getByRole("button", { name: "Sign out" }).click();
     await page.waitForURL("**/");
     await page.goto("/signin");
     await page.getByRole("button", { name: "Quick sign in as @bob" }).click();
     await page.waitForURL("**/me");
 
-    await page.getByRole("button", { name: "New Confirmed Bean" }).click();
-    await page.getByLabel("Title").fill("Bob favors early service isolation");
-    await page.getByLabel("Take").fill("Blast radius matters early on sensitive systems.");
-    await page
-      .getByLabel("Priority & Trade-off")
-      .fill("Security isolation over simpler local debugging.");
-    await page.getByLabel("Boundary").fill("Systems handling PII or billing.");
-    await page.getByLabel("Source URL").fill(sharedUrl);
-    await page.getByLabel("Selected quotation (optional)").fill("Blast radius dictates boundaries.");
-    await page.getByRole("button", { name: "Prepare Confirmation Card" }).click();
-    await page.getByRole("switch", { name: "Make this Bean public" }).click();
-    await page.getByRole("button", { name: "Confirm & Save Bean" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Bob favors early service isolation" }),
-    ).toBeVisible();
-
-    // Save @alice to Bob's Shelf from /@alice
     await page.goto("/@alice");
     await page.getByRole("button", { name: "Save @alice to Shelf" }).click();
     await expect(page.getByText("Saved to Shelf")).toBeVisible();
 
-    // Open Source Compare page and confirm BOTH Alice & Bob appear side by side!
     await page.getByRole("link", { name: "Compare on Source Page" }).click();
     await page.waitForURL("**/sources/**");
-    await expect(page.getByText("Alice favors modular monoliths")).toBeVisible();
-    await expect(page.getByText("Bob favors early service isolation")).toBeVisible();
+
+    // Add Bob's contrasting take directly on the Source Compare page (URL pre-filled!)
+    await page.getByRole("button", { name: "Add your take to this table" }).click();
+    await page
+      .getByLabel("Line that stood out (optional quote)")
+      .fill("Blast radius dictates boundaries.");
+    await page
+      .getByLabel("Headline — your take in one line")
+      .fill("Bob favors early service isolation");
+    await page
+      .getByLabel("What it meant to you")
+      .fill("Blast radius matters early on sensitive systems.");
+    await page
+      .getByLabel("What mattered more (the trade-off)")
+      .fill("Security isolation over simpler local debugging.");
+    await page
+      .getByLabel("When it doesn't apply (the exception)")
+      .fill("Systems handling PII or billing.");
+    await page
+      .getByRole("switch", { name: "Share publicly on my Coffee Chat page" })
+      .click();
+    await page.getByRole("button", { name: "Save Perspective" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Alice favors modular monoliths" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Bob favors early service isolation" }),
+    ).toBeVisible();
     await expect(page.getByText("2 confirmed perspectives")).toBeVisible();
   });
 
   test("renders and interacts with all 3 compiled MCP App HTML bundles", async ({
     page,
   }) => {
-    // 1. Confirm Bean Card MCP App (work_episode redaction check + 1-click save)
+    // 1. Confirm Bean Card MCP App
     await page.addInitScript(() => {
       (window as unknown as Record<string, unknown>).__COFFEE_CHAT_INITIAL_RESULT__ = {
         structuredContent: {
@@ -179,7 +208,7 @@ test.describe("Coffee Chat Zero-AI Web & MCP Apps E2E", () => {
     await expect(page.getByText("Confirmed & Saved")).toBeVisible();
     await expect(page.getByText("bean-e2e-123")).toBeVisible();
 
-    // 2. Bean Picker MCP App (conflict tension badge + selection)
+    // 2. Bean Picker MCP App
     const pickerPage = await page.context().newPage();
     await pickerPage.addInitScript(() => {
       (window as unknown as Record<string, unknown>).__COFFEE_CHAT_INITIAL_RESULT__ = {

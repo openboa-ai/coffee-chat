@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import {
   CoffeeChatError,
   createDatabase,
+  seedDemoCommunityIfEmpty,
   type CoffeeChatDb,
   type DatabaseHandle,
 } from "@coffee-chat/core";
@@ -29,6 +30,14 @@ export async function getDbHandle(): Promise<DatabaseHandle> {
       }
       g[globalKey] = createDatabase({
         pgliteDir: pgliteDir === ":memory:" ? undefined : pgliteDir,
+      }).then(async (handle) => {
+        if (
+          process.env.NODE_ENV !== "production" &&
+          process.env.COFFEE_CHAT_SEED_DEMO === "true"
+        ) {
+          await seedDemoCommunityIfEmpty(handle.db);
+        }
+        return handle;
       });
     }
   }

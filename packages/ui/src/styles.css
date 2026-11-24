@@ -1,4 +1,4 @@
-/* Coffee Chat presentation helpers built strictly on Yogurt design tokens. */
+/* Coffee Chat layout helpers built strictly on Yogurt design tokens. */
 .cc-shell {
   min-height: 100vh;
   background: var(--yg-canvas);
@@ -7,9 +7,9 @@
 }
 
 .cc-container {
-  max-width: 1040px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: var(--boa-space-24) var(--boa-space-16);
+  padding: var(--boa-space-24) var(--boa-space-16) var(--boa-space-64);
 }
 
 .cc-widget-frame {
@@ -19,8 +19,56 @@
   font-family: var(--boa-font-family);
 }
 
+.cc-nav-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--yg-hover);
+  background: var(--yg-canvas);
+}
+
+.cc-nav {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--boa-space-16);
+  padding: var(--boa-space-12) var(--boa-space-16);
+}
+
+.cc-nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--boa-space-16);
+  flex-wrap: wrap;
+}
+
+.cc-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--boa-space-8);
+  text-decoration: none;
+  color: var(--yg-text);
+  font-weight: 600;
+}
+
 .cc-card {
+  padding: var(--boa-space-24);
+  border-radius: var(--yg-radius-panel);
+  background: var(--yg-surface);
+  border: 1px solid var(--yg-hover);
+}
+
+.cc-card-compact {
   padding: var(--boa-space-16);
+  border-radius: var(--yg-radius-panel);
+  background: var(--yg-surface);
+  border: 1px solid var(--yg-hover);
+}
+
+.cc-hero {
+  padding: var(--boa-space-32) var(--boa-space-24);
   border-radius: var(--yg-radius-panel);
   background: var(--yg-surface);
   border: 1px solid var(--yg-hover);
@@ -33,29 +81,46 @@
   background: var(--yg-field);
   border-radius: var(--yg-radius-small);
   font-size: 0.875rem;
+  color: var(--yg-text);
+}
+
+.cc-tradeoff-box {
+  padding: var(--boa-space-12);
+  border-radius: var(--yg-radius-control);
+  background: var(--yg-action-soft);
+  border-left: 3px solid var(--yg-action);
+}
+
+.cc-boundary-box {
+  padding: var(--boa-space-8) var(--boa-space-12);
+  border-radius: var(--yg-radius-control);
+  background: var(--yg-field);
 }
 
 .cc-diff-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--boa-space-16);
 }
 
-.cc-nav {
+.cc-people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--boa-space-12);
+}
+
+.cc-row-between {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--boa-space-16);
-  padding: var(--boa-space-12) var(--boa-space-24);
-  border-bottom: 1px solid var(--yg-hover);
-  background: var(--yg-surface);
+  gap: var(--boa-space-12);
+  flex-wrap: wrap;
 }
 
-.cc-nav-links {
-  display: flex;
-  align-items: center;
-  gap: var(--boa-space-16);
-  flex-wrap: wrap;
+.cc-muted-box {
+  padding: var(--boa-space-12);
+  border-radius: var(--yg-radius-control);
+  background: var(--yg-field);
 }
 
 .cc-mono {
@@ -73,19 +138,19 @@
   background: var(--yg-field);
   overflow-x: auto;
   font-size: 0.8125rem;
-  line-height: 1.45;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.cc-row-between {
+.cc-chip-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--boa-space-12);
+  gap: var(--boa-space-8);
   flex-wrap: wrap;
 }
 
-.cc-muted-box {
-  padding: var(--boa-space-12);
-  border-radius: var(--yg-radius-control);
-  background: var(--yg-field);
+.cc-paragraph {
+  margin: 0;
+  line-height: 1.6;
 }
