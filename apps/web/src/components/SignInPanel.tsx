@@ -152,25 +152,25 @@ export function SignInPanel({
                     emphasis="soft"
                     size="compact"
                     disabled={loading}
-                    onClick={() => handleTestLogin("mina", "Mina Seo")}
+                    onClick={() => handleTestLogin("claire", "Claire Brooks")}
                   >
-                    Sign in as @mina
+                    Sign in as @claire
                   </Button>
                   <Button
                     emphasis="soft"
                     size="compact"
                     disabled={loading}
-                    onClick={() => handleTestLogin("jun", "Jun Park")}
+                    onClick={() => handleTestLogin("david", "David Chen")}
                   >
-                    Sign in as @jun
+                    Sign in as @david
                   </Button>
                   <Button
                     emphasis="soft"
                     size="compact"
                     disabled={loading}
-                    onClick={() => handleTestLogin("sora", "Sora Han")}
+                    onClick={() => handleTestLogin("hannah", "Hannah Kim")}
                   >
-                    Sign in as @sora
+                    Sign in as @hannah
                   </Button>
                 </Inline>
 

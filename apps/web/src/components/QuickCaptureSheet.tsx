@@ -48,6 +48,7 @@ export interface QuickCaptureSheetProps {
   editingBean?: BeanDetail | null;
   initialUrl?: string;
   initialSourceTitle?: string;
+  initialSpark?: string;
   initialRelations?: DraftRelation[];
   onSaved: (bean: BeanDetail) => void;
   onReloadLatest?: (beanId: string) => Promise<BeanDetail | null>;
@@ -82,6 +83,7 @@ export function QuickCaptureSheet({
   editingBean = null,
   initialUrl = "",
   initialSourceTitle = "",
+  initialSpark = "",
   initialRelations = [],
   onSaved,
   onReloadLatest,
@@ -153,13 +155,20 @@ export function QuickCaptureSheet({
       setTagsText("");
       setVisibility("private");
       setRedactionConfirmed(false);
-      setOrigins([emptyReadingOrigin(initialUrl, initialSourceTitle)]);
+      const trimmedSpark = initialSpark.trim();
+      if (trimmedSpark && /^https?:\/\//i.test(trimmedSpark)) {
+        setOrigins([emptyReadingOrigin(trimmedSpark, initialSourceTitle)]);
+      } else if (trimmedSpark) {
+        setOrigins([{ ...emptyWorkOrigin(), episodeSummary: trimmedSpark }]);
+      } else {
+        setOrigins([emptyReadingOrigin(initialUrl, initialSourceTitle)]);
+      }
       setRelations(initialRelations);
     }
     setNewRelTarget("");
     setNewRelKind("refines");
     setNewRelNote("");
-  }, [open, editingBean, initialUrl, initialSourceTitle, initialRelations]);
+  }, [open, editingBean, initialUrl, initialSourceTitle, initialSpark, initialRelations]);
 
   const hasWorkOrigin = origins.some((o) => o.kind === "work_episode");
   const needsRedaction = visibility === "public" && hasWorkOrigin;

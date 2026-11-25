@@ -20,26 +20,26 @@ export async function seedDemoCommunityIfEmpty(
     return { seeded: false };
   }
 
-  const mina = await ensureUser(db, {
-    handle: "mina",
-    name: "Mina Seo",
-    email: "mina@coffeechat.demo",
+  const claire = await ensureUser(db, {
+    handle: "claire",
+    name: "Claire Brooks",
+    email: "claire@coffeechat.demo",
     providerId: "github",
-    providerAccountId: "demo-mina",
+    providerAccountId: "demo-claire",
   });
-  const jun = await ensureUser(db, {
-    handle: "jun",
-    name: "Jun Park",
-    email: "jun@coffeechat.demo",
+  const david = await ensureUser(db, {
+    handle: "david",
+    name: "David Chen",
+    email: "david@coffeechat.demo",
     providerId: "github",
-    providerAccountId: "demo-jun",
+    providerAccountId: "demo-david",
   });
-  const sora = await ensureUser(db, {
-    handle: "sora",
-    name: "Sora Lim",
-    email: "sora@coffeechat.demo",
+  const hannah = await ensureUser(db, {
+    handle: "hannah",
+    name: "Hannah Kim",
+    email: "hannah@coffeechat.demo",
     providerId: "google",
-    providerAccountId: "demo-sora",
+    providerAccountId: "demo-hannah",
   });
 
   const saveOne = async (
@@ -58,97 +58,15 @@ export async function seedDemoCommunityIfEmpty(
     return saved.bean;
   };
 
-  // Shared Read 1: Monolith vs Service Boundaries
-  const archUrl = "https://essays.coffeechat.dev/small-team-boundaries";
+  // Shared Read 1 (Lead Featured Table): Shipping Fast Without Losing Trust (universal product & work call)
+  const productUrl = "https://essays.coffeechat.dev/shipping-vs-trust";
 
-  const minaOldArch = await saveOne(mina.id, {
-    title: "Keep one deployable until the team hits 10",
-    take: "Early teams lose weeks to cross-service deploys before they even know if the product sticks.",
-    tradeoff: "Shipping speed in a single codebase over clean service ownership.",
-    boundary: "Early-stage products without regulated data isolation needs.",
-    tags: ["architecture", "startups"],
-    visibility: "public",
-    origins: [
-      {
-        kind: "source_excerpt",
-        url: archUrl,
-        sourceTitle: "Boundaries for Small Engineering Teams",
-        quotation: "Every network hop multiplies debugging and coordination cost.",
-        locator: "Section 2",
-      },
-    ],
-  });
-
-  await saveOne(mina.id, {
-    title: "Start modular monolith, split only on real ownership pain",
-    take: "Headcount alone was the wrong threshold—what actually forces a split is independent release cadence and blast radius.",
-    tradeoff: "Strict module boundaries inside one repo over premature microservices.",
-    boundary: "Do not delay splitting once security or billing compliance requires hard runtime isolation.",
-    tags: ["architecture", "engineering"],
-    visibility: "public",
-    origins: [
-      {
-        kind: "source_excerpt",
-        url: archUrl,
-        sourceTitle: "Boundaries for Small Engineering Teams",
-        quotation: "Good module boundaries buy you optionality without paying the network tax upfront.",
-        locator: "Section 4",
-      },
-    ],
-    relations: [
-      {
-        toBeanId: minaOldArch.id,
-        kind: "supersedes",
-        note: "Updated after seeing a 25-person team stay fast on a modular monolith.",
-      },
-    ],
-  });
-
-  await saveOne(jun.id, {
-    title: "Isolate auth and money paths from day one",
-    take: "Once auth, billing, or user-owned secrets live inside the main app process, untangling them later is ten times harder.",
-    tradeoff: "Hard blast-radius isolation early over simpler local setup.",
-    boundary: "Applies specifically to auth, billing, and external credential custody—not ordinary CRUD pages.",
-    tags: ["architecture", "security"],
-    visibility: "public",
-    origins: [
-      {
-        kind: "source_excerpt",
-        url: archUrl,
-        sourceTitle: "Boundaries for Small Engineering Teams",
-        quotation: "The cost of a security boundary mistake grows superlinearly once customer data arrives.",
-        locator: "Section 3",
-      },
-    ],
-  });
-
-  // Shared Read 2: Shipping Fast vs Complete First Impressions
-  const productUrl = "https://essays.coffeechat.dev/shipping-vs-craft";
-
-  const soraCraft = await saveOne(sora.id, {
-    title: "Cut scope in half, never cut first-minute craft",
-    take: "People forgive missing features in v1, but they immediately bounce when the core loop feels confusing or unfinished.",
-    tradeoff: "Narrower feature scope with unmistakable clarity over a broad rough prototype.",
-    boundary: "Applies to external user-facing launches; internal throwaway spikes can stay rough.",
-    tags: ["product", "design"],
-    visibility: "public",
-    origins: [
-      {
-        kind: "source_excerpt",
-        url: productUrl,
-        sourceTitle: "Shipping Fast Without Losing Trust",
-        quotation: "Trust is formed in the first sixty seconds of real use, not by the roadmap.",
-        locator: "Opening",
-      },
-    ],
-  });
-
-  await saveOne(mina.id, {
-    title: "Ship a reversible probe behind a flag before polishing",
-    take: "Polishing the wrong workflow wastes more time than showing an honest beta to five real users early.",
-    tradeoff: "Fast reversible user feedback over upfront polish.",
-    boundary: "Never apply to irreversible schema changes, public brand launches, or security boundaries.",
-    tags: ["product", "experimentation"],
+  const claireDraftOld = await saveOne(claire.id, {
+    title: "Put every early idea in front of customers on day one",
+    take: "Waiting until a workflow feels polished hides whether people even want the core outcome.",
+    tradeoff: "Fast customer signal over upfront polish.",
+    boundary: "Internal prototypes and opt-in betas only.",
+    tags: ["product", "speed"],
     visibility: "public",
     origins: [
       {
@@ -161,123 +79,235 @@ export async function seedDemoCommunityIfEmpty(
     ],
   });
 
-  // Tension example for Sora (tensions_with!)
-  await saveOne(sora.id, {
-    title: "Make the first 30 seconds require zero signup",
-    take: "Showing a real interactive experience before asking for OAuth converts far better than a blank login wall.",
-    tradeoff: "Immediate hands-on clarity before login over gated onboarding.",
-    boundary: "Only for public read/explore surfaces; private notes and writes always require sign-in.",
-    tags: ["product", "onboarding"],
+  await saveOne(claire.id, {
+    title: "Show an honest draft to 5 real people before polishing",
+    take: "Polishing the wrong workflow wastes a month—showing a clearly labeled early draft to five real users exposes blind spots in an hour.",
+    tradeoff: "Fast real-world feedback over upfront perfection.",
+    boundary: "Public brand launches or irreversible customer commitments.",
+    tags: ["product", "decisions"],
     visibility: "public",
     origins: [
       {
-        kind: "work_episode",
-        episodeSummary: "Redesigned an onboarding flow after noticing visitors left on an empty home screen.",
+        kind: "source_excerpt",
+        url: productUrl,
+        sourceTitle: "Shipping Fast Without Losing Trust",
+        quotation: "Reversible decisions should optimize for learning rate, not ceremony.",
+        locator: "Part 2",
       },
     ],
     relations: [
       {
-        toBeanId: soraCraft.id,
-        kind: "refines",
-        note: "Specific application of first-minute craft to landing flows.",
-      },
-    ],
-  }, true);
-
-  const junStrictAuth = await saveOne(jun.id, {
-    title: "Fail loudly on auth checks—never silently fall back",
-    take: "Silent fallbacks in auth code hide broken assumptions until production.",
-    tradeoff: "Explicit 401/403 failure over convenient silent defaults.",
-    boundary: "Applies to auth, permissions, and persistence; UI display labels may use safe defaults.",
-    tags: ["security", "engineering"],
-    visibility: "public",
-    origins: [
-      {
-        kind: "work_episode",
-        episodeSummary: "Caught a silent fallback during code review that masked expired tokens.",
-      },
-    ],
-  }, true);
-
-  await saveOne(jun.id, {
-    title: "Keep local developer setup zero-config",
-    take: "If a new contributor needs five cloud accounts just to run tests locally, nobody tests properly.",
-    tradeoff: "In-process local defaults for dev/test over forcing full cloud setup upfront.",
-    boundary: "Local development and CI only; production must fail closed if credentials are missing.",
-    tags: ["engineering", "dx"],
-    visibility: "public",
-    origins: [
-      {
-        kind: "work_episode",
-        episodeSummary: "Switched local test suite to in-process Postgres so E2E runs with one command.",
-      },
-    ],
-    relations: [
-      {
-        toBeanId: junStrictAuth.id,
-        kind: "tensions_with",
-        note: "Zero-config local DX is in deliberate tension with strict fail-closed auth—strictly separated by environment.",
-      },
-    ],
-  }, true);
-
-  // Private Beans (never visible publicly, but truthfully reflected in aggregate privateCount!)
-  await saveOne(mina.id, {
-    title: "Private Q4 roadmap sequencing notes",
-    take: "Keep internal sequencing private until customer interviews finish.",
-    tradeoff: "Validated demand over pre-announcing dates.",
-    boundary: "Internal planning only.",
-    tags: ["planning"],
-    visibility: "private",
-    origins: [
-      {
-        kind: "work_episode",
-        episodeSummary: "Internal prioritization review.",
+        toBeanId: claireDraftOld.id,
+        kind: "supersedes",
+        note: "Refined after an unannounced beta confused non-opt-in customers.",
       },
     ],
   });
 
-  await saveOne(mina.id, {
-    title: "Private hiring bar notes for founding engineer",
-    take: "Prefer builders who talk to users directly over specialists who wait for specs.",
-    tradeoff: "Product ownership over narrow framework depth.",
-    boundary: "Early-stage founding team hiring.",
+  await saveOne(david.id, {
+    title: "Never ship a shortcut that touches money or privacy",
+    take: "Early users forgive a rough layout or missing option, but they never forget a broken promise around billing or personal data.",
+    tradeoff: "Durable customer trust on day one over faster early demos.",
+    boundary: "Throwaway visual prototypes using sample data only.",
+    tags: ["trust", "product"],
+    visibility: "public",
+    origins: [
+      {
+        kind: "source_excerpt",
+        url: productUrl,
+        sourceTitle: "Shipping Fast Without Losing Trust",
+        quotation: "Trust compounds slowly and breaks in a single sloppy release.",
+        locator: "Opening",
+      },
+    ],
+  });
+
+  const hannahCraft = await saveOne(hannah.id, {
+    title: "Cut scope in half, never cut first-minute clarity",
+    take: "People forgive missing features in v1, but they immediately leave when the core promise feels cluttered or confusing.",
+    tradeoff: "Narrower scope with unmistakable clarity over a broad rough release.",
+    boundary: "External launches; internal rough drafts can stay messy.",
+    tags: ["design", "product"],
+    visibility: "public",
+    origins: [
+      {
+        kind: "source_excerpt",
+        url: productUrl,
+        sourceTitle: "Shipping Fast Without Losing Trust",
+        quotation: "Trust is formed in the first sixty seconds of real use, not by the roadmap.",
+        locator: "Part 1",
+      },
+    ],
+  });
+
+  // Shared Read 2: Small Team Decisions (relatable to both operators and builders)
+  const teamUrl = "https://essays.coffeechat.dev/small-team-boundaries";
+
+  await saveOne(claire.id, {
+    title: "Keep small teams on one shared system until growth hurts",
+    take: "Splitting work across separate systems too early slows every decision down with coordination overhead.",
+    tradeoff: "Shared momentum in one place over clean separate ownership.",
+    boundary: "Regulated work requiring hard compliance separation.",
+    tags: ["teams", "architecture"],
+    visibility: "public",
+    origins: [
+      {
+        kind: "source_excerpt",
+        url: teamUrl,
+        sourceTitle: "Boundaries for Small Teams",
+        quotation: "Every handoff boundary multiplies coordination cost.",
+        locator: "Section 2",
+      },
+    ],
+  });
+
+  await saveOne(david.id, {
+    title: "Separate high-risk permissions and billing on day one",
+    take: "Keep ordinary workflows simple and unified, but isolate payments, credentials, and sensitive customer data before scale locks them in.",
+    tradeoff: "Hard blast-radius protection early over simpler initial setup.",
+    boundary: "High-risk money, privacy, and access paths only.",
+    tags: ["trust", "architecture"],
+    visibility: "public",
+    origins: [
+      {
+        kind: "source_excerpt",
+        url: teamUrl,
+        sourceTitle: "Boundaries for Small Teams",
+        quotation: "The cost of a trust boundary mistake grows superlinearly once customer data arrives.",
+        locator: "Section 3",
+      },
+    ],
+  });
+
+  // Work Origin Beans with explicit relations (refines & tensions_with)
+  await saveOne(
+    hannah.id,
+    {
+      title: "Show the real experience before asking people to sign up",
+      take: "Letting someone feel the actual outcome in 10 seconds works far better than greeting them with a wall of marketing boxes.",
+      tradeoff: "Immediate hands-on clarity over gated onboarding.",
+      boundary: "Public landing surfaces; personal notes always require sign-in.",
+      tags: ["design", "onboarding"],
+      visibility: "public",
+      origins: [
+        {
+          kind: "work_episode",
+          episodeSummary: "Redesigned a product homepage after watching first-time visitors bounce before signing in.",
+        },
+      ],
+      relations: [
+        {
+          toBeanId: hannahCraft.id,
+          kind: "refines",
+          note: "Direct application of first-minute clarity to product entry.",
+        },
+      ],
+    },
+    true,
+  );
+
+  const davidSayNo = await saveOne(
+    david.id,
+    {
+      title: "Name what you are dropping before adding a new goal",
+      take: "Saying yes to a new priority without naming what pauses silently burns out the team and produces mediocre results everywhere.",
+      tradeoff: "Explicit trade-offs and focus over appearing responsive to every request.",
+      boundary: "Urgent customer incidents that pause normal plans anyway.",
+      tags: ["leadership", "decisions"],
+      visibility: "public",
+      origins: [
+        {
+          kind: "work_episode",
+          episodeSummary: "Quarterly planning review where three new initiatives landed without dropping prior commitments.",
+        },
+      ],
+    },
+    true,
+  );
+
+  await saveOne(
+    david.id,
+    {
+      title: "Keep small urgent fixes fast without waiting for quarterly planning",
+      take: "If fixing a glaring customer paper cut requires a formal prioritization cycle, teams lose their sense of ownership.",
+      tradeoff: "Fast responsiveness on small fixes over strict roadmap gatekeeping.",
+      boundary: "Small half-day improvements only; multi-week bets still require explicit trade-offs.",
+      tags: ["leadership", "speed"],
+      visibility: "public",
+      origins: [
+        {
+          kind: "work_episode",
+          episodeSummary: "Created a lightweight lane for customer paper cuts alongside quarterly goals.",
+        },
+      ],
+      relations: [
+        {
+          toBeanId: davidSayNo.id,
+          kind: "tensions_with",
+          note: "Fast responsiveness for small fixes sits in healthy tension with strict focus—separated by scope size.",
+        },
+      ],
+    },
+    true,
+  );
+
+  // Private Beans (never visible publicly, truthfully reflected in aggregate privateCount)
+  await saveOne(claire.id, {
+    title: "Lead with the hard truth, not the build-up",
+    take: "When a target slips or a plan breaks, put the honest status and concrete fix in the very first sentence instead of burying it on slide 4.",
+    tradeoff: "Upfront trust and clarity over softening the moment.",
+    boundary: "External announcements requiring legal or sensitive framing first.",
+    tags: ["communication"],
+    visibility: "private",
+    origins: [
+      {
+        kind: "work_episode",
+        episodeSummary: "Weekly leadership update after a launch date moved by two weeks.",
+      },
+    ],
+  });
+
+  await saveOne(claire.id, {
+    title: "Hire fast learners over ready-made playbooks",
+    take: "Prefer people who talk to customers directly and own fuzzy problems over specialists waiting for a written spec.",
+    tradeoff: "Ownership and learning speed over exact prior industry background.",
+    boundary: "Roles requiring day-one regulatory certification.",
     tags: ["hiring"],
     visibility: "private",
     origins: [
       {
         kind: "work_episode",
-        episodeSummary: "Debrief after candidate work trial.",
+        episodeSummary: "Debrief after final-round candidate interviews.",
       },
     ],
   });
 
-  await saveOne(jun.id, {
-    title: "Private incident postmortem checklist",
-    take: "Always verify token revocation under concurrent refresh requests.",
-    tradeoff: "Deterministic concurrency tests over manual smoke checks.",
-    boundary: "Auth infrastructure.",
-    tags: ["security"],
+  await saveOne(david.id, {
+    title: "Private quarterly review checklist for customer trust",
+    take: "Audit every billing and access change against worst-case failure paths before signing off.",
+    tradeoff: "Explicit failure checks over optimistic manual walkthroughs.",
+    boundary: "Internal trust and risk reviews.",
+    tags: ["trust"],
     visibility: "private",
     origins: [
       {
         kind: "work_episode",
-        episodeSummary: "Security review on OAuth token rotation.",
+        episodeSummary: "Internal operational readiness review.",
       },
     ],
   });
 
-  await saveOne(sora.id, {
-    title: "Private typography and spacing rules for dense tables",
-    take: "Keep secondary metadata muted and collapsible so the trade-off reads first.",
-    tradeoff: "Scannable hierarchy over showing every field at equal weight.",
-    boundary: "Editorial and review screens.",
+  await saveOne(hannah.id, {
+    title: "Private editing rule: cut half the words before shipping",
+    take: "If a screen needs a paragraph to explain what a button does, the structure is wrong—fix the layout before adding help text.",
+    tradeoff: "Immediate visual comprehension over exhaustive documentation.",
+    boundary: "Product screens and landing pages.",
     tags: ["design"],
     visibility: "private",
     origins: [
       {
         kind: "work_episode",
-        episodeSummary: "Critique of an overly dense card layout.",
+        episodeSummary: "Design critique of an overly verbose first-run screen.",
       },
     ],
   });

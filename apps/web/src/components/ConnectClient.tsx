@@ -29,7 +29,7 @@ export function ConnectClient({
   connectedClientNames,
 }: ConnectClientProps) {
   const router = useRouter();
-  const [hostTab, setHostTab] = useState("codex");
+  const [hostTab, setHostTab] = useState("chatgpt");
 
   const copyText = async (text: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -39,42 +39,25 @@ export function ConnectClient({
 
   const hostConfigs = [
     {
+      id: "chatgpt",
+      label: "ChatGPT",
+      language: "text",
+      hint: "In Settings → Apps & Connectors → Add Custom Connector, paste this URL and approve once.",
+      code: `Connector URL: ${mcpUrl}\nAuth: OAuth (automatic discovery)`,
+    },
+    {
+      id: "claude",
+      label: "Claude",
+      language: "bash",
+      hint: "Add Coffee Chat to Claude Code once from your terminal, or connect the URL in Claude Connectors.",
+      code: `claude mcp add --transport http coffee-chat "${mcpUrl}"`,
+    },
+    {
       id: "codex",
       label: "Codex",
       language: "toml",
       hint: "Add Coffee Chat to ~/.codex/config.toml, then approve sign-in once when prompted.",
       code: `[mcp_servers.coffee_chat]\nurl = "${mcpUrl}"`,
-    },
-    {
-      id: "claude",
-      label: "Claude Code",
-      language: "bash",
-      hint: "Register Coffee Chat once from your terminal; OAuth sign-in opens automatically.",
-      code: `claude mcp add --transport http coffee-chat "${mcpUrl}"`,
-    },
-    {
-      id: "chatgpt",
-      label: "ChatGPT",
-      language: "text",
-      hint: "In Settings → Apps & Connectors → Add Custom Connector, enter this server URL and approve access.",
-      code: `Connector URL: ${mcpUrl}\nAuth: OAuth (automatic discovery)`,
-    },
-    {
-      id: "antigravity",
-      label: "Antigravity",
-      language: "json",
-      hint: "Add Coffee Chat to your Antigravity remote connector config and approve on first use.",
-      code: JSON.stringify(
-        {
-          mcpServers: {
-            "coffee-chat": {
-              url: mcpUrl,
-            },
-          },
-        },
-        null,
-        2,
-      ),
     },
     {
       id: "cursor",
@@ -93,29 +76,46 @@ export function ConnectClient({
         2,
       ),
     },
+    {
+      id: "antigravity",
+      label: "Antigravity",
+      language: "json",
+      hint: "Add Coffee Chat to your Antigravity remote connector config and approve on first use.",
+      code: JSON.stringify(
+        {
+          mcpServers: {
+            "coffee-chat": {
+              url: mcpUrl,
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    },
   ];
 
   const starterPrompts = [
     {
       id: "brew-work",
-      title: "Brew · Pour my Taste into a work call",
-      description: "Shape concrete trade-offs and honor every stated boundary",
+      title: "Brew · Answer with my Taste",
+      description: "Apply your confirmed priorities and respect every boundary",
       prompt:
-        "Before proposing a design for this task, check my confirmed Coffee Chat Beans on this topic. Apply the matching trade-offs, name which Bean guided each choice, and withhold any Bean outside its boundary.",
+        "Before recommending a path here, check my confirmed Coffee Chat Beans on this topic. Apply what I actually prioritize, tell me which Bean guided the call, and hold back any Bean outside its stated boundary.",
     },
     {
       id: "roast-work",
-      title: "Roast · Capture a new Work Origin Bean",
-      description: "Turn a correction into a private Bean after your confirmation",
+      title: "Roast · Save a correction as a private Bean",
+      description: "Turn one real pushback into a lasting rule after your confirmation",
       prompt:
-        "Turn the correction I just gave you into a private Coffee Chat Bean draft with a concise take, the priority trade-off, and when it doesn't apply. Show it to me for confirmation before saving anything.",
+        "Turn the correction I just gave you into a private Coffee Chat Bean draft with a crisp takeaway, what mattered more, and when the rule stops applying. Show it to me for confirmation before saving anything.",
     },
     {
-      id: "brew-table",
-      title: "Coffee Chat · Compare minds on a link",
-      description: "Contrast public perspectives without impersonation",
+      id: "coffee-chat-other",
+      title: "Coffee Chat · Ask someone else’s Taste",
+      description: "Consult another person’s confirmed Beans without fake roleplay",
       prompt:
-        "Check the public Coffee Chat Table for this article and compare how different voices weigh trade-offs and boundaries. Highlight where their views diverge from my own Beans.",
+        "Have a Coffee Chat with @claire using her confirmed public Coffee Chat Beans on this decision. Walk through what she puts first, note where her boundary stops, and attribute every point explicitly without impersonating her.",
     },
   ];
 
@@ -123,7 +123,7 @@ export function ConnectClient({
     <Stack gap={24}>
       <PageHeader
         title="Brew Bar"
-        detail="Pour your Taste into any AI host — connect once, Brew your Beans & Shelf anywhere"
+        detail="Connect your AI once — Brew your own Taste or Coffee Chat with anyone else’s anywhere you work"
         action={
           <Inline gap={8}>
             {signedIn ? (
@@ -163,7 +163,7 @@ export function ConnectClient({
               </Button>
             }
           >
-            Connected hosts:{" "}
+            Connected apps:{" "}
             {connectedClientNames.length > 0
               ? connectedClientNames.join(", ")
               : "Active AI app"}
@@ -172,7 +172,7 @@ export function ConnectClient({
           </Notice>
         ) : (
           <Notice title="No AI app connected yet" tone="neutral">
-            Pick your AI host below, copy the setup snippet, and approve access
+            Pick your AI app below, copy the setup snippet, and approve access
             once. You can revoke any connection instantly from Brew Bar &amp;
             Account.
           </Notice>
@@ -185,11 +185,11 @@ export function ConnectClient({
       )}
 
       <Card
-        title="Step 1 · Plug into your AI host"
-        description="Choose your AI app below — automatic discovery handles sign-in and permissions"
+        title="Step 1 · Plug into your AI app"
+        description="Choose the AI you already use — automatic discovery handles sign-in and permissions"
         headerAction={
           <Badge tone="neutral" dot={false}>
-            5 hosts supported
+            5 AI apps supported
           </Badge>
         }
         variant="raised"

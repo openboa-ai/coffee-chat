@@ -8,7 +8,7 @@ import {
   listUserGrants,
 } from "@coffee-chat/core";
 import { getCurrentUser } from "@/lib/auth";
-import { getDb } from "@/lib/runtime";
+import { getAppOrigin, getDb } from "@/lib/runtime";
 import { HomeClient } from "@/components/HomeClient";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +73,7 @@ export default async function HomePage(props: {
   return (
     <HomeClient
       signedIn={Boolean(user)}
+      mcpUrl={`${getAppOrigin()}/api/mcp`}
       totalCorpusPublicCount={corpusCheck.totalCount}
       featuredTable={featuredTable}
       people={people}

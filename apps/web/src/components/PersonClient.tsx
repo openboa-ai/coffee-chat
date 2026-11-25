@@ -9,6 +9,7 @@ import { Card } from "@openboa/yogurt/card";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
+import { CopyButton } from "@openboa/yogurt/motion-copy-button";
 import { Stack } from "@openboa/yogurt/stack";
 import { Text } from "@openboa/yogurt/text";
 import { Toast } from "@openboa/yogurt/toast";
@@ -67,6 +68,14 @@ export function PersonClient({
       .map(([t]) => `#${t}`);
     return { readingCount, workCount, topPublicTags };
   }, [profile.publicBeans]);
+
+  const coffeeChatPrompt = `Have a Coffee Chat with ${profile.displayName} (@${profile.handle}) using their confirmed public Coffee Chat Beans. Walk through how they weigh trade-offs for my current decision, note where their boundaries stop, and attribute every point explicitly without impersonating them.`;
+
+  const copyText = async (text: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+    }
+  };
 
   const toggleSavePerson = async () => {
     if (!signedIn) {
@@ -140,7 +149,7 @@ export function PersonClient({
     <Stack gap={24}>
       <PageHeader
         title={profile.displayName}
-        detail={`@${profile.handle} · Voice Profile · Public Taste & Coffee Chat`}
+        detail={`@${profile.handle} · Confirmed public Taste ready for a Coffee Chat in your AI`}
         leading={<Avatar label={profile.displayName} size="large" />}
         action={
           <Inline gap={8}>
@@ -157,7 +166,7 @@ export function PersonClient({
               size="compact"
               onClick={() => setBrewOpen(true)}
             >
-              Brew their Taste
+              Coffee Chat with @{profile.handle}
             </Button>
           </Inline>
         }
@@ -166,6 +175,17 @@ export function PersonClient({
       {toastMsg ? (
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
+
+      {/* Direct Coffee Chat Prompt Strip */}
+      <Card
+        title={`Ask your AI to Coffee Chat with @${profile.handle}’s Taste`}
+        description="Copy straight into ChatGPT, Claude, Codex, Cursor, or Antigravity — attributed to confirmed Beans, never impersonated"
+        variant="outlined"
+        density="compact"
+        action={<CopyButton value={coffeeChatPrompt} onCopy={copyText} />}
+      >
+        <Text variant="body">&ldquo;{coffeeChatPrompt}&rdquo;</Text>
+      </Card>
 
       {/* Clean hairline Voice Tasting Notes strip (public counts & public tags only) */}
       <Card variant="raised" density="regular">
@@ -243,10 +263,10 @@ export function PersonClient({
       <AgentHandoffDialog
         open={brewOpen}
         onOpenChange={setBrewOpen}
-        title={`Brew · Explore @${profile.handle}'s Taste`}
-        description="Bring their public trade-offs and boundaries into a Coffee Chat without impersonation"
+        title={`Coffee Chat with @${profile.handle}`}
+        description="Bring their confirmed trade-offs and boundaries into your AI without impersonation"
         activeGrantCount={activeGrantCount}
-        prompt={`Review the public Coffee Chat Beans shared by ${profile.displayName} (@${profile.handle}) that relate to my current question. Summarize what trade-offs they prioritize, where their boundaries stop, and attribute every takeaway explicitly to their confirmed Beans without speaking as them.`}
+        prompt={coffeeChatPrompt}
       />
     </Stack>
   );

@@ -137,6 +137,8 @@ export function WorkspaceClient({
   );
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [roastOpen, setRoastOpen] = useState(startComposing);
+  const [quickSpark, setQuickSpark] = useState("");
+  const [roastSparkSeed, setRoastSparkSeed] = useState("");
   const [editingBean, setEditingBean] = useState<BeanDetail | null>(null);
   const [prefillRelations, setPrefillRelations] = useState<DraftRelation[]>([]);
 
@@ -729,6 +731,7 @@ export function WorkspaceClient({
                       onClick={() => {
                         setEditingBean(null);
                         setPrefillRelations([]);
+                        setRoastSparkSeed("");
                         setRoastOpen(true);
                       }}
                     >
@@ -737,6 +740,41 @@ export function WorkspaceClient({
                   </Inline>
                 }
               />
+
+              {/* 1-Line Quick-Roast Spark Bar */}
+              <div className="quick-spark-row">
+                <div className="quick-spark-input">
+                  <TextField
+                    label="Quick Roast"
+                    placeholder="Paste an article link or jot a real call you just made…"
+                    value={quickSpark}
+                    onChange={(e) => setQuickSpark(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && quickSpark.trim()) {
+                        e.preventDefault();
+                        setEditingBean(null);
+                        setPrefillRelations([]);
+                        setRoastSparkSeed(quickSpark.trim());
+                        setQuickSpark("");
+                        setRoastOpen(true);
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  emphasis="soft"
+                  size="compact"
+                  onClick={() => {
+                    setEditingBean(null);
+                    setPrefillRelations([]);
+                    setRoastSparkSeed(quickSpark.trim());
+                    setQuickSpark("");
+                    setRoastOpen(true);
+                  }}
+                >
+                  Start Roasting →
+                </Button>
+              </div>
 
               {/* Single clean filter toolbar — no outer Card wrapper, no duplicate SegmentedControl row */}
               <FilterBar
@@ -1642,10 +1680,12 @@ export function WorkspaceClient({
           if (!next) {
             setEditingBean(null);
             setPrefillRelations([]);
+            setRoastSparkSeed("");
           }
         }}
         existingBeans={allBeanChoices}
         editingBean={editingBean}
+        initialSpark={roastSparkSeed}
         initialRelations={prefillRelations}
         onSaved={(saved) => void handleRoastSaved(saved)}
         onReloadLatest={async (id) => openInspector(id)}
