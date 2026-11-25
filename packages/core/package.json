@@ -15,7 +15,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.3.14",
     "@neondatabase/serverless": "^1.0.0",
-    "drizzle-orm": "^0.44.2",
+    "drizzle-orm": "^0.45.2",
     "zod": "^3.25.0"
   },
   "devDependencies": {
