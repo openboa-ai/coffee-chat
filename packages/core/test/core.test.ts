@@ -14,10 +14,16 @@ import {
   exchangeAuthorizationCode,
   exportUserBeans,
   getBean,
+  getPersonalInsights,
   getPersonProfile,
   getSourceCompare,
+  getViewerStanceForOrigin,
   linkProviderAccount,
   listBeans,
+  listBeansPage,
+  listHydratedShelfRefs,
+  listPublicPeoplePage,
+  listPublicSourcesPage,
   listShelf,
   normalizeOriginUrl,
   prepareBean,
@@ -480,5 +486,313 @@ describe("Core domain, privacy, concurrency, and OAuth 2.1 invariants (PGlite)",
     await expect(
       unlinkProviderAccount(handle.db, bobId, bobAccount.id),
     ).rejects.toMatchObject({ code: "LAST_LOGIN_METHOD" });
+  });
+
+  it("computes deterministic Personal Insights (Tasting Notes) with mutually exclusive lifecycle, non-exclusive originMix, and live shelfCount", async () => {
+    // 1) Multi-origin Bean (BOTH source_excerpt AND work_episode) -> ui_attested, private
+    const b1Prep = await prepareBean(handle.db, aliceId, {
+      title: "Synthesize architecture docs with incident learnings",
+      take: "Reading and production calls both matter.",
+      tradeoff: "Favor explicit boundaries over convenience.",
+      boundary: "Not for throwaway scripts.",
+      tags: ["architecture", "reliability"],
+      origins: [
+        {
+          kind: "source_excerpt",
+          url: "https://example.com/essay-a#intro",
+          sourceTitle: "Essay A",
+          quotation: "Explicit boundaries compound.",
+        },
+        {
+          kind: "work_episode",
+          episodeSummary: "Postmortem on silent retry storm.",
+        },
+      ],
+    });
+    const b1 = await saveBean(handle.db, aliceId, {
+      ...b1Prep.canonicalPayload,
+      digest: b1Prep.digest,
+      operationKey: b1Prep.operationKey,
+      attestationKind: "ui_attested",
+    });
+
+    // Update b1 to revision 2 so revisionCount tracks immutable history
+    const b1v2Prep = await prepareBean(handle.db, aliceId, {
+      beanId: b1.bean.id,
+      expectedVersion: b1.bean.version,
+      title: "Synthesize architecture docs with incident learnings (v2)",
+      take: "Reading and production calls both matter even more at scale.",
+      tradeoff: "Favor explicit boundaries over convenience.",
+      boundary: "Not for throwaway scripts.",
+      tags: ["architecture", "reliability"],
+      origins: [
+        {
+          kind: "source_excerpt",
+          url: "https://example.com/essay-a",
+          sourceTitle: "Essay A",
+        },
+        {
+          kind: "work_episode",
+          episodeSummary: "Postmortem on silent retry storm.",
+        },
+      ],
+    });
+    const b1v2 = await saveBean(handle.db, aliceId, {
+      ...b1v2Prep.canonicalPayload,
+      digest: b1v2Prep.digest,
+      operationKey: b1v2Prep.operationKey,
+      attestationKind: "agent_attested",
+    });
+
+    // 2) Public reading Bean that has BOTH tension with b1 AND gets superseded by b3
+    const b2Prep = await prepareBean(handle.db, aliceId, {
+      title: "Ship fast with minimal ceremony",
+      take: "Move fast early.",
+      tradeoff: "Speed over upfront review.",
+      boundary: "Pre-PMF prototypes only.",
+      visibility: "public",
+      tags: ["product", "architecture"],
+      origins: [
+        {
+          kind: "source_excerpt",
+          url: "https://example.com/essay-a",
+          sourceTitle: "Essay A",
+        },
+      ],
+      relations: [{ toBeanId: b1v2.bean.id, kind: "tensions_with", note: "speed vs rigor" }],
+    });
+    const b2 = await saveBean(handle.db, aliceId, {
+      ...b2Prep.canonicalPayload,
+      digest: b2Prep.digest,
+      operationKey: b2Prep.operationKey,
+      attestationKind: "ui_attested",
+    });
+
+    // 3) Private Bean superseding b2 (so b2 is BOTH superseded AND in_tension -> MUST count as superseded only!)
+    const b3Prep = await prepareBean(handle.db, aliceId, {
+      title: "Stage-gated shipping beats blanket speed",
+      take: "Keep prototypes fast, gate shared state.",
+      tradeoff: "Clear risk tiers over one-size speed.",
+      boundary: "Teams with shared production data.",
+      tags: ["product"],
+      origins: [
+        {
+          kind: "source_excerpt",
+          url: "https://example.com/essay-b",
+          sourceTitle: "Essay B",
+        },
+      ],
+      relations: [{ toBeanId: b2.bean.id, kind: "supersedes", note: "evolved view" }],
+    });
+    const b3 = await saveBean(handle.db, aliceId, {
+      ...b3Prep.canonicalPayload,
+      digest: b3Prep.digest,
+      operationKey: b3Prep.operationKey,
+      attestationKind: "agent_attested",
+    });
+
+    // Bob publishes a Bean and Alice saves it to Shelf
+    const bobPrep = await prepareBean(handle.db, bobId, {
+      title: "Bob public note on Essay A",
+      take: "Bob takes a different angle.",
+      tradeoff: "Clarity over brevity.",
+      boundary: "Public RFCs.",
+      visibility: "public",
+      tags: ["writing"],
+      origins: [
+        {
+          kind: "source_excerpt",
+          url: "https://example.com/essay-a",
+          sourceTitle: "Essay A",
+        },
+      ],
+    });
+    const bobSaved = await saveBean(handle.db, bobId, {
+      ...bobPrep.canonicalPayload,
+      digest: bobPrep.digest,
+      operationKey: bobPrep.operationKey,
+    });
+    const shelfEntry = await addToShelf(handle.db, aliceId, {
+      targetType: "bean",
+      beanId: bobSaved.bean.id,
+    });
+    expect(shelfEntry.bean?.firstSourceOriginId).toBeTruthy();
+
+    // Grant Alice an active OAuth grant
+    const client = await registerOAuthClientDcr(handle.db, {
+      clientName: "Codex CLI",
+      redirectUris: ["http://127.0.0.1:4321/cb"],
+    });
+    const grant = await approveOAuthAuthorization(handle.db, {
+      userId: aliceId,
+      clientId: client.client_id,
+      redirectUri: "http://127.0.0.1:4321/cb",
+      resource: "http://127.0.0.1:3000/api/mcp",
+      scopes: ["beans:read"],
+      codeChallenge: computePkceS256("v".repeat(48)),
+      codeChallengeMethod: "S256",
+    });
+
+    const insights = await getPersonalInsights(handle.db, aliceId);
+    expect(insights.totalCount).toBe(3);
+    expect(insights.publicCount).toBe(1);
+    expect(insights.privateCount).toBe(2);
+    // Multi-origin b1 increments BOTH readingCount and workCount!
+    expect(insights.originMix.readingCount).toBe(3);
+    expect(insights.originMix.workCount).toBe(1);
+    expect(insights.originMix.uniqueSourceUrlCount).toBe(2);
+    // Current revision attestations: b1v2=agent, b2=ui, b3=agent
+    expect(insights.captureMix.agentAttestedCount).toBe(2);
+    expect(insights.captureMix.uiAttestedCount).toBe(1);
+    // Mutually exclusive lifecycle: b2=superseded (even though also in tension), b1=in_tension, b3=active
+    expect(insights.lifecycle).toEqual({
+      activeCount: 1,
+      inTensionCount: 1,
+      supersededCount: 1,
+    });
+    expect(
+      insights.lifecycle.activeCount +
+        insights.lifecycle.inTensionCount +
+        insights.lifecycle.supersededCount,
+    ).toBe(insights.totalCount);
+    // b1 had 2 revisions + b2 (1) + b3 (1) = 4
+    expect(insights.revisionCount).toBe(4);
+    expect(insights.relationCounts).toEqual({
+      supersedes: 1,
+      refines: 0,
+      tensionsWith: 1,
+    });
+    expect(insights.topTags[0]).toEqual({ tag: "architecture", count: 2 });
+    expect(insights.activeGrantCount).toBe(1);
+    expect(insights.shelfCount).toBe(1);
+    expect(insights.monthlyActivity.length).toBeGreaterThanOrEqual(1);
+
+    // Live Shelf & Grant revocation update insights immediately
+    await setBeanVisibility(handle.db, bobId, {
+      beanId: bobSaved.bean.id,
+      visibility: "private",
+      expectedVersion: bobSaved.bean.version,
+      operationKey: "bob-priv-1",
+    });
+    await revokeUserGrant(handle.db, aliceId, grant.grantId);
+
+    const updatedInsights = await getPersonalInsights(handle.db, aliceId);
+    expect(updatedInsights.shelfCount).toBe(0);
+    expect(updatedInsights.activeGrantCount).toBe(0);
+
+    // Non-owner lifecycleState privacy guard:
+    // b2 is public, superseded by private b3 and in tension with private b1.
+    // Owner sees b2 under superseded; non-owner Bob must NEVER infer private relations!
+    const aliceSuperseded = await listBeansPage(handle.db, aliceId, {
+      scope: "mine",
+      lifecycleState: "superseded",
+    });
+    expect(aliceSuperseded.items.map((x) => x.id)).toEqual([b2.bean.id]);
+
+    const bobPublicSuperseded = await listBeansPage(handle.db, bobId, {
+      scope: "public",
+      lifecycleState: "superseded",
+    });
+    expect(bobPublicSuperseded.items).toHaveLength(0);
+
+    const bobPublicTension = await listBeansPage(handle.db, bobId, {
+      scope: "public",
+      lifecycleState: "in_tension",
+    });
+    expect(bobPublicTension.items).toHaveLength(0);
+
+    const bobPublicActive = await listBeansPage(handle.db, bobId, {
+      scope: "public",
+      lifecycleState: "active",
+    });
+    expect(bobPublicActive.items.map((x) => x.id)).toEqual([b2.bean.id]);
+
+    // Also verify all_accessible non-owned rows never leak private relations
+    const bobAllSuperseded = await listBeansPage(handle.db, bobId, {
+      scope: "all_accessible",
+      lifecycleState: "superseded",
+    });
+    expect(bobAllSuperseded.items).toHaveLength(0);
+
+    // Pagination accuracy on listBeansPage
+    const page1 = await listBeansPage(handle.db, aliceId, {
+      scope: "mine",
+      limit: 2,
+      offset: 0,
+    });
+    expect(page1.totalCount).toBe(3);
+    expect(page1.items).toHaveLength(2);
+    expect(page1.hasMore).toBe(true);
+    const page2 = await listBeansPage(handle.db, aliceId, {
+      scope: "mine",
+      limit: 2,
+      offset: 2,
+    });
+    expect(page2.totalCount).toBe(3);
+    expect(page2.items).toHaveLength(1);
+    expect(page2.hasMore).toBe(false);
+
+    // originKind filter works for multi-origin beans
+    const workOnly = await listBeansPage(handle.db, aliceId, {
+      scope: "mine",
+      originKind: "work_episode",
+    });
+    expect(workOnly.items.map((x) => x.id)).toEqual([b1v2.bean.id]);
+
+    // getViewerStanceForOrigin null guard + owner-private stance + private-only 404 invariant
+    const publicSource = await getSourceCompare(handle.db, "https://example.com/essay-a");
+    expect(await getViewerStanceForOrigin(handle.db, null, publicSource.originId)).toBeNull();
+    expect(await getViewerStanceForOrigin(handle.db, undefined, publicSource.originId)).toBeNull();
+    expect(await getViewerStanceForOrigin(handle.db, "   ", publicSource.originId)).toBeNull();
+
+    const aliceStance = await getViewerStanceForOrigin(
+      handle.db,
+      aliceId,
+      publicSource.originId,
+    );
+    expect(aliceStance?.map((b) => b.id).sort()).toEqual(
+      [b1v2.bean.id, b2.bean.id].sort(),
+    );
+
+    // Private-only URL (essay-b) STILL throws 404 on getSourceCompare!
+    await expect(
+      getSourceCompare(handle.db, "https://example.com/essay-b"),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    // Public search/pagination helpers never leak private tags or private-only sources
+    const sourcesPage = await listPublicSourcesPage(handle.db, {
+      query: "essay-b",
+    });
+    expect(sourcesPage.totalCount).toBe(0);
+
+    const sourcesFound = await listPublicSourcesPage(handle.db, {
+      query: "essay-a",
+      tag: "product",
+    });
+    expect(sourcesFound.totalCount).toBe(1);
+    expect(sourcesFound.items[0]?.tags).toContain("product");
+    expect(sourcesFound.items[0]?.tags).not.toContain("reliability"); // private-only tag!
+
+    const peopleFound = await listPublicPeoplePage(handle.db, {
+      tag: "reliability", // only on Alice's private Bean!
+    });
+    expect(peopleFound.totalCount).toBe(0);
+
+    // listHydratedShelfRefs drops privatized targets and returns exact shelfItemId for active ones
+    expect(await listHydratedShelfRefs(handle.db, aliceId)).toHaveLength(0);
+    const savedPerson = await addToShelf(handle.db, aliceId, {
+      targetType: "person",
+      handle: "bob",
+    });
+    const hydrated = await listHydratedShelfRefs(handle.db, aliceId);
+    expect(hydrated).toEqual([
+      {
+        targetType: "person",
+        targetId: bobId,
+        shelfItemId: savedPerson.id,
+      },
+    ]);
+    // Keep unused reference check clean
+    expect(b3.bean.id).toBeTruthy();
   });
 });

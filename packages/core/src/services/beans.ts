@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { CoffeeChatDb } from "../db/client.js";
 import {
   beanOrigins,
@@ -7,6 +7,7 @@ import {
   beanRevisions,
   beans,
   mutationReceipts,
+  oauthGrants,
   origins,
   shelfItems,
   users,
@@ -15,6 +16,7 @@ import { computeJcsDigest } from "../jcs.js";
 import {
   type AttestationKind,
   type BeanDetail,
+  type BeanLifecycleState,
   type BeanRelationView,
   type BeanSummary,
   type CanonicalBeanPayload,
@@ -24,10 +26,14 @@ import {
   deleteBeanInputSchema,
   type NormalizedOrigin,
   type OriginKind,
+  type PaginatedResult,
+  type PersonalInsightsView,
   type PersonProfileView,
   type PrepareBeanInput,
   prepareBeanInputSchema,
   type PreparedBeanResult,
+  type PublicQueryOptions,
+  type PublicSourceSummary,
   type RelationKind,
   type SaveBeanInput,
   saveBeanInputSchema,
@@ -37,6 +43,7 @@ import {
   type Visibility,
 } from "../types.js";
 import { normalizeOriginUrl } from "../url.js";
+import { listShelf } from "./shelf.js";
 
 function normalizeTags(tags?: string[]): string[] {
   if (!tags || tags.length === 0) return [];
@@ -998,6 +1005,7 @@ export async function getBean(
       tradeoff: r.tradeoff,
       boundary: r.boundary,
       payloadDigest: r.payloadDigest,
+      attestationKind: r.attestationKind as AttestationKind,
       createdAt: r.createdAt.toISOString(),
     }));
   }
@@ -1041,21 +1049,25 @@ export interface ListBeansFilter {
   tag?: string;
   ownerHandle?: string;
   originUrl?: string;
+  originKind?: OriginKind;
+  lifecycleState?: BeanLifecycleState;
   visibility?: Visibility;
+  offset?: number;
   limit?: number;
 }
 
 /**
- * Deterministic Zero-AI Postgres search (tsvector + ILIKE fallback) returning compact
+ * Deterministic Zero-AI Postgres search (tsvector + ILIKE fallback) returning paginated
  * Bean summaries with visibility-safe relation indicators.
  */
-export async function listBeans(
+export async function listBeansPage(
   db: CoffeeChatDb,
   viewerId: string | null,
   filter: ListBeansFilter = {},
-): Promise<BeanSummary[]> {
+): Promise<PaginatedResult<BeanSummary>> {
   const scope = filter.scope ?? (viewerId ? "mine" : "public");
   const limit = Math.min(Math.max(filter.limit ?? 30, 1), 100);
+  const offset = Math.max(filter.offset ?? 0, 0);
 
   if ((scope === "mine" || scope === "shelf") && !viewerId) {
     throw new CoffeeChatError(
@@ -1091,7 +1103,7 @@ export async function listBeans(
     conditions.push(eq(beans.visibility, "public"));
   } else if (scope === "shelf") {
     if (shelfPersonIds.length === 0 && shelfBeanIds.length === 0) {
-      return [];
+      return { items: [], totalCount: 0, hasMore: false };
     }
     const shelfConds = [];
     if (shelfPersonIds.length > 0) {
@@ -1125,12 +1137,14 @@ export async function listBeans(
       .from(origins)
       .where(eq(origins.normalizedUrl, normalizedUrl))
       .limit(1);
-    if (!originRow) return [];
+    if (!originRow) return { items: [], totalCount: 0, hasMore: false };
     const matchingLinks = await db
       .select({ beanId: beanOrigins.beanId })
       .from(beanOrigins)
       .where(eq(beanOrigins.originId, originRow.id));
-    if (matchingLinks.length === 0) return [];
+    if (matchingLinks.length === 0) {
+      return { items: [], totalCount: 0, hasMore: false };
+    }
     conditions.push(
       inArray(
         beans.id,
@@ -1160,29 +1174,49 @@ export async function listBeans(
     .innerJoin(beanRevisions, eq(beans.currentRevisionId, beanRevisions.id))
     .innerJoin(users, eq(beans.ownerId, users.id))
     .where(and(...conditions))
-    .orderBy(desc(beans.updatedAt))
-    .limit(limit);
+    .orderBy(desc(beans.updatedAt));
 
   const cleanTag = filter.tag?.trim().toLowerCase();
-  const filteredRows = cleanTag
-    ? rows.filter((r) => ((r.rev.tags ?? []) as string[]).includes(cleanTag))
-    : rows;
+  const relationViewerId = scope === "public" ? null : viewerId;
 
-  const summaries: BeanSummary[] = [];
-  for (const r of filteredRows) {
+  const matched: BeanSummary[] = [];
+  for (const r of rows) {
+    const tags = (r.rev.tags ?? []) as string[];
+    if (cleanTag && !tags.includes(cleanTag)) continue;
+
+    const originsList = (r.rev.originsJson ?? []) as NormalizedOrigin[];
+    const originKinds = Array.from(
+      new Set(originsList.map((o) => o.kind)),
+    ) as OriginKind[];
+    if (filter.originKind && !originKinds.includes(filter.originKind)) {
+      continue;
+    }
+
+    // For scope="public" or non-owned rows in "all_accessible", hydrateRelationsForBean
+    // restricts edges to public-only endpoints so private relations can never be inferred.
     const rels = await hydrateRelationsForBean(
       db,
       r.bean.id,
       r.bean.ownerId,
-      viewerId,
+      relationViewerId,
     );
     const supersededBy = rels.find(
       (rel) => rel.direction === "incoming" && rel.kind === "supersedes",
     );
     const hasTension = rels.some((rel) => rel.kind === "tensions_with");
-    const originsList = (r.rev.originsJson ?? []) as NormalizedOrigin[];
 
-    summaries.push({
+    if (filter.lifecycleState === "superseded" && !supersededBy) continue;
+    if (
+      filter.lifecycleState === "in_tension" &&
+      (supersededBy || !hasTension)
+    ) {
+      continue;
+    }
+    if (filter.lifecycleState === "active" && (supersededBy || hasTension)) {
+      continue;
+    }
+
+    matched.push({
       id: r.bean.id,
       ownerId: r.bean.ownerId,
       ownerHandle: r.owner.handle,
@@ -1192,17 +1226,224 @@ export async function listBeans(
       revisionNumber: r.rev.revisionNumber,
       title: r.rev.title,
       tradeoffPreview: r.rev.tradeoff.slice(0, 140),
-      tags: (r.rev.tags ?? []) as string[],
-      originKinds: Array.from(
-        new Set(originsList.map((o) => o.kind)),
-      ) as OriginKind[],
+      tags,
+      originKinds,
       supersededByBeanId: supersededBy?.relatedBeanId ?? null,
       hasTension,
       updatedAt: r.bean.updatedAt.toISOString(),
     });
   }
 
-  return summaries;
+  const totalCount = matched.length;
+  const items = matched.slice(offset, offset + limit);
+  return {
+    items,
+    totalCount,
+    hasMore: offset + items.length < totalCount,
+  };
+}
+
+/**
+ * Deterministic Zero-AI Postgres search returning BeanSummary[].
+ * Preserves backward-compatible array signature for existing MCP and internal callers.
+ */
+export async function listBeans(
+  db: CoffeeChatDb,
+  viewerId: string | null,
+  filter: ListBeansFilter = {},
+): Promise<BeanSummary[]> {
+  const page = await listBeansPage(db, viewerId, filter);
+  return page.items;
+}
+
+/**
+ * Owner-only deterministic SQL/TypeScript personal insights (Tasting Notes).
+ * Strictly scoped to WHERE owner_id = ownerId; zero LLM calls and zero unbacked telemetry.
+ */
+export async function getPersonalInsights(
+  db: CoffeeChatDb,
+  ownerId: string,
+): Promise<PersonalInsightsView> {
+  const ownedRows = await db
+    .select({
+      bean: beans,
+      rev: beanRevisions,
+    })
+    .from(beans)
+    .innerJoin(beanRevisions, eq(beans.currentRevisionId, beanRevisions.id))
+    .where(eq(beans.ownerId, ownerId));
+
+  const ownedBeanIds = ownedRows.map((r) => r.bean.id);
+  const allRevisions =
+    ownedBeanIds.length > 0
+      ? await db
+          .select({
+            id: beanRevisions.id,
+            createdAt: beanRevisions.createdAt,
+          })
+          .from(beanRevisions)
+          .where(inArray(beanRevisions.beanId, ownedBeanIds))
+      : [];
+
+  const relations = await db
+    .select({
+      fromBeanId: beanRelations.fromBeanId,
+      toBeanId: beanRelations.toBeanId,
+      kind: beanRelations.kind,
+    })
+    .from(beanRelations)
+    .where(eq(beanRelations.ownerId, ownerId));
+
+  const activeGrants = await db
+    .select({ id: oauthGrants.id })
+    .from(oauthGrants)
+    .where(and(eq(oauthGrants.userId, ownerId), isNull(oauthGrants.revokedAt)));
+
+  const liveShelf = await listShelf(db, ownerId);
+
+  let publicCount = 0;
+  let privateCount = 0;
+  let readingCount = 0;
+  let workCount = 0;
+  let agentAttestedCount = 0;
+  let uiAttestedCount = 0;
+  const uniqueSourceUrls = new Set<string>();
+  const tagCounts = new Map<string, number>();
+
+  for (const row of ownedRows) {
+    if (row.bean.visibility === "public") publicCount++;
+    else privateCount++;
+
+    if (row.rev.attestationKind === "agent_attested") agentAttestedCount++;
+    else uiAttestedCount++;
+
+    const originsList = (row.rev.originsJson ?? []) as NormalizedOrigin[];
+    let hasReading = false;
+    let hasWork = false;
+    for (const o of originsList) {
+      if (o.kind === "source_excerpt") {
+        hasReading = true;
+        if (o.url) uniqueSourceUrls.add(o.url);
+      } else if (o.kind === "work_episode") {
+        hasWork = true;
+      }
+    }
+    if (hasReading) readingCount++;
+    if (hasWork) workCount++;
+
+    for (const tag of (row.rev.tags ?? []) as string[]) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+
+  let supersedesRelCount = 0;
+  let refinesRelCount = 0;
+  let tensionsRelCount = 0;
+  const supersededBeanIds = new Set<string>();
+  const tensionBeanIds = new Set<string>();
+
+  for (const rel of relations) {
+    if (rel.kind === "supersedes") {
+      supersedesRelCount++;
+      supersededBeanIds.add(rel.toBeanId);
+    } else if (rel.kind === "refines") {
+      refinesRelCount++;
+    } else if (rel.kind === "tensions_with") {
+      tensionsRelCount++;
+      tensionBeanIds.add(rel.fromBeanId);
+      tensionBeanIds.add(rel.toBeanId);
+    }
+  }
+
+  let activeCount = 0;
+  let inTensionCount = 0;
+  let supersededCount = 0;
+  for (const row of ownedRows) {
+    // Mutually exclusive precedence: superseded > in_tension > active
+    if (supersededBeanIds.has(row.bean.id)) {
+      supersededCount++;
+    } else if (tensionBeanIds.has(row.bean.id)) {
+      inTensionCount++;
+    } else {
+      activeCount++;
+    }
+  }
+
+  const topTags = Array.from(tagCounts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 10)
+    .map(([tag, count]) => ({ tag, count }));
+
+  const monthCounts = new Map<string, number>();
+  for (const rev of allRevisions) {
+    const month = rev.createdAt.toISOString().slice(0, 7); // YYYY-MM
+    monthCounts.set(month, (monthCounts.get(month) ?? 0) + 1);
+  }
+  const monthlyActivity = Array.from(monthCounts.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-12)
+    .map(([month, count]) => ({ month, count }));
+
+  return {
+    totalCount: ownedRows.length,
+    publicCount,
+    privateCount,
+    originMix: {
+      readingCount,
+      workCount,
+      uniqueSourceUrlCount: uniqueSourceUrls.size,
+    },
+    captureMix: {
+      agentAttestedCount,
+      uiAttestedCount,
+    },
+    lifecycle: {
+      activeCount,
+      inTensionCount,
+      supersededCount,
+    },
+    revisionCount: allRevisions.length,
+    relationCounts: {
+      supersedes: supersedesRelCount,
+      refines: refinesRelCount,
+      tensionsWith: tensionsRelCount,
+    },
+    topTags,
+    monthlyActivity,
+    activeGrantCount: activeGrants.length,
+    shelfCount: liveShelf.length,
+    asOf: new Date().toISOString(),
+  };
+}
+
+/**
+ * Owner-only helper for `/sources/[id]` Your Stance Banner.
+ * Returns null immediately when viewerId is null, undefined, or empty.
+ */
+export async function getViewerStanceForOrigin(
+  db: CoffeeChatDb,
+  viewerId: string | null | undefined,
+  originId: string,
+): Promise<BeanDetail[] | null> {
+  if (!viewerId || !viewerId.trim()) {
+    return null;
+  }
+
+  const links = await db
+    .select({ beanId: beanOrigins.beanId })
+    .from(beanOrigins)
+    .innerJoin(beans, eq(beanOrigins.beanId, beans.id))
+    .where(
+      and(eq(beanOrigins.originId, originId), eq(beans.ownerId, viewerId)),
+    )
+    .orderBy(desc(beans.updatedAt));
+
+  const uniqueIds = Array.from(new Set(links.map((l) => l.beanId)));
+  const results: BeanDetail[] = [];
+  for (const id of uniqueIds) {
+    results.push(await getBean(db, viewerId, id));
+  }
+  return results;
 }
 
 /**
@@ -1328,6 +1569,7 @@ export async function getSourceCompare(
 }
 
 export interface PublicPersonCard {
+  userId: string;
   handle: string;
   displayName: string;
   publicCount: number;
@@ -1336,12 +1578,19 @@ export interface PublicPersonCard {
   topTags: string[];
 }
 
-export async function listPublicPeople(
+export async function listPublicPeoplePage(
   db: CoffeeChatDb,
-  limit = 12,
-): Promise<PublicPersonCard[]> {
+  options: PublicQueryOptions = {},
+): Promise<PaginatedResult<PublicPersonCard>> {
+  const limit = Math.min(Math.max(options.limit ?? 12, 1), 100);
+  const offset = Math.max(options.offset ?? 0, 0);
+  const q = options.query?.trim().toLowerCase() ?? "";
+  const cleanTag = options.tag?.trim().toLowerCase() ?? "";
+
   const allUsers = await db.select().from(users);
-  if (allUsers.length === 0) return [];
+  if (allUsers.length === 0) {
+    return { items: [], totalCount: 0, hasMore: false };
+  }
 
   const allBeans = await db
     .select({
@@ -1388,38 +1637,72 @@ export async function listPublicPeople(
         tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
       }
     }
+    const allPubTags = Array.from(tagCounts.keys());
+    if (cleanTag && !allPubTags.includes(cleanTag)) continue;
+
     const topTags = Array.from(tagCounts.entries())
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .slice(0, 3)
       .map(([t]) => t);
 
-    cards.push({
+    const card: PublicPersonCard = {
+      userId: u.id,
       handle: u.handle,
       displayName: u.name,
       publicCount: pub.length,
       privateCount: privCount,
       signatureTradeoff: latestPubRev?.tradeoff ?? null,
       topTags,
-    });
+    };
+
+    if (q) {
+      const hay = [
+        card.handle,
+        card.displayName,
+        card.signatureTradeoff ?? "",
+        ...allPubTags,
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) continue;
+    }
+
+    cards.push(card);
   }
 
-  return cards
-    .sort((a, b) => b.publicCount - a.publicCount)
-    .slice(0, limit);
+  cards.sort(
+    (a, b) =>
+      b.publicCount - a.publicCount || a.handle.localeCompare(b.handle),
+  );
+  const totalCount = cards.length;
+  const items = cards.slice(offset, offset + limit);
+  return {
+    items,
+    totalCount,
+    hasMore: offset + items.length < totalCount,
+  };
 }
 
-export async function listPublicSources(
+export async function listPublicPeople(
   db: CoffeeChatDb,
-  limit = 20,
-): Promise<
-  Array<{
-    originId: string;
-    normalizedUrl: string;
-    sourceTitle: string | null;
-    publicBeanCount: number;
-    authorHandles: string[];
-  }>
-> {
+  limitOrOptions: number | PublicQueryOptions = 12,
+): Promise<PublicPersonCard[]> {
+  const options: PublicQueryOptions =
+    typeof limitOrOptions === "number"
+      ? { limit: limitOrOptions }
+      : limitOrOptions;
+  return (await listPublicPeoplePage(db, options)).items;
+}
+
+export async function listPublicSourcesPage(
+  db: CoffeeChatDb,
+  options: PublicQueryOptions = {},
+): Promise<PaginatedResult<PublicSourceSummary>> {
+  const limit = Math.min(Math.max(options.limit ?? 20, 1), 100);
+  const offset = Math.max(options.offset ?? 0, 0);
+  const q = options.query?.trim().toLowerCase() ?? "";
+  const cleanTag = options.tag?.trim().toLowerCase() ?? "";
+
   const rows = await db
     .select({
       originId: origins.id,
@@ -1427,6 +1710,7 @@ export async function listPublicSources(
       beanId: beans.id,
       ownerHandle: users.handle,
       originsJson: beanRevisions.originsJson,
+      tags: beanRevisions.tags,
     })
     .from(origins)
     .innerJoin(beanOrigins, eq(origins.id, beanOrigins.originId))
@@ -1448,6 +1732,7 @@ export async function listPublicSources(
       sourceTitle: string | null;
       beanIds: Set<string>;
       handles: Set<string>;
+      tagCounts: Map<string, number>;
     }
   >();
 
@@ -1459,9 +1744,13 @@ export async function listPublicSources(
       sourceTitle: null,
       beanIds: new Set<string>(),
       handles: new Set<string>(),
+      tagCounts: new Map<string, number>(),
     };
     entry.beanIds.add(r.beanId);
     entry.handles.add(r.ownerHandle);
+    for (const t of (r.tags ?? []) as string[]) {
+      entry.tagCounts.set(t, (entry.tagCounts.get(t) ?? 0) + 1);
+    }
     if (!entry.sourceTitle) {
       const match = ((r.originsJson ?? []) as NormalizedOrigin[]).find(
         (o) => o.url === r.normalizedUrl && o.sourceTitle,
@@ -1471,16 +1760,52 @@ export async function listPublicSources(
     map.set(r.originId, entry);
   }
 
-  return Array.from(map.values())
-    .map((e) => ({
-      originId: e.originId,
-      normalizedUrl: e.normalizedUrl,
-      sourceTitle: e.sourceTitle,
-      publicBeanCount: e.beanIds.size,
-      authorHandles: Array.from(e.handles),
-    }))
-    .sort((a, b) => b.publicBeanCount - a.publicBeanCount)
-    .slice(0, limit);
+  let list: PublicSourceSummary[] = Array.from(map.values()).map((e) => ({
+    originId: e.originId,
+    normalizedUrl: e.normalizedUrl,
+    sourceTitle: e.sourceTitle,
+    publicBeanCount: e.beanIds.size,
+    authorHandles: Array.from(e.handles),
+    tags: Array.from(e.tagCounts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([t]) => t),
+  }));
+
+  if (cleanTag) {
+    list = list.filter((s) => s.tags.includes(cleanTag));
+  }
+  if (q) {
+    list = list.filter((s) =>
+      [s.sourceTitle ?? "", s.normalizedUrl, ...s.authorHandles, ...s.tags]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    );
+  }
+
+  list.sort(
+    (a, b) =>
+      b.publicBeanCount - a.publicBeanCount ||
+      a.normalizedUrl.localeCompare(b.normalizedUrl),
+  );
+  const totalCount = list.length;
+  const items = list.slice(offset, offset + limit);
+  return {
+    items,
+    totalCount,
+    hasMore: offset + items.length < totalCount,
+  };
+}
+
+export async function listPublicSources(
+  db: CoffeeChatDb,
+  limitOrOptions: number | PublicQueryOptions = 20,
+): Promise<PublicSourceSummary[]> {
+  const options: PublicQueryOptions =
+    typeof limitOrOptions === "number"
+      ? { limit: limitOrOptions }
+      : limitOrOptions;
+  return (await listPublicSourcesPage(db, options)).items;
 }
 
 /**

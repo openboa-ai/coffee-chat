@@ -210,8 +210,70 @@ export interface BeanDetail extends BeanSummary {
     tradeoff: string;
     boundary: string;
     payloadDigest: string;
+    attestationKind?: AttestationKind;
     createdAt: string;
   }>;
+}
+
+export type BeanLifecycleState = "active" | "in_tension" | "superseded";
+
+export interface PaginatedResult<T> {
+  items: T[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
+export interface HydratedShelfRef {
+  targetType: "person" | "bean";
+  targetId: string;
+  shelfItemId: string;
+}
+
+export interface PublicSourceSummary {
+  originId: string;
+  normalizedUrl: string;
+  sourceTitle: string | null;
+  publicBeanCount: number;
+  authorHandles: string[];
+  tags: string[];
+}
+
+export interface PublicQueryOptions {
+  query?: string;
+  tag?: string;
+  offset?: number;
+  limit?: number;
+}
+
+export interface PersonalInsightsView {
+  totalCount: number;
+  publicCount: number;
+  privateCount: number;
+  originMix: {
+    readingCount: number;
+    workCount: number;
+    uniqueSourceUrlCount: number;
+  };
+  captureMix: {
+    agentAttestedCount: number;
+    uiAttestedCount: number;
+  };
+  lifecycle: {
+    activeCount: number;
+    inTensionCount: number;
+    supersededCount: number;
+  };
+  revisionCount: number;
+  relationCounts: {
+    supersedes: number;
+    refines: number;
+    tensionsWith: number;
+  };
+  topTags: Array<{ tag: string; count: number }>;
+  monthlyActivity: Array<{ month: string; count: number }>;
+  activeGrantCount: number;
+  shelfCount: number;
+  asOf: string;
 }
 
 export interface PersonProfileView {

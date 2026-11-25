@@ -2,7 +2,19 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import type { CoffeeChatDb } from "../db/client.js";
 import { beanRevisions, beans, shelfItems, users } from "../db/schema.js";
-import { CoffeeChatError } from "../types.js";
+import {
+  CoffeeChatError,
+  type HydratedShelfRef,
+  type NormalizedOrigin,
+} from "../types.js";
+
+function extractFirstSourceOriginId(originsJson: unknown): string | null {
+  const list = (originsJson ?? []) as NormalizedOrigin[];
+  const found = list.find(
+    (o) => o.kind === "source_excerpt" && typeof o.originId === "string" && o.originId.length > 0,
+  );
+  return found?.originId ?? null;
+}
 
 export interface ShelfEntryView {
   id: string;
@@ -21,6 +33,7 @@ export interface ShelfEntryView {
     ownerHandle: string;
     ownerDisplayName: string;
     version: number;
+    firstSourceOriginId: string | null;
   };
 }
 
@@ -154,6 +167,7 @@ export async function addToShelf(
       ownerHandle: owner?.handle ?? "unknown",
       ownerDisplayName: owner?.name ?? "Unknown",
       version: targetBean.version,
+      firstSourceOriginId: extractFirstSourceOriginId(rev?.originsJson),
     },
   };
 }
@@ -242,10 +256,39 @@ export async function listShelf(
           ownerHandle: owner.handle,
           ownerDisplayName: owner.name,
           version: targetBean.version,
+          firstSourceOriginId: extractFirstSourceOriginId(rev.originsJson),
         },
       });
     }
   }
 
   return results;
+}
+
+/**
+ * Compact live Shelf reference list used by browse SSR pages to hydrate
+ * Save / On Shelf toggle state and pass shelfItemId directly to DELETE /api/shelf.
+ */
+export async function listHydratedShelfRefs(
+  db: CoffeeChatDb,
+  userId: string,
+): Promise<HydratedShelfRef[]> {
+  const entries = await listShelf(db, userId);
+  const refs: HydratedShelfRef[] = [];
+  for (const entry of entries) {
+    if (entry.targetType === "person" && entry.person) {
+      refs.push({
+        targetType: "person",
+        targetId: entry.person.userId,
+        shelfItemId: entry.id,
+      });
+    } else if (entry.targetType === "bean" && entry.bean) {
+      refs.push({
+        targetType: "bean",
+        targetId: entry.bean.beanId,
+        shelfItemId: entry.id,
+      });
+    }
+  }
+  return refs;
 }
