@@ -89,29 +89,18 @@ export function PerspectiveDiffCard({
                       </blockquote>
                     ) : null}
 
-                    <Text as="p" variant="body">
-                      {bean.take}
-                    </Text>
+                    <p className="editorial-lead">{bean.take}</p>
 
-                    <div className="bean-axis-tradeoff">
-                      <Stack gap={4}>
-                        <Text variant="meta">Trade-off · What mattered more</Text>
+                    <div className="bean-pull">
+                      <Stack gap={2}>
+                        <Text variant="meta">What mattered more</Text>
                         <Text as="p" variant="body">
                           {bean.tradeoff}
                         </Text>
                       </Stack>
                     </div>
 
-                    <div className="bean-axis-boundary">
-                      <Stack gap={4}>
-                        <Text variant="meta">
-                          Boundary · When it doesn&apos;t apply
-                        </Text>
-                        <Text as="p" variant="help">
-                          {bean.boundary}
-                        </Text>
-                      </Stack>
-                    </div>
+                    <p className="bean-footnote">Except when: {bean.boundary}</p>
 
                     <Divider />
 

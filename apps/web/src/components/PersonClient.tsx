@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { Card } from "@openboa/yogurt/card";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
-import { RecordFacts } from "@openboa/yogurt/record-facts";
 import { Stack } from "@openboa/yogurt/stack";
+import { Text } from "@openboa/yogurt/text";
 import { Toast } from "@openboa/yogurt/toast";
 import { PageHeader } from "@openboa/yogurt/top";
 import { BeanCard } from "@coffee-chat/ui";
@@ -48,7 +49,7 @@ export function PersonClient({
   const [brewOpen, setBrewOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Public-only Tasting Notes derived strictly from profile.publicBeans
+  // Public-only Tasting Notes derived strictly from profile.publicBeans (zero private leakage)
   const publicInsights = useMemo(() => {
     const tagCounts = new Map<string, number>();
     let readingCount = 0;
@@ -69,7 +70,9 @@ export function PersonClient({
 
   const toggleSavePerson = async () => {
     if (!signedIn) {
-      router.push(`/signin?returnTo=${encodeURIComponent(`/@${profile.handle}`)}`);
+      router.push(
+        `/signin?returnTo=${encodeURIComponent(`/@${profile.handle}`)}`,
+      );
       return;
     }
     if (personShelfId) {
@@ -99,7 +102,9 @@ export function PersonClient({
 
   const toggleSaveBean = async (beanId: string, title: string) => {
     if (!signedIn) {
-      router.push(`/signin?returnTo=${encodeURIComponent(`/@${profile.handle}`)}`);
+      router.push(
+        `/signin?returnTo=${encodeURIComponent(`/@${profile.handle}`)}`,
+      );
       return;
     }
     const existingId = beanShelfMap[beanId];
@@ -135,7 +140,7 @@ export function PersonClient({
     <Stack gap={24}>
       <PageHeader
         title={profile.displayName}
-        detail={`@${profile.handle} · Voice Profile · Public Beans & Coffee Chat`}
+        detail={`@${profile.handle} · Voice Profile · Public Taste & Coffee Chat`}
         leading={<Avatar label={profile.displayName} size="large" />}
         action={
           <Inline gap={8}>
@@ -152,7 +157,7 @@ export function PersonClient({
               size="compact"
               onClick={() => setBrewOpen(true)}
             >
-              Brew their voice
+              Brew their Taste
             </Button>
           </Inline>
         }
@@ -162,37 +167,40 @@ export function PersonClient({
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      <RecordFacts
-        title="Voice Tasting Notes"
-        source={`@${profile.handle} public profile`}
-        asOf="Live"
-        facts={[
-          {
-            id: "public",
-            label: "On the Table · Public Beans",
-            value: profile.publicCount,
-          },
-          {
-            id: "private",
-            label: "Private Beans (count only)",
-            value: profile.privateCount,
-          },
-          {
-            id: "mix",
-            label: "Public Origin Mix",
-            value: `${publicInsights.readingCount} from reading · ${publicInsights.workCount} from work`,
-          },
-          ...(publicInsights.topPublicTags.length > 0
-            ? [
-                {
-                  id: "domains",
-                  label: "Top Public Domains",
-                  value: publicInsights.topPublicTags.join(" · "),
-                },
-              ]
-            : []),
-        ]}
-      />
+      {/* Clean hairline Voice Tasting Notes strip (public counts & public tags only) */}
+      <Card variant="raised" density="regular">
+        <Stack gap={12}>
+          <div className="taste-strip">
+            <div className="taste-metric">
+              <Text variant="meta">On the Table · Public Beans</Text>
+              <span className="taste-metric-value">{profile.publicCount}</span>
+              <Text variant="meta">
+                {publicInsights.readingCount} from reading ·{" "}
+                {publicInsights.workCount} from work
+              </Text>
+            </div>
+
+            <div className="taste-metric">
+              <Text variant="meta">Private Beans (count only)</Text>
+              <span className="taste-metric-value">{profile.privateCount}</span>
+              <Text variant="meta">
+                Kept private in @{profile.handle}&apos;s Roastery
+              </Text>
+            </div>
+          </div>
+
+          {publicInsights.topPublicTags.length > 0 ? (
+            <Inline gap={6} align="center" wrap>
+              <Text variant="meta">Public Domains:</Text>
+              {publicInsights.topPublicTags.map((tag) => (
+                <Badge key={tag} tone="neutral" dot={false}>
+                  {tag}
+                </Badge>
+              ))}
+            </Inline>
+          ) : null}
+        </Stack>
+      </Card>
 
       {profile.publicBeans.length === 0 ? (
         <EmptyResult
@@ -235,7 +243,7 @@ export function PersonClient({
       <AgentHandoffDialog
         open={brewOpen}
         onOpenChange={setBrewOpen}
-        title={`Brew · Explore @${profile.handle}'s Beans`}
+        title={`Brew · Explore @${profile.handle}'s Taste`}
         description="Bring their public trade-offs and boundaries into a Coffee Chat without impersonation"
         activeGrantCount={activeGrantCount}
         prompt={`Review the public Coffee Chat Beans shared by ${profile.displayName} (@${profile.handle}) that relate to my current question. Summarize what trade-offs they prioritize, where their boundaries stop, and attribute every takeaway explicitly to their confirmed Beans without speaking as them.`}

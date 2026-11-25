@@ -31,7 +31,9 @@ export function SignInPanel({
   const [error, setError] = useState<string | null>(null);
 
   const safeReturnTo =
-    returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\")
+    returnTo.startsWith("/") &&
+    !returnTo.startsWith("//") &&
+    !returnTo.includes("\\")
       ? returnTo
       : "/me";
 
@@ -57,7 +59,10 @@ export function SignInPanel({
     }
   };
 
-  const handleTestLogin = async (presetHandle?: string, presetName?: string) => {
+  const handleTestLogin = async (
+    presetHandle?: string,
+    presetName?: string,
+  ) => {
     setLoading(true);
     setError(null);
     try {
@@ -87,13 +92,13 @@ export function SignInPanel({
   return (
     <Stack gap={24}>
       <PageHeader
-        title="Sign In"
-        detail="Enter your Roastery — Roast private Beans, review Tasting Notes, and Brew in your AI"
+        title="Pull up a chair"
+        detail="Sign in to My Roastery — Roast private Beans, check Tasting Notes, and Brew your Taste in AI"
       />
 
       <Card
-        title="Sign in with your account"
-        description="Accounts stay separate unless you explicitly link them in AI & Account"
+        title="Enter My Roastery"
+        description="Accounts stay separate unless you explicitly link them in Brew Bar & Account"
         variant="raised"
         density="regular"
       >
@@ -124,8 +129,8 @@ export function SignInPanel({
 
           {!hasGithub && !hasGoogle ? (
             <Text variant="meta">
-              GitHub and Google sign-in activate automatically once OAuth client credentials are
-              configured in the environment.
+              GitHub and Google sign-in activate automatically once OAuth client
+              credentials are configured in the environment.
             </Text>
           ) : null}
 
@@ -142,7 +147,7 @@ export function SignInPanel({
                   </Text>
                 </Inline>
 
-                <Inline gap={8}>
+                <Inline gap={8} wrap>
                   <Button
                     emphasis="soft"
                     size="compact"

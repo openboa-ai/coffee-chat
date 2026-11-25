@@ -38,7 +38,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     const pageErrors: string[] = [];
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
-    // Fresh empty DB renders purposeful unseeded onboarding on /
+    // Fresh empty DB renders product-first value hero, interactive Brew demo, and starter card on /
     const homeResp = await page.goto("/");
     expect(homeResp?.status()).toBe(200);
     const cacheControl = homeResp?.headers()["cache-control"] ?? "";
@@ -46,13 +46,19 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     expect(cacheControl).toContain("no-store");
 
     await expect(
-      page.getByText("Start Coffee Chat · Roast your first Bean"),
+      page.getByRole("heading", { level: 1, name: /Give it your Taste/ }),
+    ).toBeVisible();
+    await expect(page.getByText("Same prompt. Different Brew.")).toBeVisible();
+    // Interactive Zero-AI demo switches between Unbrewed and Brewed Taste presets
+    await page.getByRole("radio", { name: "Brew · Isolation-first Taste" }).click();
+    await expect(
+      page.getByText("Isolate auth and money paths on day one."),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Roast a private Bean" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Open Brew Setup" }),
+      page.getByRole("button", { name: "Open Brew Bar" }).first(),
     ).toBeVisible();
     await assertCleanSurface(page, "unseeded /");
 
@@ -60,7 +66,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await page.goto("/me");
     await page.waitForURL(/\/signin\?returnTo=%2Fme/);
     await expect(
-      page.getByRole("heading", { name: "Sign In", exact: true }),
+      page.getByRole("heading", { level: 1, name: "Pull up a chair" }),
     ).toBeVisible();
 
     // Open-redirect payloads (//evil.com and /\evil) MUST sanitize safely to /me
@@ -100,9 +106,9 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "My Roastery" }),
     ).toBeVisible();
-    await expect(page.getByText("Workspace & history")).toBeVisible();
-    await expect(page.getByText("Personal stats & insights")).toBeVisible();
-    await expect(page.getByText("Saved voices & takes")).toBeVisible();
+    await expect(page.getByText("Confirmed Taste & Roast Log")).toBeVisible();
+    await expect(page.getByText("How your Taste leans")).toBeVisible();
+    await expect(page.getByText("Voices & Beans kept on hand")).toBeVisible();
     await expect(page.getByText("Connected AI apps & sign-in")).toBeVisible();
 
     // 2A. Progressive 2-stage multi-origin Roast (Reading Origin + Work Origin, private by default)
@@ -168,7 +174,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     expect(redactFail.status()).toBe(400);
     expect((await redactFail.json()).code).toBe("REDACTION_REQUIRED");
 
-    // Verify UI opens Work Origin Privacy Check modal when trying to put Work Origin Bean On the Table
+    // Verify UI opens Work Origin Privacy Check modal from inline Editorial Bean Reader
     await page
       .getByRole("list", { name: "Your confirmed Beans" })
       .getByRole("button", { name: /Secret multi-origin work judgment/ })
@@ -180,8 +186,6 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
       .getByRole("dialog", { name: "Work Origin Privacy Check" })
       .getByRole("button", { name: "Cancel" })
       .click();
-    // Close inspector sheet via Escape
-    await page.keyboard.press("Escape");
 
     // Also create a private-only URL Bean to verify 404 isolation later
     const privPrep = await (
@@ -299,7 +303,6 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await expect(
       page.getByText("In Tension · Conflicting criteria detected"),
     ).toHaveCount(0);
-    await page.keyboard.press("Escape");
 
     // 2C. Tasting Notes deterministic insights accuracy
     await page.getByRole("button", { name: /Tasting Notes/ }).first().click();
@@ -311,10 +314,10 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     ).toBeVisible();
     await expect(page.getByText("#architecture")).toBeVisible();
 
-    // 2D. AI & Account: last-login-method guard + explicit test-auth linking + unlink
-    await page.getByRole("button", { name: /AI & Account/ }).first().click();
+    // 2D. Brew Bar & Account: last-login-method guard + explicit test-auth linking + unlink
+    await page.getByRole("button", { name: /Brew Bar & Account/ }).first().click();
     await expect(
-      page.getByRole("heading", { level: 1, name: "AI & Account" }),
+      page.getByRole("heading", { level: 1, name: "Brew Bar & Account" }),
     ).toBeVisible();
 
     // Unlink button disabled when only 1 account exists
@@ -368,9 +371,14 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await expect(
       page.getByText("Your Stance · Your Bean is on this Table"),
     ).toBeVisible();
-    await expect(page.getByText("and 1 private Bean(s) visible only to you.")).toBeVisible();
     await expect(
-      page.getByText("Axis-by-Axis Comparison Matrix"),
+      page.getByText("and 1 private Bean(s) visible only to you."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        level: 2,
+        name: "How each person read this source",
+      }),
     ).toBeVisible();
     await assertCleanSurface(page, "/sources/[id] owner");
 
@@ -504,17 +512,17 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await page.goto("/connect");
     await expect(page.getByText("No AI app connected yet")).toBeVisible();
 
-    // Populated Home / and /sources server search work cleanly
+    // Populated Home / shows value-first hero + secondary bottom Table preview; /sources search works cleanly
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: "Explore", exact: true }),
+      page.getByRole("heading", { level: 1, name: /Give it your Taste/ }),
     ).toBeVisible();
-    await expect(page.getByText("Featured Table")).toBeVisible();
+    await expect(page.getByText("On the Table right now")).toBeVisible();
     await assertCleanSurface(page, "populated /");
 
     await page.goto("/sources?q=shared-architecture");
     await expect(
-      page.getByRole("heading", { name: "Tables", exact: true }),
+      page.getByRole("heading", { level: 1, name: "Tables" }),
     ).toBeVisible();
     await expect(page.getByText("Shared Architecture Essay")).toBeVisible();
     await assertCleanSurface(page, "/sources");
@@ -548,7 +556,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/connect");
     await expect(
-      page.getByRole("heading", { name: "Brew Setup", exact: true }),
+      page.getByRole("heading", { level: 1, name: "Brew Bar" }),
     ).toBeVisible();
     await page.setViewportSize({ width: 1440, height: 900 });
 

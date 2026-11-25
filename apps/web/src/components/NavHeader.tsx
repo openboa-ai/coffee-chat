@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Avatar } from "@openboa/yogurt/avatar";
 import { Button } from "@openboa/yogurt/button";
 import { Icon } from "@openboa/yogurt/icon";
@@ -68,26 +68,25 @@ export function NavHeader({
   onAppearanceChange,
 }: NavHeaderProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const destinations = [
-    { id: "explore", label: "Explore", href: "/" },
+    { id: "home", label: "Home", href: "/" },
     { id: "tables", label: "Tables", href: "/sources" },
     { id: "roastery", label: "My Roastery", href: "/me" },
-    { id: "brew-setup", label: "Brew Setup", href: "/connect" },
+    { id: "brew-bar", label: "Brew Bar", href: "/connect" },
   ];
 
   const currentId =
     pathname === "/"
-      ? "explore"
+      ? "home"
       : pathname.startsWith("/sources")
         ? "tables"
         : pathname.startsWith("/me")
           ? "roastery"
           : pathname.startsWith("/connect")
-            ? "brew-setup"
+            ? "brew-bar"
             : "";
 
   const nextAppearance = () => {
@@ -105,13 +104,6 @@ export function NavHeader({
     } finally {
       setSigningOut(false);
     }
-  };
-
-  const handleRoastClick = () => {
-    const target = user
-      ? "/me?compose=1"
-      : "/signin?returnTo=%2Fme%3Fcompose%3D1";
-    router.push(target);
   };
 
   return (
@@ -132,14 +124,6 @@ export function NavHeader({
           onExpandedChange={setExpanded}
           action={
             <Inline gap={8} align="center">
-              <Button
-                emphasis="filled"
-                tone="brand"
-                size="compact"
-                onClick={handleRoastClick}
-              >
-                Roast a Bean
-              </Button>
               <Button
                 emphasis="quiet"
                 size="compact"
@@ -170,7 +154,7 @@ export function NavHeader({
                   </Button>
                 </>
               ) : (
-                <Link href="/signin">Sign in</Link>
+                <Link href="/signin">Pull up a chair</Link>
               )}
             </Inline>
           }

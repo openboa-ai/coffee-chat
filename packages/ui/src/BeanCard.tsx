@@ -44,12 +44,6 @@ export function BeanCard({
 }: BeanCardProps) {
   const firstSource = bean.origins.find((o) => o.kind === "source_excerpt");
   const firstWork = bean.origins.find((o) => o.kind === "work_episode");
-  const originLabel =
-    firstSource && firstWork
-      ? "Reading & Work Origins"
-      : firstSource
-        ? "Reading Origin · From reading"
-        : "Work Origin · From work";
 
   return (
     <Card variant="raised" density="regular">
@@ -58,12 +52,12 @@ export function BeanCard({
           {showOwner ? (
             <Inline gap={8} align="center">
               <Avatar label={bean.ownerDisplayName} size="compact" />
-              <Stack gap={2}>
+              <Inline gap={6} align="baseline">
                 <Link href={`/@${bean.ownerHandle}`}>
                   <Text variant="body">{bean.ownerDisplayName}</Text>
                 </Link>
                 <Text variant="meta">@{bean.ownerHandle}</Text>
-              </Stack>
+              </Inline>
             </Inline>
           ) : (
             <Inline gap={8} align="center">
@@ -72,26 +66,20 @@ export function BeanCard({
                   tone={bean.visibility === "public" ? "brand" : "neutral"}
                   dot={false}
                 >
-                  {bean.visibility === "public"
-                    ? "On the Table · Public"
-                    : "Private · Only me & my AI"}
+                  {bean.visibility === "public" ? "On the Table" : "Private"}
                 </Badge>
               ) : null}
-              <Badge tone="neutral" dot={false}>
-                {originLabel}
-              </Badge>
+              <Text variant="meta">
+                {firstSource && firstWork
+                  ? "Reading & Work"
+                  : firstSource
+                    ? "From reading"
+                    : "From work"}
+              </Text>
             </Inline>
           )}
 
-          <Inline gap={8} align="center">
-            {showOwner && showVisibilityBadge ? (
-              <Badge
-                tone={bean.visibility === "public" ? "brand" : "neutral"}
-                dot={false}
-              >
-                {bean.visibility === "public" ? "On the Table" : "Private"}
-              </Badge>
-            ) : null}
+          <Inline gap={6} align="center">
             {bean.supersededByBeanId ? (
               <Badge tone="warning">Updated Mind</Badge>
             ) : null}
@@ -103,18 +91,16 @@ export function BeanCard({
 
         <Stack gap={8}>
           <Heading level={3}>{bean.title}</Heading>
-          <Text as="p" variant="body">
-            {bean.take}
-          </Text>
+          <p className="editorial-lead">{bean.take}</p>
         </Stack>
 
         {firstSource?.quotation ? (
           <blockquote className="bean-quote">
             <Stack gap={4}>
-              <Text variant="body">&ldquo;{firstSource.quotation}&rdquo;</Text>
+              <Text variant="help">&ldquo;{firstSource.quotation}&rdquo;</Text>
               {firstSource.sourceTitle ? (
                 <Text variant="meta">
-                  — {firstSource.sourceTitle}
+                  {firstSource.sourceTitle}
                   {firstSource.locator ? ` · ${firstSource.locator}` : ""}
                 </Text>
               ) : null}
@@ -122,36 +108,25 @@ export function BeanCard({
           </blockquote>
         ) : null}
 
-        <div className="bean-axis-tradeoff">
-          <Stack gap={4}>
-            <Text variant="meta">Trade-off · What mattered more</Text>
+        <div className="bean-pull">
+          <Stack gap={2}>
+            <Text variant="meta">What mattered more</Text>
             <Text as="p" variant="body">
               {bean.tradeoff}
             </Text>
           </Stack>
         </div>
 
-        <div className="bean-axis-boundary">
-          <Stack gap={4}>
-            <Text variant="meta">Boundary · When it doesn&apos;t apply</Text>
-            <Text as="p" variant="help">
-              {bean.boundary}
-            </Text>
-          </Stack>
-        </div>
+        <Text as="p" variant="help">
+          Except when: {bean.boundary}
+        </Text>
 
         {firstWork?.episodeSummary ? (
-          <Text variant="meta">Work Origin: {firstWork.episodeSummary}</Text>
+          <Text variant="meta">Sparked at work: {firstWork.episodeSummary}</Text>
         ) : null}
 
-        {firstSource && !firstSource.quotation && firstSource.url ? (
-          <Text variant="meta">
-            Reading Origin: {firstSource.sourceTitle ?? firstSource.url}
-          </Text>
-        ) : null}
-
-        {bean.relations.length > 0 ? (
-          <Inline gap={8}>
+        {bean.relations.length > 0 || bean.tags.length > 0 ? (
+          <Inline gap={6} align="center">
             {bean.relations.map((rel, idx) => (
               <Badge
                 key={rel.id ?? idx}
@@ -162,11 +137,6 @@ export function BeanCard({
                 {rel.relatedBeanTitle || rel.relatedBeanId}
               </Badge>
             ))}
-          </Inline>
-        ) : null}
-
-        {bean.tags.length > 0 ? (
-          <Inline gap={8}>
             {bean.tags.map((tag) => (
               <Badge key={tag} tone="neutral" dot={false}>
                 #{tag}
@@ -178,7 +148,9 @@ export function BeanCard({
         {actions ? (
           <>
             <Divider />
-            <Inline gap={8}>{actions}</Inline>
+            <Inline gap={8} align="center">
+              {actions}
+            </Inline>
           </>
         ) : null}
       </Stack>

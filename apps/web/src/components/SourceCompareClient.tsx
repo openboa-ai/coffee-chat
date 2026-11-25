@@ -2,16 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Breadcrumb } from "@openboa/yogurt/breadcrumb";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
-import { DataTable } from "@openboa/yogurt/data-table";
 import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
+import { Divider } from "@openboa/yogurt/divider";
+import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
 import { Notice } from "@openboa/yogurt/notice";
-import { RecordFacts } from "@openboa/yogurt/record-facts";
 import { Stack } from "@openboa/yogurt/stack";
 import { Surface } from "@openboa/yogurt/surface";
 import { Text } from "@openboa/yogurt/text";
@@ -92,7 +93,9 @@ export function SourceCompareClient({
 
   const toggleSaveBean = async (bean: BeanDetail) => {
     if (!signedIn) {
-      router.push(`/signin?returnTo=${encodeURIComponent(`/sources/${originId}`)}`);
+      router.push(
+        `/signin?returnTo=${encodeURIComponent(`/sources/${originId}`)}`,
+      );
       return;
     }
     const existingShelfId = shelfMap[bean.id];
@@ -144,7 +147,7 @@ export function SourceCompareClient({
       <Breadcrumb
         label="Table breadcrumb"
         items={[
-          { id: "explore", label: "Explore", href: "/" },
+          { id: "home", label: "Home", href: "/" },
           { id: "tables", label: "Tables", href: "/sources" },
           {
             id: "current",
@@ -156,7 +159,7 @@ export function SourceCompareClient({
 
       <PageHeader
         title={displayTitle}
-        detail="Table · Side-by-side Beans comparing what people prioritized and where their rules stop"
+        detail="Table · Same source, different Taste — compare what each voice prioritized and where their rule stops"
         action={
           <Inline gap={8}>
             <Button
@@ -180,7 +183,7 @@ export function SourceCompareClient({
                 setRoastOpen(true);
               }}
             >
-              Roast a Bean for this Table
+              Roast your Bean
             </Button>
           </Inline>
         }
@@ -190,48 +193,33 @@ export function SourceCompareClient({
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      <RecordFacts
-        title="Table Tasting Notes"
-        source="Public Beans on this source"
-        asOf="Live"
-        facts={[
-          {
-            id: "url",
-            label: "Original Source",
-            value: (
-              <Link
-                href={normalizedUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {normalizedUrl}
-              </Link>
-            ),
-          },
-          {
-            id: "voices",
-            label: "Voices at the Table",
-            value: uniqueAuthors.length,
-            unit: uniqueAuthors.length === 1 ? "voice" : "voices",
-          },
-          {
-            id: "beans",
-            label: "Public Beans",
-            value: beans.length,
-            unit: beans.length === 1 ? "Bean" : "Beans",
-          },
-          ...(sharedDomains.length > 0
-            ? [
-                {
-                  id: "domains",
-                  label: "Shared Domains",
-                  value: sharedDomains.join(" · "),
-                },
-              ]
-            : []),
-        ]}
-      />
+      {/* Calm editorial source anchor strip */}
+      <div className="trust-band">
+        <Link
+          href={normalizedUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="source-url-link"
+        >
+          {normalizedUrl} ↗
+        </Link>
+        <Text variant="meta">
+          {uniqueAuthors.length}{" "}
+          {uniqueAuthors.length === 1 ? "voice" : "voices"} · {beans.length}{" "}
+          {beans.length === 1 ? "Bean" : "Beans"}
+        </Text>
+        {sharedDomains.length > 0 ? (
+          <Inline gap={6} align="center" wrap>
+            {sharedDomains.map((tag) => (
+              <Badge key={tag} tone="neutral" dot={false}>
+                {tag}
+              </Badge>
+            ))}
+          </Inline>
+        ) : null}
+      </div>
 
+      {/* Viewer Stance Banner — signed-in only; private-only URLs already 404 before lookup */}
       {signedIn ? (
         viewerPublic.length > 0 ? (
           <Notice
@@ -283,8 +271,10 @@ export function SourceCompareClient({
                           </Badge>
                           <Text variant="body">{pb.title}</Text>
                         </Inline>
-                        <Text variant="help">Trade-off: {pb.tradeoff}</Text>
-                        <Text variant="meta">Boundary: {pb.boundary}</Text>
+                        <Text variant="help">
+                          What mattered more: {pb.tradeoff}
+                        </Text>
+                        <Text variant="meta">Except when: {pb.boundary}</Text>
                       </Stack>
                     </Surface>
                   ))}
@@ -294,7 +284,7 @@ export function SourceCompareClient({
           </Notice>
         ) : (
           <Notice
-            title="Your Stance · Not on this Table yet"
+            title="Your Stance · Pull up a chair"
             tone="neutral"
             action={
               <Button
@@ -312,73 +302,39 @@ export function SourceCompareClient({
         )
       ) : null}
 
-      <Card
-        title="Axis-by-Axis Comparison Matrix"
-        description="Compare Origin Quotes, My Take, Trade-offs, and Boundaries across every public Bean"
-        variant="raised"
-        density="compact"
-      >
-        <div className="table-scroll">
-          <DataTable
-            caption={`Axis comparison for ${displayTitle}`}
-            columns={[
-              { id: "voice", label: "Voice", kind: "identity" },
-              { id: "origin", label: "Origin Quote & Locator", kind: "text" },
-              { id: "take", label: "My Take", kind: "text" },
-              {
-                id: "tradeoff",
-                label: "Trade-off · What mattered more",
-                kind: "text",
-              },
-              {
-                id: "boundary",
-                label: "Boundary · When it doesn't apply",
-                kind: "text",
-              },
-              { id: "shelf", label: "Shelf", kind: "actions" },
-            ]}
-            rows={beans.map((b) => {
-              const matchingOrigin =
-                b.origins.find((o) => o.url === normalizedUrl) ??
-                b.origins.find((o) => o.kind === "source_excerpt");
-              const isSaved = Boolean(shelfMap[b.id]);
-              return {
-                id: b.id,
-                cells: {
-                  voice: (
-                    <Stack gap={4}>
-                      <Link href={`/@${b.ownerHandle}`}>
-                        {b.ownerDisplayName}
-                      </Link>
-                      <Text variant="meta">@{b.ownerHandle}</Text>
-                      {b.supersededByBeanId ? (
-                        <Badge tone="warning">Updated Mind</Badge>
-                      ) : null}
-                    </Stack>
-                  ),
-                  origin: matchingOrigin?.quotation ? (
-                    <Stack gap={4}>
-                      <Text variant="help">
-                        &ldquo;{matchingOrigin.quotation}&rdquo;
-                      </Text>
-                      {matchingOrigin.locator ? (
-                        <Text variant="meta">{matchingOrigin.locator}</Text>
-                      ) : null}
-                    </Stack>
-                  ) : (
-                    <Text variant="meta">
-                      {matchingOrigin?.locator ?? "Full source"}
-                    </Text>
-                  ),
-                  take: (
-                    <Stack gap={4}>
-                      <Text variant="body">{b.title}</Text>
-                      <Text variant="help">{b.take}</Text>
-                    </Stack>
-                  ),
-                  tradeoff: <Text variant="body">{b.tradeoff}</Text>,
-                  boundary: <Text variant="help">{b.boundary}</Text>,
-                  shelf: (
+      {/* Editorial Side-by-Side Comparison Dialogue (replaces cramped spreadsheet table) */}
+      <Stack gap={12}>
+        <Stack gap={2}>
+          <Text variant="meta">Voices at this Table</Text>
+          <Heading level={2}>How each person read this source</Heading>
+        </Stack>
+
+        <div className="table-dialogue-grid">
+          {beans.map((b) => {
+            const matchingOrigin =
+              b.origins.find((o) => o.url === normalizedUrl) ??
+              b.origins.find((o) => o.kind === "source_excerpt");
+            const isSaved = Boolean(shelfMap[b.id]);
+
+            return (
+              <Card key={b.id} variant="raised" density="regular">
+                <Stack gap={16}>
+                  <Inline justify="between" align="center" gap={8}>
+                    <Inline gap={8} align="center">
+                      <Avatar label={b.ownerDisplayName} size="compact" />
+                      <Stack gap={2}>
+                        <Inline gap={6} align="baseline">
+                          <Link href={`/@${b.ownerHandle}`}>
+                            <Text variant="body">{b.ownerDisplayName}</Text>
+                          </Link>
+                          <Text variant="meta">@{b.ownerHandle}</Text>
+                        </Inline>
+                        {b.supersededByBeanId ? (
+                          <Badge tone="warning">Updated Mind</Badge>
+                        ) : null}
+                      </Stack>
+                    </Inline>
+
                     <Button
                       emphasis={isSaved ? "quiet" : "soft"}
                       size="compact"
@@ -386,13 +342,57 @@ export function SourceCompareClient({
                     >
                       {isSaved ? "On Shelf" : "Save to Shelf"}
                     </Button>
-                  ),
-                },
-              };
-            })}
-          />
+                  </Inline>
+
+                  {matchingOrigin?.quotation ? (
+                    <blockquote className="bean-quote">
+                      <Stack gap={4}>
+                        <Text variant="help">
+                          &ldquo;{matchingOrigin.quotation}&rdquo;
+                        </Text>
+                        {matchingOrigin.locator ? (
+                          <Text variant="meta">{matchingOrigin.locator}</Text>
+                        ) : null}
+                      </Stack>
+                    </blockquote>
+                  ) : matchingOrigin?.locator ? (
+                    <Text variant="meta">Section: {matchingOrigin.locator}</Text>
+                  ) : null}
+
+                  <Stack gap={12}>
+                    <Heading level={3}>{b.title}</Heading>
+                    <p className="editorial-lead">{b.take}</p>
+
+                    <div className="bean-pull">
+                      <Stack gap={2}>
+                        <Text variant="meta">What mattered more</Text>
+                        <Text as="p" variant="body">
+                          {b.tradeoff}
+                        </Text>
+                      </Stack>
+                    </div>
+
+                    <p className="bean-footnote">Except when: {b.boundary}</p>
+                  </Stack>
+
+                  {b.tags.length > 0 ? (
+                    <>
+                      <Divider />
+                      <Inline gap={6} align="center" wrap>
+                        {b.tags.map((tag) => (
+                          <Badge key={tag} tone="neutral" dot={false}>
+                            #{tag}
+                          </Badge>
+                        ))}
+                      </Inline>
+                    </>
+                  ) : null}
+                </Stack>
+              </Card>
+            );
+          })}
         </div>
-      </Card>
+      </Stack>
 
       {signedIn ? (
         <QuickCaptureSheet

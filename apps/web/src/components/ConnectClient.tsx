@@ -6,6 +6,7 @@ import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
 import { CodeBlock } from "@openboa/yogurt/code-block";
+import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { CopyButton } from "@openboa/yogurt/motion-copy-button";
 import { Notice } from "@openboa/yogurt/notice";
@@ -41,7 +42,7 @@ export function ConnectClient({
       id: "codex",
       label: "Codex",
       language: "toml",
-      hint: "Add Coffee Chat in ~/.codex/config.toml, then sign in once when prompted.",
+      hint: "Add Coffee Chat to ~/.codex/config.toml, then approve sign-in once when prompted.",
       code: `[mcp_servers.coffee_chat]\nurl = "${mcpUrl}"`,
     },
     {
@@ -97,8 +98,8 @@ export function ConnectClient({
   const starterPrompts = [
     {
       id: "brew-work",
-      title: "Brew · Apply my Beans to a work call",
-      description: "Shape concrete trade-offs and respect every stated boundary",
+      title: "Brew · Pour my Taste into a work call",
+      description: "Shape concrete trade-offs and honor every stated boundary",
       prompt:
         "Before proposing a design for this task, check my confirmed Coffee Chat Beans on this topic. Apply the matching trade-offs, name which Bean guided each choice, and withhold any Bean outside its boundary.",
     },
@@ -111,7 +112,7 @@ export function ConnectClient({
     },
     {
       id: "brew-table",
-      title: "Tables · Compare voices on a link",
+      title: "Coffee Chat · Compare minds on a link",
       description: "Contrast public perspectives without impersonation",
       prompt:
         "Check the public Coffee Chat Table for this article and compare how different voices weigh trade-offs and boundaries. Highlight where their views diverge from my own Beans.",
@@ -121,27 +122,29 @@ export function ConnectClient({
   return (
     <Stack gap={24}>
       <PageHeader
-        title="Brew Setup"
-        detail="Connect your AI apps once — Brew your confirmed Beans and Shelf wherever you work"
+        title="Brew Bar"
+        detail="Pour your Taste into any AI host — connect once, Brew your Beans & Shelf anywhere"
         action={
-          signedIn ? (
-            <Button
-              emphasis="soft"
-              size="compact"
-              onClick={() => router.push("/me?tab=settings")}
-            >
-              Manage AI &amp; Account
-            </Button>
-          ) : (
-            <Button
-              emphasis="filled"
-              tone="brand"
-              size="compact"
-              onClick={() => router.push("/signin?returnTo=/connect")}
-            >
-              Sign in first
-            </Button>
-          )
+          <Inline gap={8}>
+            {signedIn ? (
+              <Button
+                emphasis="soft"
+                size="compact"
+                onClick={() => router.push("/me?tab=settings")}
+              >
+                Manage Brew Bar &amp; Account
+              </Button>
+            ) : (
+              <Button
+                emphasis="filled"
+                tone="brand"
+                size="compact"
+                onClick={() => router.push("/signin?returnTo=/connect")}
+              >
+                Pull up a chair
+              </Button>
+            )}
+          </Inline>
         }
       />
 
@@ -170,18 +173,19 @@ export function ConnectClient({
         ) : (
           <Notice title="No AI app connected yet" tone="neutral">
             Pick your AI host below, copy the setup snippet, and approve access
-            once. You can revoke any connection instantly from AI &amp; Account.
+            once. You can revoke any connection instantly from Brew Bar &amp;
+            Account.
           </Notice>
         )
       ) : (
         <Notice title="Private by default" tone="neutral">
-          Your AI connects with secure sign-in approval and never saves a Bean
-          without your explicit confirmation.
+          Your AI connects with secure sign-in approval and never roasts or
+          saves a Bean without your explicit confirmation.
         </Notice>
       )}
 
       <Card
-        title="Step 1 · Add Coffee Chat to your AI host"
+        title="Step 1 · Plug into your AI host"
         description="Choose your AI app below — automatic discovery handles sign-in and permissions"
         headerAction={
           <Badge tone="neutral" dot={false}>
@@ -206,9 +210,6 @@ export function ConnectClient({
                   language={cfg.language}
                   onCopy={copyText}
                 />
-                <Inline gap={8}>
-                  <CopyButton value={cfg.code} onCopy={copyText} />
-                </Inline>
               </Stack>
             ),
           }))}
@@ -217,11 +218,8 @@ export function ConnectClient({
 
       <Stack gap={12}>
         <Stack gap={2}>
-          <Text variant="body">Step 2 · Plain-language starter prompts</Text>
-          <Text variant="meta">
-            Copy any prompt into your connected AI — zero technical syntax
-            needed
-          </Text>
+          <Text variant="meta">Step 2 · First pours</Text>
+          <Heading level={2}>Plain-language prompts to try right away</Heading>
         </Stack>
         <div className="split-grid">
           {starterPrompts.map((item) => (

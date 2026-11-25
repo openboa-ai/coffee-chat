@@ -1,15 +1,12 @@
 "use client";
 
-import { Badge } from "@openboa/yogurt/badge";
+import type { ReactNode } from "react";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
 import { Chart } from "@openboa/yogurt/chart";
+import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { Inline } from "@openboa/yogurt/inline";
-import { List } from "@openboa/yogurt/list";
-import { ListRow } from "@openboa/yogurt/list-row";
-import { StatCard } from "@openboa/yogurt/motion-stat-card";
-import { Progress } from "@openboa/yogurt/progress";
 import { RecordFacts } from "@openboa/yogurt/record-facts";
 import { Stack } from "@openboa/yogurt/stack";
 import { Text } from "@openboa/yogurt/text";
@@ -18,6 +15,7 @@ import type { PersonalInsightsView } from "@coffee-chat/core";
 
 export interface InsightsPanelProps {
   insights: PersonalInsightsView;
+  leading?: ReactNode;
   onSelectDomain: (tag: string) => void;
   onSelectLifecycle: (state: "active" | "in_tension" | "superseded") => void;
   onOpenConnect: () => void;
@@ -25,6 +23,7 @@ export interface InsightsPanelProps {
 
 export function InsightsPanel({
   insights,
+  leading,
   onSelectDomain,
   onSelectLifecycle,
   onOpenConnect,
@@ -35,184 +34,259 @@ export function InsightsPanel({
     timeStyle: "short",
   });
 
-  const monthlySeries = insights.monthlyActivity.map((m) => m.count);
+  // Deterministic editorial reflections computed strictly from PersonalInsightsView (zero server AI)
+  const reflections: Array<{
+    id: string;
+    text: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  }> = [];
+
+  if (insights.totalCount === 0) {
+    reflections.push({
+      id: "empty",
+      text: "Your cup is empty—Roast your first Bean from a link or work call to start mapping your Taste.",
+    });
+  } else {
+    if (insights.lifecycle.inTensionCount > 0) {
+      reflections.push({
+        id: "tension",
+        text: `${insights.lifecycle.inTensionCount} ${insights.lifecycle.inTensionCount === 1 ? "Bean is" : "Beans are"} in tension—reconciling them clarifies which trade-off should lead when your AI brews.`,
+        actionLabel: "Review tension",
+        onAction: () => onSelectLifecycle("in_tension"),
+      });
+    }
+    if (
+      insights.originMix.readingCount > 0 &&
+      insights.originMix.workCount === 0
+    ) {
+      reflections.push({
+        id: "reading-heavy",
+        text: "All of your Beans came from reading so far—capture one real work call to ground theory in practice.",
+      });
+    } else if (
+      insights.originMix.workCount > 0 &&
+      insights.originMix.readingCount === 0
+    ) {
+      reflections.push({
+        id: "work-heavy",
+        text: "Every Bean came from live work calls—Roast a reading takeaway to start a Table and compare with other voices.",
+      });
+    }
+    if (insights.publicCount === 0 && insights.privateCount > 0) {
+      reflections.push({
+        id: "all-private",
+        text: "All your Beans are still Private—whenever one feels crisp, put it On the Table to invite contrasting takes.",
+      });
+    }
+  }
+
+  if (insights.activeGrantCount === 0) {
+    reflections.push({
+      id: "brew-bar",
+      text: "Brew Bar isn't linked yet—connect your AI host once so these confirmed criteria actually shape daily answers.",
+      actionLabel: "Open Brew Bar",
+      onAction: onOpenConnect,
+    });
+  } else if (
+    insights.totalCount > 0 &&
+    insights.lifecycle.inTensionCount === 0
+  ) {
+    reflections.push({
+      id: "brew-ready",
+      text: `Brew Ready—${insights.lifecycle.activeCount} active ${insights.lifecycle.activeCount === 1 ? "Bean" : "Beans"} and ${insights.shelfCount} live Shelf ${insights.shelfCount === 1 ? "ref" : "refs"} are serving ${insights.activeGrantCount} connected AI ${insights.activeGrantCount === 1 ? "host" : "hosts"}.`,
+    });
+  }
 
   return (
     <Stack gap={24}>
       <PageHeader
         title="Tasting Notes"
-        detail="Personal stats & insights — deterministic aggregates from your confirmed Beans"
+        detail="How your Taste leans — deterministic notes distilled from your confirmed Beans"
+        leading={leading}
       />
 
-      <div className="kpi-grid">
-        <StatCard
-          label="Beans"
-          value={insights.totalCount}
-          detail={`${insights.privateCount} private · ${insights.publicCount} public`}
-          series={monthlySeries.length >= 2 ? monthlySeries : undefined}
-        />
-        <StatCard
-          label="Active Criteria"
-          value={insights.lifecycle.activeCount}
-          detail={`${insights.lifecycle.inTensionCount} tension`}
-        />
-        <StatCard
-          label="Connected AI"
-          value={insights.activeGrantCount}
-          detail={insights.activeGrantCount > 0 ? "Brew ready" : "Not linked"}
-        />
-        <StatCard
-          label="Shelf"
-          value={insights.shelfCount}
-          detail="Live refs"
-        />
-      </div>
+      {/* Primary hairline typographic summary (no cramped StatCard pill boxes) */}
+      <Card variant="raised" density="regular">
+        <Stack gap={16}>
+          <div className="taste-strip">
+            <div className="taste-metric">
+              <Text variant="meta">Confirmed Beans</Text>
+              <span className="taste-metric-value">{insights.totalCount}</span>
+              <Text variant="meta">
+                Confirmed takes · {insights.privateCount} private,{" "}
+                {insights.publicCount} on the Table
+              </Text>
+            </div>
 
-      <Text variant="meta">
-        Confirmed takes · {insights.privateCount} private, {insights.publicCount} on the Table
-      </Text>
+            <div className="taste-metric">
+              <Text variant="meta">Reading vs Work Origins</Text>
+              <span className="taste-metric-value">
+                {insights.originMix.readingCount} : {insights.originMix.workCount}
+              </span>
+              <Text variant="meta">
+                {insights.originMix.uniqueSourceUrlCount} unique{" "}
+                {insights.originMix.uniqueSourceUrlCount === 1
+                  ? "source"
+                  : "sources"}{" "}
+                read
+              </Text>
+            </div>
 
-      <Card
-        title="Judgment Health"
-        description="Mutually exclusive lifecycle across all confirmed Beans — click any bucket to filter My Beans"
-        variant="raised"
-        density="regular"
-      >
-        <Inline gap={12} align="center">
-          <Button
-            emphasis="soft"
-            size="compact"
-            onClick={() => onSelectLifecycle("active")}
-          >
-            Active ({insights.lifecycle.activeCount})
-          </Button>
-          <Button
-            emphasis="soft"
-            size="compact"
-            onClick={() => onSelectLifecycle("in_tension")}
-          >
-            In Tension ({insights.lifecycle.inTensionCount})
-          </Button>
-          <Button
-            emphasis="soft"
-            size="compact"
-            onClick={() => onSelectLifecycle("superseded")}
-          >
-            Updated Mind ({insights.lifecycle.supersededCount})
-          </Button>
-          {insights.activeGrantCount === 0 ? (
-            <Button emphasis="quiet" size="compact" onClick={onOpenConnect}>
-              Open Brew Setup →
+            <div className="taste-metric">
+              <Text variant="meta">Roast Log Revisions</Text>
+              <span className="taste-metric-value">
+                {insights.revisionCount}
+              </span>
+              <Text variant="meta">
+                {insights.shelfCount} on Shelf ·{" "}
+                {insights.activeGrantCount > 0
+                  ? `${insights.activeGrantCount} AI linked`
+                  : "Brew Bar unlinked"}
+              </Text>
+            </div>
+          </div>
+
+          <Divider />
+
+          <Inline gap={8} align="center" wrap>
+            <Text variant="meta">Filter My Beans:</Text>
+            <Button
+              emphasis="soft"
+              size="compact"
+              onClick={() => onSelectLifecycle("active")}
+            >
+              Active ({insights.lifecycle.activeCount})
             </Button>
-          ) : null}
-        </Inline>
+            <Button
+              emphasis="soft"
+              size="compact"
+              onClick={() => onSelectLifecycle("in_tension")}
+            >
+              In Tension ({insights.lifecycle.inTensionCount})
+            </Button>
+            <Button
+              emphasis="soft"
+              size="compact"
+              onClick={() => onSelectLifecycle("superseded")}
+            >
+              Updated Mind ({insights.lifecycle.supersededCount})
+            </Button>
+          </Inline>
+        </Stack>
       </Card>
 
-      <div className="split-grid">
+      {/* Deterministic Taste Reflections */}
+      {reflections.length > 0 ? (
         <Card
-          title="Domains"
-          description="Decision topics across your confirmed Beans — click a topic to filter"
+          title="Palate Check"
+          description="Honest deterministic observations from your current Beans — zero server AI"
+          variant="raised"
+          density="regular"
+        >
+          <Stack gap={12}>
+            {reflections.map((item) => (
+              <Inline
+                key={item.id}
+                justify="between"
+                align="center"
+                gap={12}
+                wrap
+              >
+                <Text variant="body">{item.text}</Text>
+                {item.actionLabel && item.onAction ? (
+                  <Button
+                    emphasis="soft"
+                    size="compact"
+                    onClick={item.onAction}
+                  >
+                    {item.actionLabel}
+                  </Button>
+                ) : null}
+              </Inline>
+            ))}
+          </Stack>
+        </Card>
+      ) : null}
+
+      <div className="split-grid">
+        {/* Clean proportional domain bars (zero "coverage 50%" boilerplate) */}
+        <Card
+          title="Taste Profile by Domain"
+          description="Topics you have sharpened most — click any domain to filter My Beans"
           variant="raised"
           density="regular"
         >
           {insights.topTags.length === 0 ? (
-            <EmptyResult empty="Add Domains (topics) when Roasting Beans to see your coverage here." />
+            <EmptyResult empty="Add Domains when Roasting Beans to see where your judgment concentrates." />
           ) : (
-            <List label="Top decision domains" divided>
-              {insights.topTags.map((item) => (
-                <ListRow
-                  key={item.tag}
-                  title={`#${item.tag}`}
-                  description={`${item.count} ${item.count === 1 ? "Bean" : "Beans"}`}
-                  trailing={
-                    <Badge tone="neutral" dot={false}>
-                      {item.count}
-                    </Badge>
-                  }
-                  value={
-                    <Progress
-                      label={`${item.tag} coverage`}
-                      value={item.count}
-                      max={maxTagCount}
-                    />
-                  }
-                  onActivate={() => onSelectDomain(item.tag)}
-                />
-              ))}
-            </List>
+            <Stack gap={4}>
+              {insights.topTags.map((item) => {
+                const pct = Math.max(
+                  8,
+                  Math.round((item.count / maxTagCount) * 100),
+                );
+                return (
+                  <button
+                    key={item.tag}
+                    type="button"
+                    className="domain-bar-row"
+                    onClick={() => onSelectDomain(item.tag)}
+                  >
+                    <Text variant="body">#{item.tag}</Text>
+                    <div className="domain-bar-track" aria-hidden="true">
+                      <div
+                        className="domain-bar-fill"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <Text variant="meta">
+                      {item.count} {item.count === 1 ? "Bean" : "Beans"}
+                    </Text>
+                  </button>
+                );
+              })}
+            </Stack>
           )}
         </Card>
 
-        <Stack gap={16}>
-          <RecordFacts
-            title="Origin & Roast Balance"
-            source="Your confirmed Beans"
-            asOf={asOfLabel}
-            facts={[
-              {
-                id: "reading",
-                label: "Reading Origins · From reading",
-                value: insights.originMix.readingCount,
-                unit: "Beans",
-              },
-              {
-                id: "work",
-                label: "Work Origins · From work",
-                value: insights.originMix.workCount,
-                unit: "Beans",
-              },
-              {
-                id: "urls",
-                label: "Unique Sources Read",
-                value: insights.originMix.uniqueSourceUrlCount,
-                unit: "URLs",
-              },
-              {
-                id: "ai-roasted",
-                label: "AI-Roasted · Captured in AI",
-                value: insights.captureMix.agentAttestedCount,
-                unit: "Beans",
-              },
-              {
-                id: "web-roasted",
-                label: "Web-Roasted · Written on Web",
-                value: insights.captureMix.uiAttestedCount,
-                unit: "Beans",
-              },
-            ]}
-          />
-
-          <RecordFacts
-            title="Roast Log & Evolution"
-            source="Your Roast Log & relations"
-            asOf={asOfLabel}
-            facts={[
-              {
-                id: "revisions",
-                label: "Total Roast Log Revisions",
-                value: insights.revisionCount,
-              },
-              {
-                id: "supersedes",
-                label: "Updated Mind (Replaces)",
-                value: insights.relationCounts.supersedes,
-              },
-              {
-                id: "refines",
-                label: "Refined (Builds on)",
-                value: insights.relationCounts.refines,
-              },
-              {
-                id: "tensions",
-                label: "In Tension Links",
-                value: insights.relationCounts.tensionsWith,
-              },
-            ]}
-          />
-        </Stack>
+        <RecordFacts
+          title="Roast Balance & Evolution"
+          source="Your confirmed Beans & Roast Log"
+          asOf={asOfLabel}
+          facts={[
+            {
+              id: "ai-roasted",
+              label: "AI-Roasted · Captured in AI",
+              value: insights.captureMix.agentAttestedCount,
+              unit: "Beans",
+            },
+            {
+              id: "web-roasted",
+              label: "Web-Roasted · Written on Web",
+              value: insights.captureMix.uiAttestedCount,
+              unit: "Beans",
+            },
+            {
+              id: "supersedes",
+              label: "Updated Mind (Replaces)",
+              value: insights.relationCounts.supersedes,
+            },
+            {
+              id: "refines",
+              label: "Refined (Builds on)",
+              value: insights.relationCounts.refines,
+            },
+            {
+              id: "tensions",
+              label: "In Tension Links",
+              value: insights.relationCounts.tensionsWith,
+            },
+          ]}
+        />
       </div>
 
-      {insights.monthlyActivity.length > 0 ? (
+      {insights.monthlyActivity.length >= 2 ? (
         <Chart
           title="Roast Cadence"
           series="Confirmed revisions per month"
@@ -225,6 +299,18 @@ export function InsightsPanel({
             value: m.count,
           }))}
         />
+      ) : insights.monthlyActivity.length === 1 ? (
+        <Card
+          title="Roast Cadence"
+          description={`${insights.monthlyActivity[0]!.count} confirmed ${insights.monthlyActivity[0]!.count === 1 ? "revision" : "revisions"} in ${insights.monthlyActivity[0]!.month}`}
+          variant="raised"
+          density="compact"
+        >
+          <Text variant="help">
+            Your month-over-month trend chart activates automatically once your
+            Roast Log spans two months.
+          </Text>
+        </Card>
       ) : (
         <Card
           title="Roast Cadence"
@@ -233,7 +319,8 @@ export function InsightsPanel({
           density="regular"
         >
           <Text variant="help">
-            Every new Bean and revision recorded in My Roastery updates this deterministic timeline.
+            Every new Bean and revision recorded in My Roastery updates this
+            deterministic timeline.
           </Text>
         </Card>
       )}

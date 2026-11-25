@@ -6,24 +6,18 @@ import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
-import { EmptyResult } from "@openboa/yogurt/empty-result";
-import { FilterBar } from "@openboa/yogurt/filter-bar";
+import { Divider } from "@openboa/yogurt/divider";
+import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
-import { Pagination } from "@openboa/yogurt/pagination";
-import { Result } from "@openboa/yogurt/result";
+import { SegmentedControl } from "@openboa/yogurt/segmented-control";
 import { Stack } from "@openboa/yogurt/stack";
-import { Surface } from "@openboa/yogurt/surface";
 import { Text } from "@openboa/yogurt/text";
-import { Toast } from "@openboa/yogurt/toast";
-import { PageHeader } from "@openboa/yogurt/top";
-import { BeanCard } from "@coffee-chat/ui";
 import type {
   BeanDetail,
   HydratedShelfRef,
   PublicPersonCard,
 } from "@coffee-chat/core";
-import { AgentHandoffDialog } from "./AgentHandoffDialog";
 
 export interface FeaturedTableData {
   originId: string;
@@ -47,141 +41,307 @@ export interface HomeClientProps {
   activeGrantCount?: number;
 }
 
+type BrewDemoMode = "unbrewed" | "speed" | "isolation";
+
+const DEMO_QUESTION =
+  "Our 6-person team is shipping fast. Should we split auth and billing out of our monolith right now?";
+
+const DEMO_MODES: Record<
+  BrewDemoMode,
+  {
+    badge: string;
+    badgeTone: "neutral" | "brand" | "accent";
+    headline: string;
+    answer: string;
+    tradeoff: string | null;
+    boundary: string | null;
+    attribution: string;
+  }
+> = {
+  unbrewed: {
+    badge: "Unbrewed · Default AI",
+    badgeTone: "neutral",
+    headline: "“It depends on your team size and long-term goals…”",
+    answer:
+      "Monoliths are simpler to deploy early on, while microservices provide better isolation and independent scaling. Consider evaluating your team’s operational maturity and future roadmap before deciding.",
+    tradeoff: null,
+    boundary: null,
+    attribution:
+      "Polite, factual, and completely decaf—forces you to re-explain your priorities every time.",
+  },
+  speed: {
+    badge: "Brewed · Speed-First Taste",
+    badgeTone: "brand",
+    headline: "Keep one deployable until you hit 10 engineers.",
+    answer:
+      "Keep auth and billing as clean modules inside your single deployable for now. At 6 engineers, cross-service deploys slow down every product iteration more than module boundaries cost.",
+    tradeoff: "Shipping speed in one codebase over premature service ownership.",
+    boundary:
+      "Withhold if regulated data isolation or external compliance requires hard runtime separation.",
+    attribution:
+      "Guided by 1 confirmed Bean (Reading Origin) · applied only within its stated boundary.",
+  },
+  isolation: {
+    badge: "Brewed · Isolation-First Taste",
+    badgeTone: "accent",
+    headline: "Isolate auth and money paths on day one.",
+    answer:
+      "Pull auth and billing behind a dedicated boundary immediately, even at 6 engineers. Keep ordinary product features in the monolith, but never share blast radius with credentials or payments.",
+    tradeoff:
+      "Hard blast-radius isolation early over simpler local setup and debugging.",
+    boundary:
+      "Applies specifically to auth, billing, and secret custody—not ordinary CRUD features.",
+    attribution:
+      "Guided by 1 confirmed Bean (Work Origin) · same model, completely different decision.",
+  },
+};
+
 export function HomeClient({
   signedIn,
   totalCorpusPublicCount,
   featuredTable,
-  people,
-  publicBeans,
-  filteredTotalCount,
-  page,
-  pageSize,
-  initialQuery,
-  initialTag,
-  initialShelfRefs,
-  activeGrantCount,
 }: HomeClientProps) {
   const router = useRouter();
-  const [query, setQuery] = useState(initialQuery);
-  const [beanShelfMap, setBeanShelfMap] = useState<Record<string, string>>(
-    () => {
-      const map: Record<string, string> = {};
-      for (const ref of initialShelfRefs) {
-        if (ref.targetType === "bean") map[ref.targetId] = ref.shelfItemId;
-      }
-      return map;
-    },
-  );
-  const [personShelfMap, setPersonShelfMap] = useState<Record<string, string>>(
-    () => {
-      const map: Record<string, string> = {};
-      for (const ref of initialShelfRefs) {
-        if (ref.targetType === "person") map[ref.targetId] = ref.shelfItemId;
-      }
-      return map;
-    },
-  );
-  const [brewDialog, setBrewDialog] = useState<{
-    title: string;
-    description: string;
-    prompt: string;
-  } | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [brewMode, setBrewMode] = useState<BrewDemoMode>("speed");
+  const activeDemo = DEMO_MODES[brewMode];
 
-  const navigate = (nextQ: string, nextTag: string, nextPage: number) => {
-    const params = new URLSearchParams();
-    if (nextQ.trim()) params.set("q", nextQ.trim());
-    if (nextTag.trim()) params.set("tag", nextTag.trim());
-    if (nextPage > 1) params.set("page", String(nextPage));
-    const qs = params.toString();
-    router.push(qs ? `/?${qs}` : "/");
-  };
-
-  const toggleSaveBean = async (bean: BeanDetail) => {
-    if (!signedIn) {
-      router.push("/signin?returnTo=/");
-      return;
-    }
-    const existingId = beanShelfMap[bean.id];
-    if (existingId) {
-      const res = await fetch("/api/shelf", {
-        method: "DELETE",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ shelfItemId: existingId }),
-      });
-      if (res.ok) {
-        setBeanShelfMap((prev) => {
-          const next = { ...prev };
-          delete next[bean.id];
-          return next;
-        });
-        setToastMsg(`Removed "${bean.title}" from your Shelf.`);
-      }
-      return;
-    }
-    const res = await fetch("/api/shelf", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ targetType: "bean", beanId: bean.id }),
+  const contrastingPreview = (() => {
+    if (!featuredTable) return [];
+    const seen = new Set<string>();
+    const distinct = featuredTable.beans.filter((b) => {
+      if (seen.has(b.ownerHandle)) return false;
+      seen.add(b.ownerHandle);
+      return true;
     });
-    const data = (await res.json()) as { item?: { id: string } };
-    if (res.ok && data.item?.id) {
-      setBeanShelfMap((prev) => ({ ...prev, [bean.id]: data.item!.id }));
-      setToastMsg(`Saved "${bean.title}" to your Shelf.`);
-    }
-  };
+    return distinct.length >= 2
+      ? distinct.slice(0, 2)
+      : featuredTable.beans.slice(0, 2);
+  })();
 
-  const toggleSavePerson = async (person: PublicPersonCard) => {
-    if (!signedIn) {
-      router.push("/signin?returnTo=/");
-      return;
-    }
-    const existingId = personShelfMap[person.userId];
-    if (existingId) {
-      const res = await fetch("/api/shelf", {
-        method: "DELETE",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ shelfItemId: existingId }),
-      });
-      if (res.ok) {
-        setPersonShelfMap((prev) => {
-          const next = { ...prev };
-          delete next[person.userId];
-          return next;
-        });
-        setToastMsg(`Removed @${person.handle} from your Shelf.`);
-      }
-      return;
-    }
-    const res = await fetch("/api/shelf", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ targetType: "person", handle: person.handle }),
-    });
-    const data = (await res.json()) as { item?: { id: string } };
-    if (res.ok && data.item?.id) {
-      setPersonShelfMap((prev) => ({ ...prev, [person.userId]: data.item!.id }));
-      setToastMsg(`Added @${person.handle} to your Shelf.`);
-    }
-  };
+  return (
+    <Stack gap={48}>
+      {/* 1. HERO: Instant value proposition with Coffee Chat Taste wordplay */}
+      <section className="hero-section">
+        <Stack gap={24}>
+          <Inline gap={8} align="center">
+            <Badge tone="brand" dot={false}>
+              Coffee Chat
+            </Badge>
+            <Text variant="meta">
+              Knowledge is shared. What you make of it is personal.
+            </Text>
+          </Inline>
 
-  // Unseeded production onboarding when the database has 0 public Beans
-  if (totalCorpusPublicCount === 0 && !initialQuery && !initialTag) {
-    return (
+          <h1 className="hero-headline">
+            AI already has knowledge.
+            <br />
+            Give it your Taste.
+          </h1>
+
+          <p className="hero-subline">
+            Raw links are just green beans. <strong>Roast</strong> your real
+            calls and reading takeaways into private <strong>Beans</strong>—then{" "}
+            <strong>Brew</strong> your Taste into Codex, Claude, ChatGPT,
+            Antigravity, or Cursor.
+          </p>
+
+          <Inline gap={12} align="center">
+            <Button
+              emphasis="filled"
+              tone="brand"
+              size="comfortable"
+              onClick={() =>
+                router.push(
+                  signedIn
+                    ? "/me?compose=1"
+                    : "/signin?returnTo=%2Fme%3Fcompose%3D1",
+                )
+              }
+            >
+              {signedIn ? "Roast a Bean" : "Roast your first Bean"}
+            </Button>
+            <Button
+              emphasis="soft"
+              size="comfortable"
+              onClick={() => router.push("/connect")}
+            >
+              Open Brew Bar
+            </Button>
+            {signedIn ? (
+              <Link href="/me">Go to My Roastery →</Link>
+            ) : null}
+          </Inline>
+        </Stack>
+      </section>
+
+      {/* 2. INTERACTIVE ZERO-AI PROOF: Same prompt, completely different Brew */}
+      <Card
+        title="Same prompt. Different Brew."
+        description="Switch the Roast below—watch one confirmed Bean turn watered-down AI advice into a sharp call"
+        variant="raised"
+        density="spacious"
+      >
+        <Stack gap={16}>
+          <blockquote className="bean-quote">
+            <Stack gap={4}>
+              <Text variant="meta">Question asked to your AI</Text>
+              <Text as="p" variant="body">
+                &ldquo;{DEMO_QUESTION}&rdquo;
+              </Text>
+            </Stack>
+          </blockquote>
+
+          <SegmentedControl
+            label="Compare AI output by Taste"
+            value={brewMode}
+            onValueChange={(val) => setBrewMode(val as BrewDemoMode)}
+            options={[
+              { id: "unbrewed", label: "Unbrewed (Decaf AI)" },
+              { id: "speed", label: "Brew · Speed-first Taste" },
+              { id: "isolation", label: "Brew · Isolation-first Taste" },
+            ]}
+          />
+
+          <Stack gap={12}>
+            <Inline gap={8} align="center">
+              <Badge tone={activeDemo.badgeTone} dot={false}>
+                {activeDemo.badge}
+              </Badge>
+            </Inline>
+
+            <Heading level={3}>{activeDemo.headline}</Heading>
+            <p className="editorial-lead">{activeDemo.answer}</p>
+
+            {activeDemo.tradeoff ? (
+              <div className="bean-pull">
+                <Stack gap={2}>
+                  <Text variant="meta">What mattered more</Text>
+                  <Text as="p" variant="body">
+                    {activeDemo.tradeoff}
+                  </Text>
+                </Stack>
+              </div>
+            ) : null}
+
+            {activeDemo.boundary ? (
+              <p className="bean-footnote">Except when: {activeDemo.boundary}</p>
+            ) : null}
+
+            <Divider />
+            <Text variant="meta">{activeDemo.attribution}</Text>
+          </Stack>
+        </Stack>
+      </Card>
+
+      {/* 3. HOW IT WORKS: Roast -> Brew -> Coffee Chat (no heavy box nesting) */}
       <Stack gap={24}>
-        <PageHeader
-          title="Coffee Chat"
-          detail="Knowledge is shared. What a person makes of it is personal."
-          featured
-        />
+        <Stack gap={4}>
+          <Text variant="meta">How Coffee Chat works</Text>
+          <Heading level={2}>From raw thought to sharper AI in three beats</Heading>
+        </Stack>
 
-        <Result
-          title="Start Coffee Chat · Roast your first Bean"
+        <div className="steps-grid">
+          <Stack gap={8}>
+            <Text variant="meta">01 · Roast · Distill raw thought</Text>
+            <Heading level={3}>Turn green links &amp; calls into Beans</Heading>
+            <Text as="p" variant="help">
+              Raw articles are just green beans. Capture what clicked, the
+              trade-off you actually prioritize, and when your rule stops
+              applying. Everything starts Private by default.
+            </Text>
+          </Stack>
+
+          <Stack gap={8}>
+            <Text variant="meta">02 · Brew · Pour into your AI</Text>
+            <Heading level={3}>Serve your Taste in any AI host</Heading>
+            <Text as="p" variant="help">
+              Connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor once
+              at the Brew Bar. Your AI brings your confirmed criteria into new
+              decisions instead of serving generic decaf.
+            </Text>
+          </Stack>
+
+          <Stack gap={8}>
+            <Text variant="meta">03 · Coffee Chat · Tables &amp; Shelf</Text>
+            <Heading level={3}>Compare contrasting minds</Heading>
+            <Text as="p" variant="help">
+              Sit at a shared Table to see how two people read the same essay
+              and pulled opposite lessons. Stock your Shelf with voices you
+              trust and Brew their angle—never impersonated.
+            </Text>
+          </Stack>
+        </div>
+      </Stack>
+
+      {/* 4. PRIVACY & ZERO-AI PROMISE BAND */}
+      <div className="trust-band">
+        <Text variant="meta">Private by default</Text>
+        <Text variant="meta">·</Text>
+        <Text variant="meta">Nothing roasted without your confirmation</Text>
+        <Text variant="meta">·</Text>
+        <Text variant="meta">Zero server AI — runs in your own AI host</Text>
+        <Text variant="meta">·</Text>
+        <Text variant="meta">Revoke access in one click</Text>
+      </div>
+
+      {/* 5. SECONDARY BOTTOM SHOWCASE: Community Table preview (low priority, after value is clear) */}
+      {totalCorpusPublicCount > 0 && featuredTable ? (
+        <Stack gap={16}>
+          <Inline justify="between" align="baseline" gap={12}>
+            <Stack gap={4}>
+              <Text variant="meta">On the Table right now</Text>
+              <Heading level={2}>
+                {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
+              </Heading>
+            </Stack>
+            <Inline gap={12} align="center">
+              <Link href={`/sources/${featuredTable.originId}`}>
+                Open this Table →
+              </Link>
+              <Link href="/sources">All Tables</Link>
+            </Inline>
+          </Inline>
+
+          <div className="split-grid">
+            {contrastingPreview.map((b) => (
+              <Card key={b.id} variant="raised" density="regular">
+                <Stack gap={12}>
+                  <Inline gap={8} align="center">
+                    <Avatar label={b.ownerDisplayName} size="compact" />
+                    <Inline gap={6} align="baseline">
+                      <Link href={`/@${b.ownerHandle}`}>
+                        <Text variant="body">{b.ownerDisplayName}</Text>
+                      </Link>
+                      <Text variant="meta">@{b.ownerHandle}</Text>
+                    </Inline>
+                  </Inline>
+                  <Heading level={3}>{b.title}</Heading>
+                  <div className="bean-pull">
+                    <Stack gap={2}>
+                      <Text variant="meta">What mattered more</Text>
+                      <Text as="p" variant="body">
+                        {b.tradeoff}
+                      </Text>
+                    </Stack>
+                  </div>
+                  <p className="bean-footnote">Except when: {b.boundary}</p>
+                </Stack>
+              </Card>
+            ))}
+          </div>
+        </Stack>
+      ) : (
+        <Card
+          title="Start the first Coffee Chat Table"
+          description="No public Beans yet — begin privately in My Roastery, and share one whenever you want to open the first Table"
+          variant="raised"
+          density="regular"
           action={
-            <Inline gap={12}>
+            <Inline gap={8}>
               <Button
                 emphasis="filled"
-                tone="brand"
+                tone="neutral"
+                size="compact"
                 onClick={() =>
                   router.push(
                     signedIn
@@ -192,341 +352,22 @@ export function HomeClient({
               >
                 Roast a private Bean
               </Button>
-              <Button emphasis="soft" onClick={() => router.push("/connect")}>
-                Open Brew Setup
-              </Button>
-            </Inline>
-          }
-        >
-          <Text as="p" variant="body">
-            No public Beans are on the Table yet. Start privately in My Roastery,
-            connect your AI app to Brew your own judgment criteria, and share
-            selected Beans whenever you want to open the first Table.
-          </Text>
-        </Result>
-
-        <div className="split-grid">
-          <Card
-            title="1. Roast · Capture & confirm"
-            description="Private by default in My Roastery"
-            variant="raised"
-            density="regular"
-          >
-            <Text variant="help">
-              Save a Reading Origin or Work Origin with your exact Trade-off
-              (what mattered more) and Boundary (when it doesn&apos;t apply).
-            </Text>
-          </Card>
-          <Card
-            title="2. Brew · Apply in your AI"
-            description="Connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor"
-            variant="raised"
-            density="regular"
-          >
-            <Text variant="help">
-              Let your AI consult your confirmed Beans and Tasting Notes so you
-              stop repeating the same corrections.
-            </Text>
-          </Card>
-          <Card
-            title="3. Tables · Compare takes"
-            description="Share selected Beans publicly on a shared source"
-            variant="raised"
-            density="regular"
-          >
-            <Text variant="help">
-              Put a Reading Origin Bean On the Table to start the first
-              side-by-side comparison.
-            </Text>
-          </Card>
-        </div>
-      </Stack>
-    );
-  }
-
-  const totalPages = Math.max(1, Math.ceil(filteredTotalCount / pageSize));
-
-  return (
-    <Stack gap={24}>
-      <PageHeader
-        title="Explore"
-        detail="Fresh Beans & active Tables — compare what mattered more across shared sources"
-        action={
-          <Inline gap={8}>
-            <Button
-              emphasis="soft"
-              size="compact"
-              onClick={() => router.push("/sources")}
-            >
-              Browse Tables
-            </Button>
-            <Button
-              emphasis="filled"
-              tone="neutral"
-              size="compact"
-              onClick={() =>
-                router.push(
-                  signedIn
-                    ? "/me?compose=1"
-                    : "/signin?returnTo=%2Fme%3Fcompose%3D1",
-                )
-              }
-            >
-              Roast a Bean
-            </Button>
-          </Inline>
-        }
-      />
-
-      {toastMsg ? (
-        <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
-      ) : null}
-
-      <Card variant="raised" density="compact">
-        <FilterBar
-          label="Search public Beans"
-          placeholder="Search takes, trade-offs, boundaries, or domains…"
-          query={query}
-          onQueryChange={setQuery}
-        >
-          <Button
-            emphasis="soft"
-            size="compact"
-            onClick={() => navigate(query, initialTag, 1)}
-          >
-            Search
-          </Button>
-          {initialQuery || initialTag ? (
-            <Button
-              emphasis="quiet"
-              size="compact"
-              onClick={() => {
-                setQuery("");
-                navigate("", "", 1);
-              }}
-            >
-              Clear filters
-            </Button>
-          ) : null}
-        </FilterBar>
-      </Card>
-
-      {featuredTable && !initialQuery && !initialTag && page === 1 ? (
-        <Card
-          title={`Featured Table · ${featuredTable.sourceTitle ?? featuredTable.normalizedUrl}`}
-          description="Same source, contrasting trade-offs — open the Table for full axis-by-axis comparison"
-          headerAction={
-            <Badge tone="neutral" dot={false}>
-              {featuredTable.beans.length}{" "}
-              {featuredTable.beans.length === 1 ? "Bean" : "Beans"}
-            </Badge>
-          }
-          action={
-            <Inline gap={8}>
               <Button
                 emphasis="soft"
                 size="compact"
-                onClick={() =>
-                  router.push(`/sources/${featuredTable.originId}`)
-                }
+                onClick={() => router.push("/connect")}
               >
-                Open Table →
-              </Button>
-              <Button
-                emphasis="quiet"
-                size="compact"
-                onClick={() =>
-                  setBrewDialog({
-                    title: "Brew · Compare this Table in my AI",
-                    description:
-                      "Bring these contrasting trade-offs into your connected AI",
-                    prompt: `Review the Coffee Chat Table for "${featuredTable.sourceTitle ?? featuredTable.normalizedUrl}" (${featuredTable.normalizedUrl}). Compare the differing trade-offs and boundaries shared there, and tell me which criteria fit my current context.`,
-                  })
-                }
-              >
-                Brew this Table
+                Open Brew Bar
               </Button>
             </Inline>
           }
-          variant="raised"
-          density="regular"
         >
-          <div className="split-grid">
-            {(() => {
-              const seen = new Set<string>();
-              const distinct = featuredTable.beans.filter((b) => {
-                if (seen.has(b.ownerHandle)) return false;
-                seen.add(b.ownerHandle);
-                return true;
-              });
-              const preview =
-                distinct.length >= 2
-                  ? distinct.slice(0, 2)
-                  : featuredTable.beans.slice(0, 2);
-              return preview.map((b) => (
-                <Surface key={b.id} variant="surface" density="compact">
-                  <Stack gap={8}>
-                    <Inline justify="between" align="center" gap={8}>
-                      <Link href={`/@${b.ownerHandle}`}>
-                        {b.ownerDisplayName} (@{b.ownerHandle})
-                      </Link>
-                    </Inline>
-                    <Text variant="body">{b.title}</Text>
-                    <Text variant="help">Trade-off: {b.tradeoff}</Text>
-                    <Text variant="meta">Boundary: {b.boundary}</Text>
-                  </Stack>
-                </Surface>
-              ));
-            })()}
-          </div>
+          <Text variant="help">
+            Every Bean starts private to you and your connected AI. Share only
+            the takes you explicitly choose to put On the Table.
+          </Text>
         </Card>
-      ) : null}
-
-      <Stack gap={16}>
-        <Inline justify="between" align="center" gap={8}>
-          <Stack gap={2}>
-            <Text variant="body">Fresh Beans on the Table</Text>
-            <Text variant="meta">
-              {filteredTotalCount} public{" "}
-              {filteredTotalCount === 1 ? "Bean" : "Beans"}
-              {initialTag ? ` in #${initialTag}` : ""}
-              {initialQuery ? ` matching "${initialQuery}"` : ""}
-            </Text>
-          </Stack>
-        </Inline>
-
-        {publicBeans.length === 0 ? (
-          <EmptyResult
-            query={initialQuery || initialTag || undefined}
-            onClear={() => {
-              setQuery("");
-              navigate("", "", 1);
-            }}
-            empty="No public Beans matched your search."
-          />
-        ) : (
-          <Stack gap={16}>
-            {publicBeans.map((bean) => {
-              const firstSourceOriginId = bean.origins.find(
-                (o) => o.kind === "source_excerpt" && o.originId,
-              )?.originId;
-              const isSaved = Boolean(beanShelfMap[bean.id]);
-              return (
-                <BeanCard
-                  key={bean.id}
-                  bean={bean}
-                  actions={
-                    <Inline gap={8} align="center">
-                      <Button
-                        emphasis={isSaved ? "quiet" : "soft"}
-                        size="compact"
-                        onClick={() => void toggleSaveBean(bean)}
-                      >
-                        {isSaved ? "On Shelf" : "Save to Shelf"}
-                      </Button>
-                      <Button
-                        emphasis="quiet"
-                        size="compact"
-                        onClick={() =>
-                          setBrewDialog({
-                            title: `Brew · Apply @${bean.ownerHandle}'s Bean`,
-                            description:
-                              "Consult this public trade-off in your AI without impersonation",
-                            prompt: `Consult the public Coffee Chat Bean "${bean.title}" by @${bean.ownerHandle}. Consider their trade-off ("${bean.tradeoff}"), respect its boundary ("${bean.boundary}"), and attribute any guidance clearly to their confirmed Bean.`,
-                          })
-                        }
-                      >
-                        Brew in my AI
-                      </Button>
-                      {firstSourceOriginId ? (
-                        <Link href={`/sources/${firstSourceOriginId}`}>
-                          Open Table →
-                        </Link>
-                      ) : null}
-                    </Inline>
-                  }
-                />
-              );
-            })}
-          </Stack>
-        )}
-
-        {totalPages > 1 ? (
-          <Pagination
-            label="Explore pages"
-            page={page}
-            pages={totalPages}
-            onPageChange={(nextPage) => navigate(query, initialTag, nextPage)}
-          />
-        ) : null}
-      </Stack>
-
-      {people.length > 0 ? (
-        <Stack gap={12}>
-          <Stack gap={2}>
-            <Text variant="body">Active Voices</Text>
-            <Text variant="meta">
-              People sharing confirmed Beans — add voices to your Shelf to Brew
-              their perspectives
-            </Text>
-          </Stack>
-          <div className="split-grid">
-            {people.map((person) => {
-              const isSaved = Boolean(personShelfMap[person.userId]);
-              return (
-                <Card
-                  key={person.userId}
-                  title={person.displayName}
-                  description={`@${person.handle} · ${person.publicCount} public · ${person.privateCount} private`}
-                  headerAction={
-                    <Avatar label={person.displayName} size="compact" />
-                  }
-                  action={
-                    <Inline gap={8} align="center">
-                      <Button
-                        emphasis={isSaved ? "quiet" : "soft"}
-                        size="compact"
-                        onClick={() => void toggleSavePerson(person)}
-                      >
-                        {isSaved ? "Voice on Shelf" : "Add to Shelf"}
-                      </Button>
-                      <Link href={`/@${person.handle}`}>Profile →</Link>
-                    </Inline>
-                  }
-                  variant="raised"
-                  density="compact"
-                >
-                  <Stack gap={8}>
-                    {person.signatureTradeoff ? (
-                      <Text variant="help">{person.signatureTradeoff}</Text>
-                    ) : null}
-                    {person.topTags.length > 0 ? (
-                      <Inline gap={4}>
-                        {person.topTags.map((t) => (
-                          <Badge key={t} tone="neutral" dot={false}>
-                            #{t}
-                          </Badge>
-                        ))}
-                      </Inline>
-                    ) : null}
-                  </Stack>
-                </Card>
-              );
-            })}
-          </div>
-        </Stack>
-      ) : null}
-
-      <AgentHandoffDialog
-        open={Boolean(brewDialog)}
-        onOpenChange={(next) => {
-          if (!next) setBrewDialog(null);
-        }}
-        title={brewDialog?.title ?? "Brew in my AI"}
-        description={brewDialog?.description ?? ""}
-        prompt={brewDialog?.prompt ?? ""}
-        activeGrantCount={activeGrantCount}
-      />
+      )}
     </Stack>
   );
 }

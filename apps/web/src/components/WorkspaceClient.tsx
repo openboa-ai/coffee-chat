@@ -12,6 +12,7 @@ import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
 import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { FilterBar } from "@openboa/yogurt/filter-bar";
+import { Heading } from "@openboa/yogurt/heading";
 import { Icon } from "@openboa/yogurt/icon";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
@@ -20,9 +21,7 @@ import { ListRow } from "@openboa/yogurt/list-row";
 import { Notice } from "@openboa/yogurt/notice";
 import { Pagination } from "@openboa/yogurt/pagination";
 import { RecordFacts } from "@openboa/yogurt/record-facts";
-import { SegmentedControl } from "@openboa/yogurt/segmented-control";
 import { Select } from "@openboa/yogurt/select";
-import { Sheet } from "@openboa/yogurt/sheet";
 import {
   SidebarContent,
   SidebarFooter,
@@ -75,6 +74,7 @@ export interface WorkspaceAccount {
 export interface WorkspaceClientProps {
   user: { id: string; handle: string; name: string; email: string };
   initialBeans: BeanSummary[];
+  initialSelectedBean: BeanDetail | null;
   initialTotalCount: number;
   initialAllBeansForRelations: Array<{ id: string; title: string }>;
   initialInsights: PersonalInsightsView;
@@ -94,6 +94,7 @@ const PAGE_SIZE = 12;
 export function WorkspaceClient({
   user,
   initialBeans,
+  initialSelectedBean,
   initialTotalCount,
   initialAllBeansForRelations,
   initialInsights,
@@ -130,8 +131,10 @@ export function WorkspaceClient({
   const [page, setPage] = useState(1);
   const [loadingList, setLoadingList] = useState(false);
 
-  // Inspector & Roast sheet state
-  const [inspectedBean, setInspectedBean] = useState<BeanDetail | null>(null);
+  // Inline Editorial Bean Reader & Roast sheet state
+  const [inspectedBean, setInspectedBean] = useState<BeanDetail | null>(
+    initialSelectedBean,
+  );
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [roastOpen, setRoastOpen] = useState(startComposing);
   const [editingBean, setEditingBean] = useState<BeanDetail | null>(null);
@@ -179,6 +182,26 @@ export function WorkspaceClient({
     return Array.from(set).sort();
   }, [insights.topTags, beans, selectedTag]);
 
+  const openInspector = useCallback(
+    async (beanId: string): Promise<BeanDetail | null> => {
+      setLoadingDetail(true);
+      setInspectorConflict(null);
+      setInspectorError(null);
+      try {
+        const res = await fetch(`/api/beans/${beanId}`);
+        const data = (await res.json()) as { bean?: BeanDetail };
+        if (res.ok && data.bean) {
+          setInspectedBean(data.bean);
+          return data.bean;
+        }
+        return null;
+      } finally {
+        setLoadingDetail(false);
+      }
+    },
+    [],
+  );
+
   const fetchBeans = useCallback(
     async (opts?: {
       q?: string;
@@ -186,6 +209,7 @@ export function WorkspaceClient({
       origin?: "all" | OriginKind;
       lifecycle?: "all" | BeanLifecycleState | "private";
       nextPage?: number;
+      autoSelectFirst?: boolean;
     }) => {
       const qVal = opts?.q ?? query;
       const tagVal = opts?.tag ?? selectedTag;
@@ -217,12 +241,17 @@ export function WorkspaceClient({
         if (res.ok && data.beans) {
           setBeans(data.beans);
           setTotalCount(data.totalCount ?? data.beans.length);
+          if (opts?.autoSelectFirst && data.beans.length > 0) {
+            void openInspector(data.beans[0]!.id);
+          } else if (data.beans.length === 0) {
+            setInspectedBean(null);
+          }
         }
       } finally {
         setLoadingList(false);
       }
     },
-    [query, selectedTag, originFilter, lifecycleFilter, page],
+    [query, selectedTag, originFilter, lifecycleFilter, page, openInspector],
   );
 
   const refreshInsights = useCallback(async () => {
@@ -241,23 +270,6 @@ export function WorkspaceClient({
     }
   }, []);
 
-  const openInspector = async (beanId: string): Promise<BeanDetail | null> => {
-    setLoadingDetail(true);
-    setInspectorConflict(null);
-    setInspectorError(null);
-    try {
-      const res = await fetch(`/api/beans/${beanId}`);
-      const data = (await res.json()) as { bean?: BeanDetail };
-      if (res.ok && data.bean) {
-        setInspectedBean(data.bean);
-        return data.bean;
-      }
-      return null;
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
-
   const handleTabSwitch = (tab: RoasteryTab) => {
     setActiveTab(tab);
     const url = tab === "workspace" ? "/me" : `/me?tab=${tab}`;
@@ -272,9 +284,7 @@ export function WorkspaceClient({
     );
     setEditingBean(null);
     setPrefillRelations([]);
-    if (inspectedBean && inspectedBean.id === saved.id) {
-      setInspectedBean(saved);
-    }
+    setInspectedBean(saved);
     await Promise.all([
       fetchBeans(),
       refreshInsights(),
@@ -316,7 +326,8 @@ export function WorkspaceClient({
         if (data.code === "VERSION_CONFLICT") {
           setInspectorConflict(data.details?.latestVersion ?? null);
           setInspectorError(
-            data.message ?? "A newer version exists. Reload latest before retrying.",
+            data.message ??
+              "A newer version exists. Reload latest before retrying.",
           );
           return;
         }
@@ -372,7 +383,7 @@ export function WorkspaceClient({
       setInspectedBean(null);
       setToastMsg(`Deleted Bean "${deletedTitle}".`);
       await Promise.all([
-        fetchBeans(),
+        fetchBeans({ autoSelectFirst: true }),
         refreshInsights(),
         refreshAllRelationChoices(),
       ]);
@@ -590,6 +601,11 @@ export function WorkspaceClient({
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const savedVoices = shelf.filter((s) => s.targetType === "person" && s.person);
   const savedBeans = shelf.filter((s) => s.targetType === "bean" && s.bean);
+  const hasFilters =
+    Boolean(query) ||
+    Boolean(selectedTag) ||
+    originFilter !== "all" ||
+    lifecycleFilter !== "all";
 
   return (
     <>
@@ -600,13 +616,18 @@ export function WorkspaceClient({
         navigation={
           <>
             <SidebarHeader>
-              <Stack gap={4}>
-                <Text variant="body">{user.name}</Text>
-                <Text variant="meta">@{user.handle}</Text>
+              <Stack gap={6}>
+                <Stack gap={2}>
+                  <Text variant="body">{user.name}</Text>
+                  <Inline gap={8} align="center">
+                    <Text variant="meta">@{user.handle}</Text>
+                    <Link href={`/@${user.handle}`}>Profile →</Link>
+                  </Inline>
+                </Stack>
                 <Status tone={activeGrants.length > 0 ? "success" : "neutral"}>
                   {activeGrants.length > 0
                     ? `Brew Ready (${activeGrants.length})`
-                    : "AI not connected"}
+                    : "Brew Bar unlinked"}
                 </Status>
               </Stack>
             </SidebarHeader>
@@ -615,7 +636,7 @@ export function WorkspaceClient({
               <SidebarGroup label="My Roastery">
                 <SidebarItem
                   label="My Beans"
-                  description="Workspace & history"
+                  description="Confirmed Taste & Roast Log"
                   icon={<Icon name="folder" />}
                   active={activeTab === "workspace"}
                   badge={
@@ -627,14 +648,14 @@ export function WorkspaceClient({
                 />
                 <SidebarItem
                   label="Tasting Notes"
-                  description="Personal stats & insights"
+                  description="How your Taste leans"
                   icon={<Icon name="chart" />}
                   active={activeTab === "insights"}
                   onSelect={() => handleTabSwitch("insights")}
                 />
                 <SidebarItem
                   label="Shelf"
-                  description="Saved voices & takes"
+                  description="Voices & Beans kept on hand"
                   icon={<Icon name="bookmark" />}
                   active={activeTab === "saved"}
                   badge={
@@ -645,7 +666,7 @@ export function WorkspaceClient({
                   onSelect={() => handleTabSwitch("saved")}
                 />
                 <SidebarItem
-                  label="AI & Account"
+                  label="Brew Bar & Account"
                   description="Connected AI apps & sign-in"
                   icon={<Icon name="sliders" />}
                   active={activeTab === "settings"}
@@ -657,8 +678,7 @@ export function WorkspaceClient({
             <SidebarFooter>
               <Stack gap={8}>
                 <Button
-                  emphasis="filled"
-                  tone="neutral"
+                  emphasis="soft"
                   size="compact"
                   onClick={() => {
                     setEditingBean(null);
@@ -668,27 +688,23 @@ export function WorkspaceClient({
                 >
                   + Roast a Bean
                 </Button>
-                <Link href="/connect">Brew Setup · Connect AI</Link>
+                <Link href="/connect">Open Brew Bar →</Link>
               </Stack>
             </SidebarFooter>
           </>
         }
       >
         <Stack gap={24}>
-          <Inline justify="between" align="center" gap={8}>
-            <SidebarTrigger label="Toggle Roastery sidebar" showLabel />
-            <Link href={`/@${user.handle}`}>View Voice Profile →</Link>
-          </Inline>
-
           {toastMsg ? (
             <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
           ) : null}
 
           {activeTab === "workspace" ? (
-            <Stack gap={24}>
+            <Stack gap={16}>
               <PageHeader
                 title="My Roastery"
-                detail="My Beans · Personal judgment workspace & Roast Log"
+                detail="My Beans · Private by default, confirmed by you, ready to Brew in your AI"
+                leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
                 action={
                   <Inline gap={8}>
                     <Button
@@ -696,7 +712,7 @@ export function WorkspaceClient({
                       size="compact"
                       onClick={() =>
                         setBrewDialog({
-                          title: "Brew · Apply my Beans in AI",
+                          title: "Brew · Pour my Beans into AI",
                           description:
                             "Bring your active confirmed trade-offs and boundaries into your current work",
                           prompt:
@@ -708,7 +724,7 @@ export function WorkspaceClient({
                     </Button>
                     <Button
                       emphasis="filled"
-                      tone="neutral"
+                      tone="brand"
                       size="compact"
                       onClick={() => {
                         setEditingBean(null);
@@ -722,230 +738,609 @@ export function WorkspaceClient({
                 }
               />
 
-              {activeGrants.length > 0 ? (
-                <Notice
-                  title={`Brew Ready · ${activeGrants.length} connected AI ${activeGrants.length === 1 ? "app" : "apps"}`}
-                  tone="success"
-                  action={
-                    <Button
-                      emphasis="soft"
-                      size="compact"
-                      onClick={() => handleTabSwitch("settings")}
-                    >
-                      Manage connections
-                    </Button>
-                  }
-                >
-                  Your confirmed Beans and Shelf are live in your connected AI host.
-                </Notice>
-              ) : (
-                <Notice
-                  title="Brew Setup · Connect your AI app"
-                  tone="neutral"
-                  action={
-                    <Button
-                      emphasis="soft"
-                      size="compact"
-                      onClick={() => router.push("/connect")}
-                    >
-                      Open Brew Setup
-                    </Button>
-                  }
-                >
-                  No AI host is connected yet. Connect Codex, Claude Code, ChatGPT, Antigravity,
-                  or Cursor in 30 seconds so your Beans shape real work decisions.
-                </Notice>
-              )}
-
-              <Card variant="raised" density="compact">
-                <Stack gap={12}>
-                  <FilterBar
-                    label="Search My Beans"
-                    placeholder="Search headline, trade-off, domain, or source…"
-                    query={query}
-                    onQueryChange={(val) => {
-                      setQuery(val);
+              {/* Single clean filter toolbar — no outer Card wrapper, no duplicate SegmentedControl row */}
+              <FilterBar
+                label="Search My Beans"
+                placeholder="Search headline, trade-off, domain, or source…"
+                query={query}
+                onQueryChange={(val) => {
+                  setQuery(val);
+                  setPage(1);
+                  void fetchBeans({ q: val, nextPage: 1 });
+                }}
+              >
+                <Select
+                  label="Status"
+                  value={lifecycleFilter}
+                  onChange={(e) => {
+                    const next = e.target.value as
+                      | "all"
+                      | BeanLifecycleState
+                      | "private";
+                    setLifecycleFilter(next);
+                    setPage(1);
+                    void fetchBeans({
+                      lifecycle: next,
+                      nextPage: 1,
+                      autoSelectFirst: true,
+                    });
+                  }}
+                  options={[
+                    { id: "all", label: `All (${insights.totalCount})` },
+                    {
+                      id: "active",
+                      label: `Active (${insights.lifecycle.activeCount})`,
+                    },
+                    {
+                      id: "in_tension",
+                      label: `In Tension (${insights.lifecycle.inTensionCount})`,
+                    },
+                    {
+                      id: "superseded",
+                      label: `Updated Mind (${insights.lifecycle.supersededCount})`,
+                    },
+                    {
+                      id: "private",
+                      label: `Private (${insights.privateCount})`,
+                    },
+                  ]}
+                />
+                <Select
+                  label="Domain"
+                  value={selectedTag}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSelectedTag(v);
+                    setPage(1);
+                    void fetchBeans({
+                      tag: v,
+                      nextPage: 1,
+                      autoSelectFirst: true,
+                    });
+                  }}
+                  options={[
+                    { id: "", label: "All Domains" },
+                    ...availableDomains.map((t) => ({
+                      id: t,
+                      label: `#${t}`,
+                    })),
+                  ]}
+                />
+                <Select
+                  label="Origin"
+                  value={originFilter}
+                  onChange={(e) => {
+                    const v = e.target.value as "all" | OriginKind;
+                    setOriginFilter(v);
+                    setPage(1);
+                    void fetchBeans({
+                      origin: v,
+                      nextPage: 1,
+                      autoSelectFirst: true,
+                    });
+                  }}
+                  options={[
+                    { id: "all", label: "All Origins" },
+                    { id: "source_excerpt", label: "Reading Origin" },
+                    { id: "work_episode", label: "Work Origin" },
+                  ]}
+                />
+                {hasFilters ? (
+                  <Button
+                    emphasis="quiet"
+                    size="compact"
+                    onClick={() => {
+                      setQuery("");
+                      setSelectedTag("");
+                      setOriginFilter("all");
+                      setLifecycleFilter("all");
                       setPage(1);
-                      void fetchBeans({ q: val, nextPage: 1 });
+                      void fetchBeans({
+                        q: "",
+                        tag: "",
+                        origin: "all",
+                        lifecycle: "all",
+                        nextPage: 1,
+                        autoSelectFirst: true,
+                      });
                     }}
                   >
-                    <Select
-                      label="Domain"
-                      value={selectedTag}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setSelectedTag(v);
-                        setPage(1);
-                        void fetchBeans({ tag: v, nextPage: 1 });
-                      }}
-                      options={[
-                        { id: "", label: "All Domains" },
-                        ...availableDomains.map((t) => ({
-                          id: t,
-                          label: `#${t}`,
-                        })),
-                      ]}
-                    />
-                    <Select
-                      label="Origin"
-                      value={originFilter}
-                      onChange={(e) => {
-                        const v = e.target.value as "all" | OriginKind;
-                        setOriginFilter(v);
-                        setPage(1);
-                        void fetchBeans({ origin: v, nextPage: 1 });
-                      }}
-                      options={[
-                        { id: "all", label: "All Origins" },
-                        {
-                          id: "source_excerpt",
-                          label: "Reading Origin · From reading",
-                        },
-                        {
-                          id: "work_episode",
-                          label: "Work Origin · From work",
-                        },
-                      ]}
-                    />
-                  </FilterBar>
-
-                  <SegmentedControl
-                    label="Lifecycle filter"
-                    value={lifecycleFilter}
-                    onValueChange={(val) => {
-                      const next = val as "all" | BeanLifecycleState | "private";
-                      setLifecycleFilter(next);
-                      setPage(1);
-                      void fetchBeans({ lifecycle: next, nextPage: 1 });
-                    }}
-                    options={[
-                      { id: "all", label: `All (${insights.totalCount})` },
-                      {
-                        id: "active",
-                        label: `Active (${insights.lifecycle.activeCount})`,
-                      },
-                      {
-                        id: "in_tension",
-                        label: `In Tension (${insights.lifecycle.inTensionCount})`,
-                      },
-                      {
-                        id: "superseded",
-                        label: `Updated Mind (${insights.lifecycle.supersededCount})`,
-                      },
-                      {
-                        id: "private",
-                        label: `Private (${insights.privateCount})`,
-                      },
-                    ]}
-                  />
-                </Stack>
-              </Card>
+                    Reset
+                  </Button>
+                ) : null}
+              </FilterBar>
 
               {loadingList ? (
                 <Text variant="meta">Refreshing My Beans…</Text>
               ) : beans.length === 0 ? (
-                <EmptyResult
-                  query={query || selectedTag || undefined}
-                  onClear={
-                    query ||
-                    selectedTag ||
-                    originFilter !== "all" ||
-                    lifecycleFilter !== "all"
-                      ? () => {
-                          setQuery("");
-                          setSelectedTag("");
-                          setOriginFilter("all");
-                          setLifecycleFilter("all");
-                          setPage(1);
-                          void fetchBeans({
-                            q: "",
-                            tag: "",
-                            origin: "all",
-                            lifecycle: "all",
-                            nextPage: 1,
-                          });
-                        }
-                      : undefined
+                <Card
+                  title={
+                    hasFilters
+                      ? "No Beans match these filters"
+                      : "Your Roastery is ready for its first Bean"
                   }
-                  empty="No Beans match this view yet. Roast your first Bean to start building your judgment criteria."
-                />
+                  description={
+                    hasFilters
+                      ? "Clear a filter above to see the rest of your confirmed Taste"
+                      : "Distill one article takeaway or real work call into three crisp parts: Take, Trade-off, and Boundary"
+                  }
+                  variant="raised"
+                  density="spacious"
+                  action={
+                    <Inline gap={8}>
+                      {hasFilters ? (
+                        <Button
+                          emphasis="soft"
+                          size="compact"
+                          onClick={() => {
+                            setQuery("");
+                            setSelectedTag("");
+                            setOriginFilter("all");
+                            setLifecycleFilter("all");
+                            setPage(1);
+                            void fetchBeans({
+                              q: "",
+                              tag: "",
+                              origin: "all",
+                              lifecycle: "all",
+                              nextPage: 1,
+                              autoSelectFirst: true,
+                            });
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            emphasis="filled"
+                            tone="brand"
+                            size="compact"
+                            onClick={() => {
+                              setEditingBean(null);
+                              setPrefillRelations([]);
+                              setRoastOpen(true);
+                            }}
+                          >
+                            Roast your first Bean
+                          </Button>
+                          <Button
+                            emphasis="soft"
+                            size="compact"
+                            onClick={() => router.push("/connect")}
+                          >
+                            Open Brew Bar
+                          </Button>
+                        </>
+                      )}
+                    </Inline>
+                  }
+                >
+                  <Text variant="help">
+                    Everything you Roast starts Private to you and your
+                    connected AI. Put a Bean On the Table only when you want
+                    others to compare perspectives.
+                  </Text>
+                </Card>
               ) : (
-                <Card variant="raised" density="compact">
-                  <List label="Your confirmed Beans" divided>
-                    {beans.map((b) => (
-                      <ListRow
-                        key={b.id}
-                        title={b.title}
-                        description={`Trade-off: ${b.tradeoffPreview}`}
-                        inlineMeta={
-                          <Inline gap={4} align="center">
-                            <Badge
-                              tone={
-                                b.visibility === "public" ? "brand" : "neutral"
+                <div className="roastery-split">
+                  {/* Left Pane: Scannable Bean Index */}
+                  <Stack gap={12}>
+                    <Card variant="raised" density="compact">
+                      <List label="Your confirmed Beans" divided>
+                        {beans.map((b) => {
+                          const isSelected = inspectedBean?.id === b.id;
+                          return (
+                            <div
+                              key={b.id}
+                              className={
+                                isSelected ? "bean-row-active" : undefined
                               }
-                              dot={false}
                             >
-                              {b.visibility === "public"
-                                ? "On the Table"
-                                : "Private"}
-                            </Badge>
-                            {b.hasTension ? (
-                              <Badge tone="warning">In Tension</Badge>
-                            ) : null}
-                            {b.supersededByBeanId ? (
-                              <Badge tone="warning">Updated Mind</Badge>
-                            ) : null}
-                            {b.originKinds.includes("work_episode") ? (
-                              <Badge tone="neutral" dot={false}>
-                                Work Origin
+                              <ListRow
+                                title={b.title}
+                                description={b.tradeoffPreview}
+                                inlineMeta={
+                                  <Inline gap={4} align="center">
+                                    <Badge
+                                      tone={
+                                        b.visibility === "public"
+                                          ? "brand"
+                                          : "neutral"
+                                      }
+                                      dot={false}
+                                    >
+                                      {b.visibility === "public"
+                                        ? "On the Table"
+                                        : "Private"}
+                                    </Badge>
+                                    {b.hasTension ? (
+                                      <Badge tone="warning">In Tension</Badge>
+                                    ) : null}
+                                    {b.supersededByBeanId ? (
+                                      <Badge tone="warning">Updated Mind</Badge>
+                                    ) : null}
+                                  </Inline>
+                                }
+                                trailing={
+                                  <Text variant="meta">v{b.revisionNumber}</Text>
+                                }
+                                onActivate={() => void openInspector(b.id)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </List>
+                    </Card>
+
+                    {totalPages > 1 ? (
+                      <Pagination
+                        label="My Beans pages"
+                        page={page}
+                        pages={totalPages}
+                        onPageChange={(nextPage) => {
+                          setPage(nextPage);
+                          void fetchBeans({ nextPage, autoSelectFirst: true });
+                        }}
+                      />
+                    ) : null}
+                  </Stack>
+
+                  {/* Right Pane: Inline Editorial Bean Reader & Roast Log */}
+                  <div className="roastery-inspector">
+                    <Card variant="raised" density="regular">
+                      {loadingDetail ? (
+                        <Text variant="meta">Opening Bean…</Text>
+                      ) : !inspectedBean ? (
+                        <EmptyResult empty="Select any Bean on the left to read its full Trade-off, Origins, and Roast Log." />
+                      ) : (
+                        <Stack gap={16}>
+                          <Inline justify="between" align="center" gap={8} wrap>
+                            <Inline gap={6} align="center" wrap>
+                              <Badge
+                                tone={
+                                  inspectedBean.visibility === "public"
+                                    ? "brand"
+                                    : "neutral"
+                                }
+                                dot={false}
+                              >
+                                {inspectedBean.visibility === "public"
+                                  ? "On the Table"
+                                  : "Private"}
                               </Badge>
-                            ) : null}
-                            {b.originKinds.includes("source_excerpt") ? (
-                              <Badge tone="neutral" dot={false}>
-                                Reading Origin
-                              </Badge>
+                              <Text variant="meta">
+                                {inspectedBean.attestationKind ===
+                                "agent_attested"
+                                  ? "AI-Roasted"
+                                  : "Web-Roasted"}{" "}
+                                · Rev {inspectedBean.revisionNumber}
+                              </Text>
+                            </Inline>
+                            {inspectedBean.tags.length > 0 ? (
+                              <Inline gap={6} align="center" wrap>
+                                {inspectedBean.tags.map((tag) => (
+                                  <Badge key={tag} tone="neutral" dot={false}>
+                                    #{tag}
+                                  </Badge>
+                                ))}
+                              </Inline>
                             ) : null}
                           </Inline>
-                        }
-                        trailing={
-                          <Text variant="meta">v{b.revisionNumber}</Text>
-                        }
-                        onActivate={() => void openInspector(b.id)}
-                      />
-                    ))}
-                  </List>
-                </Card>
-              )}
 
-              {totalPages > 1 ? (
-                <Pagination
-                  label="My Beans pages"
-                  page={page}
-                  pages={totalPages}
-                  onPageChange={(nextPage) => {
-                    setPage(nextPage);
-                    void fetchBeans({ nextPage });
-                  }}
-                />
-              ) : null}
+                          {inspectorConflict !== null ? (
+                            <Notice
+                              title="Version Conflict (409)"
+                              tone="warning"
+                              action={
+                                <Button
+                                  emphasis="soft"
+                                  size="compact"
+                                  onClick={() =>
+                                    void openInspector(inspectedBean.id)
+                                  }
+                                >
+                                  Reload latest (v{inspectorConflict})
+                                </Button>
+                              }
+                            >
+                              {inspectorError ??
+                                "This Bean changed in another tab or AI session."}
+                            </Notice>
+                          ) : inspectorError ? (
+                            <Notice
+                              title="Action could not complete"
+                              tone="danger"
+                            >
+                              {inspectorError}
+                            </Notice>
+                          ) : null}
+
+                          {inspectedBean.hasTension ? (
+                            <Notice
+                              title="In Tension · Conflicting criteria detected"
+                              tone="warning"
+                            >
+                              <Stack gap={8}>
+                                <Text variant="help">
+                                  Resolve this tension so your AI knows which
+                                  trade-off should lead.
+                                </Text>
+                                <Inline gap={8} wrap>
+                                  <Button
+                                    emphasis="soft"
+                                    size="compact"
+                                    onClick={() => {
+                                      setEditingBean(null);
+                                      setPrefillRelations([
+                                        {
+                                          toBeanId: inspectedBean.id,
+                                          kind: "supersedes",
+                                          note: "Reconciles open tension",
+                                        },
+                                      ]);
+                                      setRoastOpen(true);
+                                    }}
+                                  >
+                                    Roast reconciling Bean
+                                  </Button>
+                                  <Button
+                                    emphasis="soft"
+                                    size="compact"
+                                    onClick={() => {
+                                      setEditingBean(inspectedBean);
+                                      setPrefillRelations([]);
+                                      setRoastOpen(true);
+                                    }}
+                                  >
+                                    Edit this Bean
+                                  </Button>
+                                  <Button
+                                    emphasis="quiet"
+                                    size="compact"
+                                    disabled={mutating}
+                                    onClick={() =>
+                                      void handleRemoveOutgoingTension(
+                                        inspectedBean,
+                                      )
+                                    }
+                                  >
+                                    Remove tension link
+                                  </Button>
+                                </Inline>
+                              </Stack>
+                            </Notice>
+                          ) : null}
+
+                          <Stack gap={12}>
+                            <Heading level={2}>{inspectedBean.title}</Heading>
+                            <p className="editorial-lead">
+                              {inspectedBean.take}
+                            </p>
+
+                            <div className="bean-pull">
+                              <Stack gap={2}>
+                                <Text variant="meta">What mattered more</Text>
+                                <Text as="p" variant="body">
+                                  {inspectedBean.tradeoff}
+                                </Text>
+                              </Stack>
+                            </div>
+
+                            <p className="bean-footnote">
+                              Except when: {inspectedBean.boundary}
+                            </p>
+
+                            {inspectedBean.uncertainty ? (
+                              <p className="bean-footnote">
+                                Open question: {inspectedBean.uncertainty}
+                              </p>
+                            ) : null}
+                          </Stack>
+
+                          <Inline gap={8} wrap>
+                            <Button
+                              emphasis="soft"
+                              size="compact"
+                              onClick={() => {
+                                setEditingBean(inspectedBean);
+                                setPrefillRelations([]);
+                                setRoastOpen(true);
+                              }}
+                            >
+                              Re-roast
+                            </Button>
+                            <Button
+                              emphasis="soft"
+                              size="compact"
+                              disabled={mutating}
+                              onClick={() =>
+                                handleToggleVisibilityClick(inspectedBean)
+                              }
+                            >
+                              {inspectedBean.visibility === "public"
+                                ? "Keep Private"
+                                : "Put on the Table"}
+                            </Button>
+                            <Button
+                              emphasis="soft"
+                              size="compact"
+                              onClick={() =>
+                                setBrewDialog({
+                                  title: `Brew · Apply "${inspectedBean.title}"`,
+                                  description:
+                                    "Use this confirmed Bean in your connected AI host",
+                                  prompt: `Apply my Coffee Chat Bean "${inspectedBean.title}" to this decision: prioritize "${inspectedBean.tradeoff}", and respect its boundary ("${inspectedBean.boundary}").`,
+                                })
+                              }
+                            >
+                              Brew this Bean
+                            </Button>
+                            <Button
+                              emphasis="quiet"
+                              tone="danger"
+                              size="compact"
+                              disabled={mutating}
+                              onClick={() => setDeleteTarget(inspectedBean)}
+                            >
+                              Delete
+                            </Button>
+                          </Inline>
+
+                          <Divider />
+
+                          {/* Grounded Origins */}
+                          <Stack gap={8}>
+                            <Text variant="meta">
+                              Origins ({inspectedBean.origins.length})
+                            </Text>
+                            {inspectedBean.origins.map((o, idx) => (
+                              <Stack key={idx} gap={6}>
+                                <Inline gap={8} align="center" wrap>
+                                  <Badge tone="neutral" dot={false}>
+                                    {o.kind === "source_excerpt"
+                                      ? "Reading Origin"
+                                      : "Work Origin"}
+                                  </Badge>
+                                  {o.locator ? (
+                                    <Text variant="meta">{o.locator}</Text>
+                                  ) : null}
+                                  {o.originId &&
+                                  inspectedBean.visibility === "public" ? (
+                                    <Link href={`/sources/${o.originId}`}>
+                                      Open Table →
+                                    </Link>
+                                  ) : null}
+                                </Inline>
+                                {o.kind === "source_excerpt" ? (
+                                  <>
+                                    <Text variant="body">
+                                      {o.sourceTitle ?? o.url}
+                                    </Text>
+                                    {o.quotation ? (
+                                      <blockquote className="bean-quote">
+                                        <Text variant="body">
+                                          &ldquo;{o.quotation}&rdquo;
+                                        </Text>
+                                      </blockquote>
+                                    ) : null}
+                                  </>
+                                ) : (
+                                  <Text variant="body">{o.episodeSummary}</Text>
+                                )}
+                              </Stack>
+                            ))}
+                          </Stack>
+
+                          {inspectedBean.relations.length > 0 ? (
+                            <Stack gap={8}>
+                              <Text variant="meta">Relations</Text>
+                              <List label="Bean relations" divided>
+                                {inspectedBean.relations.map((r) => (
+                                  <ListRow
+                                    key={r.id}
+                                    title={r.relatedBeanTitle || r.relatedBeanId}
+                                    description={`${formatRelationHumanLabel(r.kind, r.direction)}${r.note ? ` — ${r.note}` : ""}`}
+                                    onActivate={() =>
+                                      void openInspector(r.relatedBeanId)
+                                    }
+                                  />
+                                ))}
+                              </List>
+                            </Stack>
+                          ) : null}
+
+                          {inspectedBean.revisions &&
+                          inspectedBean.revisions.length > 0 ? (
+                            <Stack gap={8}>
+                              <Text variant="meta">
+                                Roast Log · Revision timeline
+                              </Text>
+                              <Trace
+                                label="Roast Log revision timeline"
+                                events={inspectedBean.revisions.map((rev) => ({
+                                  id: String(rev.revisionNumber),
+                                  title: `Rev ${rev.revisionNumber} · ${rev.title}`,
+                                  state: "complete",
+                                  detail: (
+                                    <Stack gap={4}>
+                                      <Text variant="meta">
+                                        {new Date(
+                                          rev.createdAt,
+                                        ).toLocaleString()}{" "}
+                                        ·{" "}
+                                        {rev.attestationKind ===
+                                        "agent_attested"
+                                          ? "AI-Roasted"
+                                          : "Web-Roasted"}
+                                      </Text>
+                                      <Text variant="help">
+                                        Trade-off: {rev.tradeoff}
+                                      </Text>
+                                    </Stack>
+                                  ),
+                                }))}
+                              />
+                            </Stack>
+                          ) : null}
+
+                          <DisclosureRow label="Verification details">
+                            <RecordFacts
+                              title="Immutable attestation"
+                              source="Coffee Chat"
+                              asOf={new Date(
+                                inspectedBean.updatedAt,
+                              ).toLocaleString()}
+                              facts={[
+                                {
+                                  id: "ver",
+                                  label: "Version / Revision",
+                                  value: `v${inspectedBean.version} (rev ${inspectedBean.revisionNumber})`,
+                                },
+                                {
+                                  id: "digest",
+                                  label: "Canonical Digest",
+                                  value:
+                                    inspectedBean.payloadDigest.slice(0, 24) +
+                                    "…",
+                                },
+                              ]}
+                            />
+                          </DisclosureRow>
+                        </Stack>
+                      )}
+                    </Card>
+                  </div>
+                </div>
+              )}
             </Stack>
           ) : null}
 
           {activeTab === "insights" ? (
             <InsightsPanel
               insights={insights}
+              leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
               onSelectDomain={(tag) => {
                 setSelectedTag(tag);
                 setLifecycleFilter("all");
                 setPage(1);
                 handleTabSwitch("workspace");
-                void fetchBeans({ tag, lifecycle: "all", nextPage: 1 });
+                void fetchBeans({
+                  tag,
+                  lifecycle: "all",
+                  nextPage: 1,
+                  autoSelectFirst: true,
+                });
               }}
               onSelectLifecycle={(state) => {
                 setLifecycleFilter(state);
                 setPage(1);
                 handleTabSwitch("workspace");
-                void fetchBeans({ lifecycle: state, nextPage: 1 });
+                void fetchBeans({
+                  lifecycle: state,
+                  nextPage: 1,
+                  autoSelectFirst: true,
+                });
               }}
               onOpenConnect={() => router.push("/connect")}
             />
@@ -955,12 +1350,13 @@ export function WorkspaceClient({
             <Stack gap={24}>
               <PageHeader
                 title="Shelf"
-                detail="Saved voices & takes — live references that disappear if made Private"
+                detail="Voices & Beans kept on hand — live references that disappear if made Private"
+                leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
               />
 
               <Card
                 title="Saved Voices"
-                description="People whose public Beans you follow and can Brew in your AI"
+                description="People whose Taste you keep on hand and can Brew in your AI"
                 headerAction={
                   <Badge tone="neutral" dot={false}>
                     {savedVoices.length}
@@ -970,7 +1366,7 @@ export function WorkspaceClient({
                 density="regular"
               >
                 {savedVoices.length === 0 ? (
-                  <EmptyResult empty="No saved voices yet. Visit Explore or any Voice Profile to add someone to your Shelf." />
+                  <EmptyResult empty="No saved voices yet. Visit Tables or any Voice Profile to stock your Shelf." />
                 ) : (
                   <List label="Saved voices" divided>
                     {savedVoices.map((entry) => (
@@ -986,9 +1382,9 @@ export function WorkspaceClient({
                               size="compact"
                               onClick={() =>
                                 setBrewDialog({
-                                  title: `Brew · Explore @${entry.person!.handle}'s Beans`,
+                                  title: `Brew · Explore @${entry.person!.handle}'s Taste`,
                                   description:
-                                    "Compare their public confirmed takes against your current question without impersonation",
+                                    "Compare their public confirmed Beans against your current question without impersonation",
                                   prompt: `Check the public Coffee Chat Beans shared by @${entry.person!.handle} on my Shelf that relate to this topic. Explain what trade-offs they prioritize, note where their boundaries stop, and attribute every point clearly to their confirmed records.`,
                                 })
                               }
@@ -1022,14 +1418,14 @@ export function WorkspaceClient({
                 density="regular"
               >
                 {savedBeans.length === 0 ? (
-                  <EmptyResult empty="No saved Beans yet. Save any public take from Explore, a Table, or a Voice Profile." />
+                  <EmptyResult empty="No saved Beans yet. Save any public take from a Table or Voice Profile." />
                 ) : (
                   <List label="Saved Beans" divided>
                     {savedBeans.map((entry) => (
                       <ListRow
                         key={entry.id}
                         title={entry.bean!.title}
-                        description={`@${entry.bean!.ownerHandle} · Trade-off: ${entry.bean!.tradeoff}`}
+                        description={`@${entry.bean!.ownerHandle} · What mattered more: ${entry.bean!.tradeoff}`}
                         actions={
                           <Inline gap={8} align="center">
                             {entry.bean!.firstSourceOriginId ? (
@@ -1062,8 +1458,9 @@ export function WorkspaceClient({
           {activeTab === "settings" ? (
             <Stack gap={24}>
               <PageHeader
-                title="AI & Account"
+                title="Brew Bar & Account"
                 detail="Connected AI apps, explicit login linking, and full Roastery export"
+                leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
               />
 
               <Card
@@ -1075,14 +1472,14 @@ export function WorkspaceClient({
                     size="compact"
                     onClick={() => router.push("/connect")}
                   >
-                    Brew Setup
+                    Open Brew Bar
                   </Button>
                 }
                 variant="raised"
                 density="regular"
               >
                 {grants.length === 0 ? (
-                  <EmptyResult empty="No AI apps connected yet. Visit Brew Setup to connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor." />
+                  <EmptyResult empty="No AI apps connected yet. Visit the Brew Bar to connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor." />
                 ) : (
                   <List label="Connected AI apps" divided>
                     {grants.map((g) => (
@@ -1152,8 +1549,8 @@ export function WorkspaceClient({
 
                   {accounts.length <= 1 ? (
                     <Text variant="meta">
-                      You must keep at least one sign-in method connected. Link a second provider
-                      before unlinking.
+                      You must keep at least one sign-in method connected. Link
+                      a second provider before unlinking.
                     </Text>
                   ) : null}
 
@@ -1184,7 +1581,7 @@ export function WorkspaceClient({
                         <Text variant="meta">
                           Test-Auth Explicit Linking (dev/E2E only)
                         </Text>
-                        <Inline gap={8} align="end">
+                        <Inline gap={8} align="end" wrap>
                           <Select
                             label="Provider"
                             value={testLinkProvider}
@@ -1236,292 +1633,6 @@ export function WorkspaceClient({
           ) : null}
         </Stack>
       </SidebarLayout>
-
-      {/* Bean Inspector Sheet */}
-      <Sheet
-        open={Boolean(inspectedBean)}
-        onOpenChange={(next) => {
-          if (!next) {
-            setInspectedBean(null);
-            setInspectorConflict(null);
-            setInspectorError(null);
-          }
-        }}
-        title={inspectedBean?.title ?? "Bean Inspector"}
-        description={
-          inspectedBean
-            ? `${inspectedBean.visibility === "public" ? "On the Table · Shared publicly" : "Private · Only me & my AI"} · ${inspectedBean.attestationKind === "agent_attested" ? "AI-Roasted · Captured in AI" : "Web-Roasted · Written on Web"}`
-            : undefined
-        }
-      >
-        {loadingDetail || !inspectedBean ? (
-          <Text variant="meta">Loading Bean details…</Text>
-        ) : (
-          <Stack gap={16}>
-            {inspectorConflict !== null ? (
-              <Notice
-                title="Version Conflict (409)"
-                tone="warning"
-                action={
-                  <Button
-                    emphasis="soft"
-                    size="compact"
-                    onClick={() => void openInspector(inspectedBean.id)}
-                  >
-                    Reload latest (v{inspectorConflict})
-                  </Button>
-                }
-              >
-                {inspectorError ??
-                  "This Bean changed in another tab or AI session."}
-              </Notice>
-            ) : inspectorError ? (
-              <Notice title="Action could not complete" tone="danger">
-                {inspectorError}
-              </Notice>
-            ) : null}
-
-            {inspectedBean.hasTension ? (
-              <Notice
-                title="In Tension · Conflicting criteria detected"
-                tone="warning"
-              >
-                <Stack gap={8}>
-                  <Text variant="help">
-                    Resolve this tension so your AI knows which trade-off should
-                    lead.
-                  </Text>
-                  <Inline gap={8}>
-                    <Button
-                      emphasis="soft"
-                      size="compact"
-                      onClick={() => {
-                        setEditingBean(null);
-                        setPrefillRelations([
-                          {
-                            toBeanId: inspectedBean.id,
-                            kind: "supersedes",
-                            note: "Reconciles open tension",
-                          },
-                        ]);
-                        setRoastOpen(true);
-                      }}
-                    >
-                      Roast reconciling Bean
-                    </Button>
-                    <Button
-                      emphasis="soft"
-                      size="compact"
-                      onClick={() => {
-                        setEditingBean(inspectedBean);
-                        setPrefillRelations([]);
-                        setRoastOpen(true);
-                      }}
-                    >
-                      Edit this Bean
-                    </Button>
-                    <Button
-                      emphasis="quiet"
-                      size="compact"
-                      disabled={mutating}
-                      onClick={() =>
-                        void handleRemoveOutgoingTension(inspectedBean)
-                      }
-                    >
-                      Remove tension link
-                    </Button>
-                  </Inline>
-                </Stack>
-              </Notice>
-            ) : null}
-
-            <Stack gap={8}>
-              <Text variant="meta">My Take · What clicked</Text>
-              <Text as="p" variant="body">
-                {inspectedBean.take}
-              </Text>
-            </Stack>
-
-            <div className="bean-axis-tradeoff">
-              <Stack gap={4}>
-                <Text variant="meta">Trade-off · What mattered more</Text>
-                <Text as="p" variant="body">
-                  {inspectedBean.tradeoff}
-                </Text>
-              </Stack>
-            </div>
-
-            <div className="bean-axis-boundary">
-              <Stack gap={4}>
-                <Text variant="meta">
-                  Boundary · When it doesn&apos;t apply
-                </Text>
-                <Text as="p" variant="help">
-                  {inspectedBean.boundary}
-                </Text>
-              </Stack>
-            </div>
-
-            {inspectedBean.uncertainty ? (
-              <Stack gap={4}>
-                <Text variant="meta">Open Question</Text>
-                <Text as="p" variant="help">
-                  {inspectedBean.uncertainty}
-                </Text>
-              </Stack>
-            ) : null}
-
-            <Stack gap={8}>
-              <Text variant="meta">
-                Origins ({inspectedBean.origins.length})
-              </Text>
-              {inspectedBean.origins.map((o, idx) => (
-                <Surface key={idx} variant="surface" density="compact">
-                  <Stack gap={4}>
-                    <Inline gap={8} align="center">
-                      <Badge tone="neutral" dot={false}>
-                        {o.kind === "source_excerpt"
-                          ? "Reading Origin"
-                          : "Work Origin"}
-                      </Badge>
-                      {o.locator ? (
-                        <Text variant="meta">{o.locator}</Text>
-                      ) : null}
-                      {o.originId && inspectedBean.visibility === "public" ? (
-                        <Link href={`/sources/${o.originId}`}>
-                          Open Table →
-                        </Link>
-                      ) : null}
-                    </Inline>
-                    {o.kind === "source_excerpt" ? (
-                      <>
-                        <Text variant="body">{o.sourceTitle ?? o.url}</Text>
-                        {o.quotation ? (
-                          <blockquote className="bean-quote">
-                            <Text variant="body">&ldquo;{o.quotation}&rdquo;</Text>
-                          </blockquote>
-                        ) : null}
-                      </>
-                    ) : (
-                      <Text variant="body">{o.episodeSummary}</Text>
-                    )}
-                  </Stack>
-                </Surface>
-              ))}
-            </Stack>
-
-            {inspectedBean.relations.length > 0 ? (
-              <Stack gap={8}>
-                <Text variant="meta">Relations</Text>
-                <List label="Bean relations" divided>
-                  {inspectedBean.relations.map((r) => (
-                    <ListRow
-                      key={r.id}
-                      title={r.relatedBeanTitle || r.relatedBeanId}
-                      description={`${formatRelationHumanLabel(r.kind, r.direction)}${r.note ? ` — ${r.note}` : ""}`}
-                      onActivate={() => void openInspector(r.relatedBeanId)}
-                    />
-                  ))}
-                </List>
-              </Stack>
-            ) : null}
-
-            {inspectedBean.revisions && inspectedBean.revisions.length > 0 ? (
-              <Stack gap={8}>
-                <Text variant="meta">Roast Log · Revision timeline</Text>
-                <Trace
-                  label="Roast Log revision timeline"
-                  events={inspectedBean.revisions.map((rev) => ({
-                    id: String(rev.revisionNumber),
-                    title: `Rev ${rev.revisionNumber} · ${rev.title}`,
-                    state: "complete",
-                    detail: (
-                      <Stack gap={4}>
-                        <Text variant="meta">
-                          {new Date(rev.createdAt).toLocaleString()} ·{" "}
-                          {rev.attestationKind === "agent_attested"
-                            ? "AI-Roasted"
-                            : "Web-Roasted"}
-                        </Text>
-                        <Text variant="help">Trade-off: {rev.tradeoff}</Text>
-                      </Stack>
-                    ),
-                  }))}
-                />
-              </Stack>
-            ) : null}
-
-            <DisclosureRow label="Verification details">
-              <RecordFacts
-                title="Immutable attestation"
-                source="Coffee Chat"
-                asOf={new Date(inspectedBean.updatedAt).toLocaleString()}
-                facts={[
-                  {
-                    id: "ver",
-                    label: "Version / Revision",
-                    value: `v${inspectedBean.version} (rev ${inspectedBean.revisionNumber})`,
-                  },
-                  {
-                    id: "digest",
-                    label: "Canonical Digest",
-                    value: inspectedBean.payloadDigest.slice(0, 24) + "…",
-                  },
-                ]}
-              />
-            </DisclosureRow>
-
-            <Divider />
-
-            <Inline gap={8}>
-              <Button
-                emphasis="soft"
-                size="compact"
-                onClick={() => {
-                  setEditingBean(inspectedBean);
-                  setPrefillRelations([]);
-                  setRoastOpen(true);
-                }}
-              >
-                Edit / Re-roast
-              </Button>
-              <Button
-                emphasis="soft"
-                size="compact"
-                disabled={mutating}
-                onClick={() => handleToggleVisibilityClick(inspectedBean)}
-              >
-                {inspectedBean.visibility === "public"
-                  ? "Keep Private"
-                  : "Put on the Table"}
-              </Button>
-              <Button
-                emphasis="soft"
-                size="compact"
-                onClick={() =>
-                  setBrewDialog({
-                    title: `Brew · Apply "${inspectedBean.title}"`,
-                    description:
-                      "Use this confirmed Bean in your connected AI host",
-                    prompt: `Apply my Coffee Chat Bean "${inspectedBean.title}" to this decision: prioritize "${inspectedBean.tradeoff}", and respect its boundary ("${inspectedBean.boundary}").`,
-                  })
-                }
-              >
-                Brew in my AI
-              </Button>
-              <Button
-                emphasis="quiet"
-                tone="danger"
-                size="compact"
-                disabled={mutating}
-                onClick={() => setDeleteTarget(inspectedBean)}
-              >
-                Delete Bean
-              </Button>
-            </Inline>
-          </Stack>
-        )}
-      </Sheet>
 
       {/* Progressive 2-Stage Roast Sheet */}
       <QuickCaptureSheet
@@ -1612,7 +1723,7 @@ export function WorkspaceClient({
         onConfirm={() => void handleConfirmDelete()}
       />
 
-      {/* Plain-Language Brew Handoff Dialog */}
+      {/* Brew Handoff Dialog */}
       <AgentHandoffDialog
         open={Boolean(brewDialog)}
         onOpenChange={(next) => {

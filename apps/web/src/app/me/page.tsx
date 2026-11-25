@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import {
+  getBean,
   getPersonalInsights,
   listBeansPage,
   listLinkedAccounts,
@@ -52,10 +53,16 @@ export default async function MyRoasteryPage(props: {
       listLinkedAccounts(db, user.id),
     ]);
 
+  const initialSelectedBean =
+    firstPage.items.length > 0
+      ? await getBean(db, user.id, firstPage.items[0]!.id)
+      : null;
+
   return (
     <WorkspaceClient
       user={user}
       initialBeans={firstPage.items}
+      initialSelectedBean={initialSelectedBean}
       initialTotalCount={firstPage.totalCount}
       initialAllBeansForRelations={allForRelations.items.map((b) => ({
         id: b.id,

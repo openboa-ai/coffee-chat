@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
+import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { FilterBar } from "@openboa/yogurt/filter-bar";
+import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
-import { List } from "@openboa/yogurt/list";
-import { ListRow } from "@openboa/yogurt/list-row";
+import { Link } from "@openboa/yogurt/link";
 import { Pagination } from "@openboa/yogurt/pagination";
 import { Stack } from "@openboa/yogurt/stack";
+import { Text } from "@openboa/yogurt/text";
 import { PageHeader } from "@openboa/yogurt/top";
 import type { PublicSourceSummary } from "@coffee-chat/core";
 
@@ -23,6 +25,14 @@ export interface SourcesDirectoryClientProps {
   initialQuery: string;
   initialTag: string;
   signedIn: boolean;
+}
+
+function formatHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }
 
 export function SourcesDirectoryClient({
@@ -51,12 +61,12 @@ export function SourcesDirectoryClient({
     <Stack gap={24}>
       <PageHeader
         title="Tables"
-        detail="Compare takes on a source — every Table gathers public Beans around one shared link"
+        detail="Same source, different Taste — sit down to compare how people read the same link"
         action={
           <Inline gap={8}>
             <Button
               emphasis="filled"
-              tone="neutral"
+              tone="brand"
               size="compact"
               onClick={() =>
                 router.push(
@@ -72,34 +82,33 @@ export function SourcesDirectoryClient({
         }
       />
 
-      <Card variant="raised" density="compact">
-        <FilterBar
-          label="Search Tables"
-          placeholder="Search source title, URL, @voice, or domain…"
-          query={query}
-          onQueryChange={setQuery}
+      {/* Clean inline filter bar — no outer Card box wrapper */}
+      <FilterBar
+        label="Search Tables"
+        placeholder="Search article title, URL, @voice, or domain…"
+        query={query}
+        onQueryChange={setQuery}
+      >
+        <Button
+          emphasis="soft"
+          size="compact"
+          onClick={() => navigate(query, initialTag, 1)}
         >
+          Search
+        </Button>
+        {initialQuery || initialTag ? (
           <Button
-            emphasis="soft"
+            emphasis="quiet"
             size="compact"
-            onClick={() => navigate(query, initialTag, 1)}
+            onClick={() => {
+              setQuery("");
+              navigate("", "", 1);
+            }}
           >
-            Search
+            Clear
           </Button>
-          {initialQuery || initialTag ? (
-            <Button
-              emphasis="quiet"
-              size="compact"
-              onClick={() => {
-                setQuery("");
-                navigate("", "", 1);
-              }}
-            >
-              Clear
-            </Button>
-          ) : null}
-        </FilterBar>
-      </Card>
+        ) : null}
+      </FilterBar>
 
       {sources.length === 0 ? (
         <EmptyResult
@@ -115,31 +124,52 @@ export function SourcesDirectoryClient({
           empty="No public Tables yet. Roast a Reading Origin Bean and put it On the Table to start the first one."
         />
       ) : (
-        <Card variant="raised" density="compact">
-          <List label="Shared Tables" divided>
-            {sources.map((src) => (
-              <ListRow
-                key={src.originId}
-                title={src.sourceTitle ?? src.normalizedUrl}
-                description={`${src.normalizedUrl} · Voices: ${src.authorHandles.map((h) => `@${h}`).join(", ")}`}
-                href={`/sources/${src.originId}`}
-                inlineMeta={
-                  <Inline gap={4} align="center">
-                    <Badge tone="brand" dot={false}>
-                      {src.publicBeanCount}{" "}
-                      {src.publicBeanCount === 1 ? "Bean" : "Beans"}
-                    </Badge>
-                    {src.tags.slice(0, 3).map((tag) => (
+        <div className="split-grid">
+          {sources.map((src) => (
+            <Card key={src.originId} variant="raised" density="regular">
+              <Stack gap={12}>
+                <Inline justify="between" align="center" gap={8}>
+                  <Text variant="meta">{formatHost(src.normalizedUrl)}</Text>
+                  <Badge tone="brand" dot={false}>
+                    {src.publicBeanCount}{" "}
+                    {src.publicBeanCount === 1 ? "Bean" : "Beans"}
+                  </Badge>
+                </Inline>
+
+                <Heading level={3}>
+                  {src.sourceTitle ?? src.normalizedUrl}
+                </Heading>
+
+                <Text variant="help">
+                  Voices at the Table:{" "}
+                  {src.authorHandles.map((h) => `@${h}`).join(", ")}
+                </Text>
+
+                {src.tags.length > 0 ? (
+                  <Inline gap={6} align="center" wrap>
+                    {src.tags.slice(0, 4).map((tag) => (
                       <Badge key={tag} tone="neutral" dot={false}>
                         #{tag}
                       </Badge>
                     ))}
                   </Inline>
-                }
-              />
-            ))}
-          </List>
-        </Card>
+                ) : null}
+
+                <Divider />
+
+                <Inline justify="between" align="center" gap={8}>
+                  <Text variant="meta">
+                    {src.authorHandles.length}{" "}
+                    {src.authorHandles.length === 1 ? "voice" : "voices"}
+                  </Text>
+                  <Link href={`/sources/${src.originId}`}>
+                    Pull up a chair →
+                  </Link>
+                </Inline>
+              </Stack>
+            </Card>
+          ))}
+        </div>
       )}
 
       {totalPages > 1 ? (

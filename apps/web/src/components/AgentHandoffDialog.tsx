@@ -53,7 +53,7 @@ export function AgentHandoffDialog({
             <Notice
               title="No AI app connected yet"
               tone="warning"
-              action={<Link href="/connect">Open Brew Setup →</Link>}
+              action={<Link href="/connect">Open Brew Bar →</Link>}
             >
               Connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor once so your AI can read
               your Beans and Shelf automatically.
@@ -64,7 +64,7 @@ export function AgentHandoffDialog({
             <Badge tone="neutral" dot={false}>
               Works with your connected AI
             </Badge>
-            <Link href="/connect">Need Brew Setup?</Link>
+            <Link href="/connect">Need Brew Bar?</Link>
           </Inline>
         )}
 
@@ -73,7 +73,7 @@ export function AgentHandoffDialog({
         <Inline justify="between" align="center" gap={12}>
           <CopyButton value={prompt} onCopy={copyText} />
           <Inline gap={8} align="center">
-            <Link href="/connect">Brew Setup</Link>
+            <Link href="/connect">Brew Bar</Link>
             <Button emphasis="quiet" size="compact" onClick={() => onOpenChange(false)}>
               Done
             </Button>
