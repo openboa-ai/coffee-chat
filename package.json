@@ -23,7 +23,7 @@
     "db:generate": "npm --workspace @coffee-chat/core run db:generate"
   },
   "dependencies": {
-    "@openboa/yogurt": "file:./vendor/openboa-yogurt-0.2.0-local.1.tgz",
+    "@openboa/yogurt": "file:vendor/openboa-yogurt-0.2.0-local.1.tgz",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },

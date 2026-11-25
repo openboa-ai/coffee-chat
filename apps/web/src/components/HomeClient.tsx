@@ -6,11 +6,10 @@ import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
-import { Divider } from "@openboa/yogurt/divider";
 import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
-import { CopyButton } from "@openboa/yogurt/motion-copy-button";
+import { ProjectMark } from "@openboa/yogurt/project-mark";
 import { SegmentedControl } from "@openboa/yogurt/segmented-control";
 import { Stack } from "@openboa/yogurt/stack";
 import { Text } from "@openboa/yogurt/text";
@@ -46,7 +45,6 @@ export interface HomeClientProps {
 type StageAct = "brew" | "roast" | "chat";
 type BrewMode = "decaf" | "growth" | "craft";
 type ChatGuest = "claire" | "david";
-type InstallHost = "chatgpt" | "claude" | "codex" | "cursor" | "antigravity";
 
 interface StageBeanCardData {
   id: string;
@@ -64,7 +62,7 @@ const BREW_BEANS: [StageBeanCardData, StageBeanCardData] = [
     title: "Hire fast learners over ready-made playbooks",
     tradeoff:
       "Ownership and learning speed over exact prior industry background.",
-    boundary: "Roles requiring day-one regulatory certification.",
+    boundary: "Roles requiring day-one certification.",
     tag: "#hiring",
   },
   {
@@ -72,7 +70,7 @@ const BREW_BEANS: [StageBeanCardData, StageBeanCardData] = [
     label: "Specialist Roast · Work",
     title: "Pick proven craft when the deadline won’t move",
     tradeoff: "Immediate execution quality over long-term versatility.",
-    boundary: "Ambiguous roles where the scope changes every month.",
+    boundary: "Roles where scope shifts every month.",
     tag: "#hiring",
   },
 ];
@@ -93,11 +91,11 @@ const CHAT_GUEST_DATA: Record<
     fullName: "Claire Brooks",
     handle: "@claire",
     prompt:
-      "Have a Coffee Chat with @claire—should we polish our new release another month, or show a rough version to 10 customers this week?",
+      "Have a Coffee Chat with @claire—should we polish our release another month, or show a rough draft to 10 customers this week?",
     headline:
       "Based on @claire’s Beans, show an honest draft to 10 people this week.",
-    body: "@claire puts real customer signal ahead of upfront polish—polishing the wrong workflow wastes a month. Share a clearly labeled early version with 10 people now, as long as nothing is irreversible.",
-    cite: "Source: @claire’s Bean · Boundary: reversible bets only",
+    body: "@claire puts real customer signal ahead of upfront polish—polishing the wrong workflow wastes a month. Share a clearly labeled early version now, as long as nothing is irreversible.",
+    cite: "From @claire’s confirmed Bean · Reversible bets only · Never roleplayed",
     beans: [
       {
         id: "claire-1",
@@ -111,8 +109,8 @@ const CHAT_GUEST_DATA: Record<
         id: "claire-2",
         label: "@claire · Public Bean",
         title: "Keep small teams focused on one shared goal",
-        tradeoff: "Momentum together over clean separate tracks.",
-        boundary: "Regulated teams needing strict separation.",
+        tradeoff: "Momentum together over separate tracks.",
+        boundary: "Regulated teams needing hard separation.",
         tag: "#teams",
       },
     ],
@@ -121,11 +119,11 @@ const CHAT_GUEST_DATA: Record<
     fullName: "David Chen",
     handle: "@david",
     prompt:
-      "Have a Coffee Chat with @david—should we polish our new release another month, or show a rough version to 10 customers this week?",
+      "Have a Coffee Chat with @david—should we polish our release another month, or show a rough draft to 10 customers this week?",
     headline:
       "Based on @david’s Beans, ship rough only if zero money or private data is touched.",
-    body: "@david puts durable customer trust ahead of early demo speed. People forgive a rough layout, never a billing or privacy slip—only test early if you keep it strictly on sample data until trust paths are airtight.",
-    cite: "Source: @david’s Bean · Boundary: prototypes with sample data",
+    body: "@david puts durable customer trust ahead of demo speed. People forgive a rough screen, never a billing or privacy slip—only test early on sample data until trust paths are airtight.",
+    cite: "From @david’s confirmed Bean · Sample-data prototypes only · Never roleplayed",
     beans: [
       {
         id: "david-1",
@@ -157,8 +155,11 @@ export function HomeClient({
   const [act, setAct] = useState<StageAct>("brew");
   const [brewMode, setBrewMode] = useState<BrewMode>("growth");
   const [guest, setGuest] = useState<ChatGuest>("claire");
-  const [installHost, setInstallHost] = useState<InstallHost>("chatgpt");
   const [playNonce, setPlayNonce] = useState(0);
+
+  // Universal Hero Copy-and-Start CTA state (works regardless of which AI app the visitor uses)
+  const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
+  const [showPromptPreview, setShowPromptPreview] = useState(false);
 
   // Sequenced motion phase state (respects reduced motion cleanly)
   const [promptVisible, setPromptVisible] = useState(true);
@@ -185,15 +186,30 @@ export function HomeClient({
     return id;
   }, []);
 
+  const universalStartPrompt = `Connect to Coffee Chat at ${mcpUrl} (sign in when prompted). Once connected, help me Roast my first private Bean from a real decision or article I share with you—ask what mattered more and when the rule stops applying, and wait for my confirmation before saving.`;
+
+  const handleCopyStartPrompt = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(universalStartPrompt);
+      }
+    } catch {
+      // Clipboard may be unavailable in restricted contexts; still reveal preview so user can copy manually.
+    }
+    setCopiedHeroPrompt(true);
+    setShowPromptPreview(true);
+    window.setTimeout(() => setCopiedHeroPrompt(false), 3500);
+  };
+
   const getActiveResponseText = useCallback((): string => {
     if (act === "brew") {
       if (brewMode === "decaf") {
         return "Generalists offer flexibility and long-term growth, while specialists bring immediate domain knowledge. Consider your team’s current needs and timeline before deciding.";
       }
       if (brewMode === "growth") {
-        return "Per your confirmed Bean, ownership and learning speed outrank prior industry playbooks. Give the generalist a clear 30-day ramp—and only flip to the specialist if regulatory certification is mandatory on day one.";
+        return "Based on your Bean, ownership and learning speed outrank prior playbooks. Hire the generalist with a clear 30-day ramp—and only flip to the specialist if certification is required on day one.";
       }
-      return "Per your confirmed Bean, immediate execution quality beats versatility when the launch date is fixed. Pick the specialist as long as the role’s core scope is already well defined.";
+      return "Based on your Bean, immediate execution quality beats versatility when the deadline won’t move. Pick the specialist as long as the role’s scope is already well defined.";
     }
     if (act === "chat") {
       return CHAT_GUEST_DATA[guest].body;
@@ -261,7 +277,6 @@ export function HomeClient({
       return clearTimers;
     }
 
-    // Act 01 (Brew active) or Act 03 (Coffee Chat with other Taste)
     schedule(160, () => {
       setTraceOpen(true);
       setCurveDrawn(true);
@@ -286,24 +301,12 @@ export function HomeClient({
     return clearTimers;
   }, [act, brewMode, guest, playNonce, clearTimers, schedule, getActiveResponseText]);
 
-  const installCommands: Record<InstallHost, string> = {
-    chatgpt: `Settings → Apps & Connectors → Add URL: ${mcpUrl}`,
-    claude: `claude mcp add --transport http coffee-chat "${mcpUrl}"`,
-    codex: `[mcp_servers.coffee_chat] url = "${mcpUrl}"`,
-    cursor: `{ "mcpServers": { "coffee-chat": { "url": "${mcpUrl}" } } }`,
-    antigravity: `{ "mcpServers": { "coffee-chat": { "url": "${mcpUrl}" } } }`,
-  };
-
-  const copyText = async (text: string) => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
-    }
-  };
-
   const contrastingPreview = (() => {
     if (!featuredTable) return [];
     const ordered = [...featuredTable.beans].sort(
-      (a, b) => Number(Boolean(a.supersededByBeanId)) - Number(Boolean(b.supersededByBeanId)),
+      (a, b) =>
+        Number(Boolean(a.supersededByBeanId)) -
+        Number(Boolean(b.supersededByBeanId)),
     );
     const seen = new Set<string>();
     const distinct = ordered.filter((b) => {
@@ -311,44 +314,35 @@ export function HomeClient({
       seen.add(b.ownerHandle);
       return true;
     });
-    return distinct.length >= 2
-      ? distinct.slice(0, 2)
-      : ordered.slice(0, 2);
+    return distinct.length >= 2 ? distinct.slice(0, 2) : ordered.slice(0, 2);
   })();
 
-  // Derived stage values
   const isDecaf = act === "brew" && brewMode === "decaf";
-  const topCurveState =
-    isDecaf
-      ? "dim"
-      : act === "brew"
-        ? brewMode === "growth"
-          ? curveDrawn
-            ? "drawn"
-            : "idle"
-          : "dim"
-        : act === "roast"
-          ? curveDrawn
-            ? "drawn"
-            : "idle"
-          : curveDrawn
-            ? "drawn"
-            : "idle";
-
-  const bottomCurveState =
-    isDecaf
-      ? "dim"
-      : act === "brew" && brewMode === "craft"
+  const topCurveState = isDecaf
+    ? "dim"
+    : act === "brew"
+      ? brewMode === "growth"
         ? curveDrawn
           ? "drawn"
           : "idle"
-        : "dim";
+        : "dim"
+      : curveDrawn
+        ? "drawn"
+        : "idle";
+
+  const bottomCurveState = isDecaf
+    ? "dim"
+    : act === "brew" && brewMode === "craft"
+      ? curveDrawn
+        ? "drawn"
+        : "idle"
+      : "dim";
 
   const activeGuest = CHAT_GUEST_DATA[guest];
 
   const promptText =
     act === "brew"
-      ? "Two finalists for a key role: a sharp generalist who learns fast, or a proven specialist with our exact background. Who should we pick?"
+      ? "Two finalists for a key role: a fast-learning generalist, or a proven specialist with our exact background. Who should we pick?"
       : act === "roast"
         ? "No—don’t bury the missed target on slide 4. Put the honest status and our fix in the very first sentence."
         : activeGuest.prompt;
@@ -356,31 +350,31 @@ export function HomeClient({
   const traceLabel =
     act === "brew"
       ? brewMode === "growth"
-        ? 'coffee-chat · applied your Bean "Hire fast learners over ready-made playbooks"'
-        : 'coffee-chat · applied your Bean "Pick proven craft when the deadline won’t move"'
+        ? "Applied your Bean · Hire fast learners over ready-made playbooks"
+        : "Applied your Bean · Pick proven craft when the deadline won’t move"
       : act === "roast"
-        ? "coffee-chat · drafted a private Bean for your confirmation"
-        : `coffee-chat · pulled ${activeGuest.handle}’s confirmed public Beans (attributed, never roleplay)`;
+        ? "Drafted a private Bean from your correction — waiting for confirmation"
+        : `Pulled ${activeGuest.handle}’s confirmed public Beans (attributed, never roleplayed)`;
 
   const pluginChipLabel = isDecaf
-    ? "unplugged"
+    ? "Unplugged"
     : act === "brew"
-      ? "coffee-chat · active"
+      ? "Coffee Chat · Active"
       : act === "roast"
         ? roastConfirmed
-          ? "coffee-chat · roasted"
-          : "coffee-chat · draft"
-        : `coffee-chat · ${activeGuest.handle}`;
+          ? "Coffee Chat · Roasted"
+          : "Coffee Chat · Draft"
+        : `Coffee Chat · ${activeGuest.handle}`;
 
-  const drawerTitle =
+  const drawerHeading =
     act === "chat"
       ? `${activeGuest.fullName} (${activeGuest.handle})`
       : "Your Roastery";
-  const drawerCount =
+  const drawerSub =
     act === "roast"
       ? roastConfirmed
-        ? "5 Beans"
-        : "4 Beans"
+        ? "5 private Beans"
+        : "4 private Beans"
       : act === "chat"
         ? "Public Taste"
         : "Private Beans";
@@ -393,61 +387,83 @@ export function HomeClient({
       : act === "roast"
         ? roastConfirmed
           ? "Saved privately · ready across your AI apps"
-          : "Waiting for your confirmation…"
+          : "Nothing saves until you confirm"
         : `Switch to ${guest === "claire" ? "@david" : "@claire"} above`;
 
   return (
     <Stack gap={48}>
-      {/* 1. HERO: FINAL EXPERIENCE OUTCOME FIRST (100% English, one breath) */}
+      {/* 1. HERO: CRYSTAL-CLEAR POSITIONING + UNIVERSAL COPY-TO-AI CTA */}
       <section className="hero-section">
         <Stack gap={16}>
           <div className="hero-eyebrow">
-            <span className="hero-eyebrow-dot" aria-hidden="true" />
+            <ProjectMark project="coffee" size={24} />
             <span>
-              Plugin for ChatGPT · Claude · Codex · Cursor · Antigravity
+              Personal Taste plugin for ChatGPT, Claude, Codex, Cursor &amp;
+              Antigravity
             </span>
           </div>
 
           <h1 className="hero-headline">
-            Give your AI your Taste.
+            Your AI knows everything.
             <br />
-            Coffee Chat with other Taste.
+            Give it your Taste.
           </h1>
 
           <p className="hero-subline">
-            Your Taste inside your AI—or anyone else’s, one prompt away.
+            Save how you weigh real trade-offs—so your AI answers with your
+            priorities, or lets you Coffee Chat with anyone else’s.
           </p>
 
-          <Inline gap={12} align="center" wrap>
-            <Button
-              emphasis="filled"
-              tone="brand"
-              size="comfortable"
-              onClick={() =>
-                router.push(
-                  signedIn
-                    ? "/me?compose=1"
-                    : "/signin?returnTo=%2Fme%3Fcompose%3D1",
-                )
-              }
-            >
-              {signedIn ? "Roast a Bean" : "Roast your first Bean"}
-            </Button>
-            <Button
-              emphasis="soft"
-              size="comfortable"
-              onClick={() => router.push("/connect")}
-            >
-              Connect your AI
-            </Button>
-            {signedIn ? (
-              <Link href="/me">Open My Roastery →</Link>
+          <Stack gap={12}>
+            <Inline gap={12} align="center" wrap>
+              <Button
+                emphasis="filled"
+                tone="brand"
+                size="comfortable"
+                onClick={() => void handleCopyStartPrompt()}
+              >
+                {copiedHeroPrompt
+                  ? "Copied — paste into any AI ✓"
+                  : "Copy prompt to start in your AI"}
+              </Button>
+              <Button
+                emphasis="soft"
+                size="comfortable"
+                onClick={() =>
+                  router.push(
+                    signedIn
+                      ? "/me?compose=1"
+                      : "/signin?returnTo=%2Fme%3Fcompose%3D1",
+                  )
+                }
+              >
+                {signedIn ? "Open My Roastery" : "Try in browser"}
+              </Button>
+              <Link href="/connect">Manual setup →</Link>
+            </Inline>
+
+            <Inline gap={12} align="center" wrap>
+              <span className="stage-caption">
+                Paste into whatever AI you already use — no config file needed
+                to start.
+              </span>
+              <Button
+                emphasis="quiet"
+                size="compact"
+                onClick={() => setShowPromptPreview((v) => !v)}
+              >
+                {showPromptPreview ? "Hide prompt" : "Preview prompt"}
+              </Button>
+            </Inline>
+
+            {showPromptPreview ? (
+              <div className="hero-prompt-preview">{universalStartPrompt}</div>
             ) : null}
-          </Inline>
+          </Stack>
         </Stack>
       </section>
 
-      {/* 2. LIVE CHOREOGRAPHED 3-ACT AGENT STAGE (01 Brew -> 02 Roast -> 03 Coffee Chat with other Taste) */}
+      {/* 2. FLAT, READABLE 3-ACT LIVE STAGE (NO BOX-IN-BOX NESTING, NO ALL-CAPS SHOUTING) */}
       <Stack gap={16}>
         <div className="stage-act-bar">
           <div
@@ -511,357 +527,297 @@ export function HomeClient({
           ) : null}
         </div>
 
-        <Card variant="raised" density="regular">
-          <div className="stage-canvas-grid">
-            {/* LEFT: YOUR AI WINDOW */}
-            <div className="stage-agent-window">
-              <div className="stage-agent-chrome">
-                <Inline gap={8} align="center">
-                  <span className="stage-window-dots" aria-hidden="true">
-                    <span className="stage-window-dot" />
-                    <span className="stage-window-dot" />
-                    <span className="stage-window-dot" />
-                  </span>
-                  <span className="mono-meta">
-                    your AI · chatgpt / claude / codex / cursor
-                  </span>
-                </Inline>
-                <Badge tone={isDecaf ? "neutral" : "brand"} dot={false}>
-                  {pluginChipLabel}
-                </Badge>
+        <div className="stage-canvas-grid">
+          {/* LEFT: CLEAN AI CONVERSATION WINDOW (directly on neutral stage) */}
+          <div className="stage-agent-window">
+            <div className="stage-agent-chrome">
+              <Inline gap={8} align="center">
+                <ProjectMark project="coffee" size={18} />
+                <Text variant="meta">Your AI · Any connected chat</Text>
+              </Inline>
+              <Badge tone={isDecaf ? "neutral" : "brand"} dot={false}>
+                {pluginChipLabel}
+              </Badge>
+            </div>
+
+            <div className="stage-agent-body">
+              <div className="stage-prompt-row">
+                <div
+                  className="stage-prompt-bubble stage-reveal"
+                  data-visible={promptVisible}
+                >
+                  {promptText}
+                </div>
               </div>
 
-              <div className="stage-agent-body">
-                <div className="stage-prompt-row">
-                  <div
-                    className="stage-prompt-bubble stage-reveal"
-                    data-visible={promptVisible}
-                  >
-                    {promptText}
+              {/* Quiet sentence-case plugin trace */}
+              <div className="stage-unfold" data-open={traceOpen}>
+                <div className="stage-unfold-inner">
+                  <div className="stage-trace-line">
+                    <ProjectMark project="coffee" size={16} />
+                    <span>{traceLabel}</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Inline MCP Plugin Trace */}
-                <div className="stage-unfold" data-open={traceOpen}>
-                  <div className="stage-unfold-inner">
-                    <span className="mono-meta">{traceLabel}</span>
-                  </div>
-                </div>
-
-                {/* Final Answer or Inline Confirm Card */}
-                <div className="stage-unfold" data-open={responseOpen}>
-                  <div className="stage-unfold-inner">
-                    {act === "roast" ? (
-                      <div className="stage-response-box">
-                        <Stack gap={12}>
-                          <Inline justify="between" align="center" gap={8}>
-                            <span className="mono-meta">
-                              Inline Confirm Bean · Private by default
-                            </span>
-                            <span className="mono-meta">
-                              {roastConfirmed ? "Saved" : "Nothing saved yet"}
-                            </span>
-                          </Inline>
-                          <Heading level={3}>
-                            Lead with the hard truth, not the build-up
-                          </Heading>
-                          <div className="bean-pull">
-                            <Stack gap={2}>
-                              <span className="mono-meta">
-                                What mattered more
-                              </span>
-                              <Text as="p" variant="body">
-                                Upfront trust and clarity over softening the
-                                moment.
-                              </Text>
-                            </Stack>
-                          </div>
-                          <p className="bean-footnote">
-                            Except when: External announcements needing legal
-                            review first.
-                          </p>
-                          <Divider />
-                          <Inline justify="between" align="center" gap={8}>
-                            <Button
-                              emphasis={roastConfirmed ? "soft" : "filled"}
-                              tone="neutral"
-                              size="compact"
-                              onClick={() => {
-                                setRoastConfirmed(true);
-                                setCurveDrawn(true);
-                                setPulseActive(true);
-                              }}
-                            >
-                              {roastConfirmed
-                                ? "Roasted into Roastery ✓"
-                                : "Confirm & Roast"}
-                            </Button>
-                            <span className="mono-meta">
-                              Never saved silently
-                            </span>
-                          </Inline>
-                        </Stack>
-                      </div>
-                    ) : (
-                      <div
-                        className="stage-response-box"
-                        data-mode={isDecaf ? "decaf" : "brewed"}
-                      >
-                        <Stack gap={12}>
-                          <Inline justify="between" align="center" gap={8}>
-                            <span className="mono-meta">
-                              {isDecaf
-                                ? "Unbrewed · Generic Decaf AI"
-                                : act === "brew"
-                                  ? brewMode === "growth"
-                                    ? "Brewed · Your Growth Roast"
-                                    : "Brewed · Your Specialist Roast"
-                                  : `Coffee Chat · ${activeGuest.fullName}’s Confirmed Taste`}
-                            </span>
-                            {!isDecaf ? (
-                              <Badge tone="brand" dot={false}>
-                                {act === "chat"
-                                  ? "Attributed"
-                                  : "Boundary verified"}
-                              </Badge>
-                            ) : null}
-                          </Inline>
-
-                          <Heading
-                            level={3}
-                            className={isDecaf ? "stage-decaf-strike" : undefined}
-                          >
-                            {isDecaf
-                              ? "“Both candidates have strong pros and cons depending on your goals…”"
-                              : act === "brew"
-                                ? brewMode === "growth"
-                                  ? "Hire the fast-learning generalist—unless compliance requires credentials today."
-                                  : "Hire the proven specialist—your deadline leaves no room for ramp-up."
-                                : activeGuest.headline}
-                          </Heading>
-
-                          <Text as="p" variant="help">
-                            {streamedText}
+              {/* Clean reply directly on canvas — NO nested bordered box! */}
+              <div className="stage-unfold" data-open={responseOpen}>
+                <div className="stage-unfold-inner">
+                  {act === "roast" ? (
+                    <div className="stage-confirm-card">
+                      <Stack gap={12}>
+                        <Inline justify="between" align="center" gap={8}>
+                          <Text variant="meta">
+                            Confirm Bean · Private by default
                           </Text>
-
-                          {!isDecaf ? (
-                            <div
-                              className="stage-reveal"
-                              data-visible={citeVisible}
-                            >
-                              <Stack gap={8}>
-                                <Divider />
-                                <Inline
-                                  justify="between"
-                                  align="center"
-                                  gap={8}
-                                  wrap
-                                >
-                                  <span className="mono-meta">
-                                    {act === "brew"
-                                      ? brewMode === "growth"
-                                        ? "Guided by: Your Growth Roast Bean"
-                                        : "Guided by: Your Specialist Roast Bean"
-                                      : activeGuest.cite}
-                                  </span>
-                                  <span className="mono-meta">
-                                    {act === "chat"
-                                      ? "Zero impersonation"
-                                      : "Same AI · Your priority order"}
-                                  </span>
-                                </Inline>
-                              </Stack>
-                            </div>
-                          ) : null}
-                        </Stack>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="stage-agent-footer">
-                <span className="mono-meta">{composerHint}</span>
-                <Button
-                  emphasis="quiet"
-                  size="compact"
-                  onClick={() => setPlayNonce((n) => n + 1)}
-                >
-                  Replay ↺
-                </Button>
-              </div>
-            </div>
-
-            {/* CENTER: PRECISION SVG BEZIER SIGNAL */}
-            <div className="stage-bridge-col" aria-hidden="true">
-              <svg
-                viewBox="0 0 72 340"
-                width="72"
-                height="340"
-                style={{ overflow: "visible" }}
-              >
-                <path
-                  className="stage-signal-path"
-                  data-state={topCurveState}
-                  d="M 0 155 C 34 155, 38 92, 72 92"
-                />
-                <path
-                  className="stage-signal-path"
-                  data-state={bottomCurveState}
-                  d="M 0 155 C 34 155, 38 232, 72 232"
-                />
-
-                <circle
-                  r="2.75"
-                  className="stage-signal-pulse"
-                  data-active={
-                    pulseActive &&
-                    ((act === "brew" && brewMode === "growth") ||
-                      act === "chat")
-                  }
-                >
-                  <animateMotion
-                    dur="1.8s"
-                    repeatCount="indefinite"
-                    path="M 72 92 C 38 92, 34 155, 0 155"
-                  />
-                </circle>
-
-                <circle
-                  r="2.75"
-                  className="stage-signal-pulse"
-                  data-active={
-                    pulseActive && act === "brew" && brewMode === "craft"
-                  }
-                >
-                  <animateMotion
-                    dur="1.8s"
-                    repeatCount="indefinite"
-                    path="M 72 232 C 38 232, 34 155, 0 155"
-                  />
-                </circle>
-
-                <circle
-                  r="2.75"
-                  className="stage-signal-pulse"
-                  data-active={pulseActive && act === "roast"}
-                >
-                  <animateMotion
-                    dur="1.4s"
-                    repeatCount="indefinite"
-                    path="M 0 155 C 34 155, 38 92, 72 92"
-                  />
-                </circle>
-              </svg>
-            </div>
-
-            {/* RIGHT: DOCKED COFFEE CHAT ROASTERY / SHELF PANEL */}
-            <div className="stage-drawer">
-              <Stack gap={12}>
-                <Inline justify="between" align="center" gap={8}>
-                  <span className="mono-meta">{drawerTitle}</span>
-                  <span className="mono-meta">{drawerCount}</span>
-                </Inline>
-
-                <Divider />
-
-                {act === "roast" ? (
-                  <Stack gap={12}>
-                    <div className="stage-unfold" data-open={roastConfirmed}>
-                      <div className="stage-unfold-inner">
-                        <div
-                          className="stage-bean-card"
-                          data-active={roastConfirmed}
-                        >
-                          <span className="stage-bean-rail" aria-hidden="true" />
-                          <Stack gap={4}>
-                            <Inline justify="between" align="center" gap={6}>
-                              <span className="mono-meta">
-                                Roasted Just Now · Private
-                              </span>
-                              <span className="mono-meta">#communication</span>
-                            </Inline>
-                            <Text variant="body">
-                              Lead with the hard truth, not the build-up
-                            </Text>
-                            <Text variant="meta">
+                          <Badge
+                            tone={roastConfirmed ? "success" : "neutral"}
+                            dot={false}
+                          >
+                            {roastConfirmed ? "Saved" : "Draft"}
+                          </Badge>
+                        </Inline>
+                        <Heading level={3}>
+                          Lead with the hard truth, not the build-up
+                        </Heading>
+                        <div className="bean-pull">
+                          <Stack gap={2}>
+                            <Text variant="meta">What mattered more</Text>
+                            <Text as="p" variant="body">
                               Upfront trust and clarity over softening the
                               moment.
                             </Text>
                           </Stack>
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="stage-bean-card" data-active={false}>
-                      <span className="stage-bean-rail" aria-hidden="true" />
-                      <Stack gap={4}>
-                        <Inline justify="between" align="center" gap={6}>
-                          <span className="mono-meta">Confirmed · Private</span>
-                          <span className="mono-meta">#hiring</span>
+                        <p className="bean-footnote">
+                          Except when: External announcements needing legal
+                          review first.
+                        </p>
+                        <Inline justify="between" align="center" gap={8}>
+                          <Button
+                            emphasis={roastConfirmed ? "soft" : "filled"}
+                            tone="neutral"
+                            size="compact"
+                            onClick={() => {
+                              setRoastConfirmed(true);
+                              setCurveDrawn(true);
+                              setPulseActive(true);
+                            }}
+                          >
+                            {roastConfirmed
+                              ? "Roasted into Roastery ✓"
+                              : "Confirm & Roast"}
+                          </Button>
+                          <span className="stage-caption">
+                            Never saved silently
+                          </span>
                         </Inline>
-                        <Text variant="body">{BREW_BEANS[0].title}</Text>
-                        <Text variant="meta">{BREW_BEANS[0].tradeoff}</Text>
                       </Stack>
                     </div>
-                  </Stack>
-                ) : (
-                  <Stack gap={12}>
-                    {(act === "brew" ? BREW_BEANS : activeGuest.beans).map(
-                      (bean, idx) => {
-                        const isCardActive =
-                          act === "brew"
-                            ? (brewMode === "growth" && idx === 0 && pulseActive) ||
-                              (brewMode === "craft" && idx === 1 && pulseActive)
-                            : idx === 0 && pulseActive;
-                        return (
-                          <div
-                            key={bean.id}
-                            className="stage-bean-card"
-                            data-active={isCardActive}
-                          >
-                            <span
-                              className="stage-bean-rail"
-                              aria-hidden="true"
-                            />
-                            <Stack gap={4}>
-                              <Inline justify="between" align="center" gap={6}>
-                                <span className="mono-meta">{bean.label}</span>
-                                <span className="mono-meta">{bean.tag}</span>
-                              </Inline>
-                              <Text variant="body">{bean.title}</Text>
-                              <Text variant="meta">{bean.tradeoff}</Text>
-                              <Text variant="meta">Except: {bean.boundary}</Text>
-                            </Stack>
-                          </div>
-                        );
-                      },
-                    )}
-                  </Stack>
-                )}
-              </Stack>
+                  ) : (
+                    <div
+                      className="stage-reply"
+                      data-mode={isDecaf ? "decaf" : "brewed"}
+                    >
+                      <Heading
+                        level={3}
+                        className={isDecaf ? "stage-decaf-strike" : undefined}
+                      >
+                        {isDecaf
+                          ? "“Both candidates have strong pros and cons depending on your goals…”"
+                          : act === "brew"
+                            ? brewMode === "growth"
+                              ? "Hire the fast-learning generalist—unless certification is required today."
+                              : "Hire the proven specialist—your deadline leaves no room for ramp-up."
+                            : activeGuest.headline}
+                      </Heading>
 
-              <Stack gap={8}>
-                <Divider />
-                <Inline justify="between" align="center" gap={8}>
-                  <span className="mono-meta">
-                    {act === "chat"
-                      ? "Attributed · Never impersonated"
-                      : "Private by default"}
-                  </span>
-                  <span className="mono-meta">Zero server AI</span>
-                </Inline>
-              </Stack>
+                      <p className="stage-reply-body">{streamedText}</p>
+
+                      {!isDecaf ? (
+                        <div
+                          className="stage-reveal"
+                          data-visible={citeVisible}
+                        >
+                          <span className="stage-caption">
+                            {act === "brew"
+                              ? brewMode === "growth"
+                                ? "Guided by your Growth Roast Bean · Boundary verified"
+                                : "Guided by your Specialist Roast Bean · Boundary verified"
+                              : activeGuest.cite}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="stage-agent-footer">
+              <span className="stage-caption">{composerHint}</span>
+              <Button
+                emphasis="quiet"
+                size="compact"
+                onClick={() => setPlayNonce((n) => n + 1)}
+              >
+                Replay ↺
+              </Button>
             </div>
           </div>
-        </Card>
+
+          {/* CENTER: PRECISION SVG BEZIER SIGNAL */}
+          <div className="stage-bridge-col" aria-hidden="true">
+            <svg
+              viewBox="0 0 72 320"
+              width="72"
+              height="320"
+              style={{ overflow: "visible" }}
+            >
+              <path
+                className="stage-signal-path"
+                data-state={topCurveState}
+                d="M 0 155 C 34 155, 38 96, 72 96"
+              />
+              <path
+                className="stage-signal-path"
+                data-state={bottomCurveState}
+                d="M 0 155 C 34 155, 38 228, 72 228"
+              />
+
+              <circle
+                r="3"
+                className="stage-signal-pulse"
+                data-active={
+                  pulseActive &&
+                  ((act === "brew" && brewMode === "growth") || act === "chat")
+                }
+              >
+                <animateMotion
+                  dur="1.8s"
+                  repeatCount="indefinite"
+                  path="M 72 96 C 38 96, 34 155, 0 155"
+                />
+              </circle>
+
+              <circle
+                r="3"
+                className="stage-signal-pulse"
+                data-active={
+                  pulseActive && act === "brew" && brewMode === "craft"
+                }
+              >
+                <animateMotion
+                  dur="1.8s"
+                  repeatCount="indefinite"
+                  path="M 72 228 C 38 228, 34 155, 0 155"
+                />
+              </circle>
+
+              <circle
+                r="3"
+                className="stage-signal-pulse"
+                data-active={pulseActive && act === "roast"}
+              >
+                <animateMotion
+                  dur="1.4s"
+                  repeatCount="indefinite"
+                  path="M 0 155 C 34 155, 38 96, 72 96"
+                />
+              </circle>
+            </svg>
+          </div>
+
+          {/* RIGHT: FLOATING BEAN CARDS (NO OUTER DASHED BOX PRISON!) */}
+          <div className="stage-bean-column">
+            <Inline justify="between" align="center" gap={8}>
+              <Text variant="body">{drawerHeading}</Text>
+              <Text variant="meta">{drawerSub}</Text>
+            </Inline>
+
+            {act === "roast" ? (
+              <Stack gap={12}>
+                <div className="stage-unfold" data-open={roastConfirmed}>
+                  <div className="stage-unfold-inner">
+                    <div
+                      className="stage-bean-card"
+                      data-active={roastConfirmed}
+                    >
+                      <span className="stage-bean-rail" aria-hidden="true" />
+                      <Stack gap={6}>
+                        <Inline justify="between" align="center" gap={6}>
+                          <Text variant="meta">Roasted just now</Text>
+                          <Badge tone="neutral" dot={false}>
+                            #communication
+                          </Badge>
+                        </Inline>
+                        <Heading level={4}>
+                          Lead with the hard truth, not the build-up
+                        </Heading>
+                        <Text variant="help">
+                          Upfront trust and clarity over softening the moment.
+                        </Text>
+                      </Stack>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="stage-bean-card" data-active={false}>
+                  <span className="stage-bean-rail" aria-hidden="true" />
+                  <Stack gap={6}>
+                    <Inline justify="between" align="center" gap={6}>
+                      <Text variant="meta">Confirmed · Private</Text>
+                      <Badge tone="neutral" dot={false}>
+                        #hiring
+                      </Badge>
+                    </Inline>
+                    <Heading level={4}>{BREW_BEANS[0].title}</Heading>
+                    <Text variant="help">{BREW_BEANS[0].tradeoff}</Text>
+                  </Stack>
+                </div>
+              </Stack>
+            ) : (
+              <Stack gap={12}>
+                {(act === "brew" ? BREW_BEANS : activeGuest.beans).map(
+                  (bean, idx) => {
+                    const isCardActive =
+                      act === "brew"
+                        ? (brewMode === "growth" && idx === 0 && pulseActive) ||
+                          (brewMode === "craft" && idx === 1 && pulseActive)
+                        : idx === 0 && pulseActive;
+                    return (
+                      <div
+                        key={bean.id}
+                        className="stage-bean-card"
+                        data-active={isCardActive}
+                      >
+                        <span className="stage-bean-rail" aria-hidden="true" />
+                        <Stack gap={6}>
+                          <Inline justify="between" align="center" gap={6}>
+                            <Text variant="meta">{bean.label}</Text>
+                            <Badge tone="neutral" dot={false}>
+                              {bean.tag}
+                            </Badge>
+                          </Inline>
+                          <Heading level={4}>{bean.title}</Heading>
+                          <Text variant="help">{bean.tradeoff}</Text>
+                          <Text variant="meta">Except: {bean.boundary}</Text>
+                        </Stack>
+                      </div>
+                    );
+                  },
+                )}
+              </Stack>
+            )}
+          </div>
+        </div>
       </Stack>
 
-      {/* 3. WHY COFFEE CHAT EXISTS (Directly beneath the use cases!) */}
+      {/* 3. WHY COFFEE CHAT EXISTS — CRISP, HUMAN, DIRECTLY BELOW USE CASES */}
       <section className="why-section">
-        <Stack gap={32}>
+        <Stack gap={24}>
           <Stack gap={12}>
-            <span className="mono-meta">Why Coffee Chat</span>
+            <span className="section-kicker">Why Coffee Chat</span>
             <h2 className="why-headline">
               Nothing is unimportant.
               <br />
@@ -869,11 +825,10 @@ export function HomeClient({
             </h2>
             <p className="hero-subline">
               Everyone agrees speed, quality, honesty, and caution all matter.
-              In real work and everyday decisions, good things collide—and the
-              real call is always <strong>which one wins</strong> and{" "}
-              <strong>when the rule flips</strong>. We’ve had tools to save
-              links and notes forever, but nothing built to organize what we
-              actually prioritize.
+              In real work, good things collide—and what decides the call is{" "}
+              <strong>which one wins</strong> and{" "}
+              <strong>when the rule flips</strong>. We save links and notes
+              everywhere, but nothing organizes our priority order.
             </p>
           </Stack>
 
@@ -883,11 +838,10 @@ export function HomeClient({
                 Why a Coffee Chat here actually works
               </Heading>
               <Text as="p" variant="help">
-                You don’t grab coffee with someone for textbook advice—you ask
-                what they put first when good options clash. Because their Beans
-                hold confirmed trade-offs and boundaries, your AI walks through
-                your situation using their real priorities—attributed, never
-                roleplayed.
+                You don’t grab coffee with someone for textbook advice—you want
+                to know what they put first when good options clash. Their
+                confirmed Beans let your AI apply their real priorities to your
+                situation, never roleplayed.
               </Text>
             </Stack>
 
@@ -896,69 +850,31 @@ export function HomeClient({
                 Why your AI stops saying “it depends”
               </Heading>
               <Text as="p" variant="help">
-                Models treat every good principle as equally valid. Once you
-                Roast your priority order into private Beans, your AI stops
-                hedging with generic pros and cons and commits to what you
-                actually value.
+                Models treat every principle as equally valid. Once you Roast
+                your priority order into private Beans, your AI stops hedging
+                and commits to what you actually optimize for.
               </Text>
             </Stack>
 
             <Stack gap={8}>
-              <Heading level={3}>Your priority order, never inferred</Heading>
+              <Heading level={3}>Confirmed by you, zero server AI</Heading>
               <Text as="p" variant="help">
-                Nothing saves without your confirmation, and Coffee Chat runs
-                zero server AI. Your Beans stay private by default, evolve as
-                your calls change, and brew straight inside the AI you already
-                use.
+                Nothing saves without your confirmation, and Coffee Chat runs no
+                models of its own. Everything stays private by default and brews
+                straight inside your AI.
               </Text>
             </Stack>
           </div>
-
-          {/* 30-second Connect Strip (Mechanism tucked cleanly after Why) */}
-          <Card variant="raised" density="compact">
-            <Stack gap={12}>
-              <Inline justify="between" align="center" gap={12} wrap>
-                <Inline gap={12} align="center" wrap>
-                  <span className="mono-meta">Connect in 30s</span>
-                  <SegmentedControl
-                    label="Choose your AI app"
-                    value={installHost}
-                    onValueChange={(v) => setInstallHost(v as InstallHost)}
-                    options={[
-                      { id: "chatgpt", label: "ChatGPT" },
-                      { id: "claude", label: "Claude" },
-                      { id: "codex", label: "Codex" },
-                      { id: "cursor", label: "Cursor" },
-                      { id: "antigravity", label: "Antigravity" },
-                    ]}
-                  />
-                </Inline>
-                <Link href="/connect">Full Brew Bar guide →</Link>
-              </Inline>
-
-              <Inline justify="between" align="center" gap={12} wrap>
-                <code className="connect-strip-code">
-                  {installCommands[installHost]}
-                </code>
-                <CopyButton
-                  value={installCommands[installHost]}
-                  onCopy={copyText}
-                />
-              </Inline>
-            </Stack>
-          </Card>
         </Stack>
       </section>
 
-      {/* 4. SECONDARY BOTTOM SHOWCASE: Community Table preview (low priority, after value & why) */}
+      {/* 4. SECONDARY BOTTOM SHOWCASE: Real Table preview (low priority, after value & why) */}
       {totalCorpusPublicCount > 0 && featuredTable ? (
         <Stack gap={16}>
           <Inline justify="between" align="baseline" gap={12} wrap>
             <Stack gap={4}>
-              <span className="mono-meta">On the Table right now</span>
-              <Heading level={2}>
-                Same essay. Opposite Roasts.
-              </Heading>
+              <span className="section-kicker">On the Table right now</span>
+              <Heading level={2}>Same essay. Opposite Roasts.</Heading>
               <Text variant="meta">
                 {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
               </Text>
@@ -1007,7 +923,7 @@ export function HomeClient({
       ) : (
         <Card
           title="Start the first Coffee Chat Table"
-          description="No public Beans yet — begin privately in My Roastery, and put one On the Table whenever you want to invite contrasting takes"
+          description="No public Beans yet — start in your AI or privately in My Roastery, and share one whenever you want contrasting takes"
           variant="raised"
           density="regular"
           action={
@@ -1031,7 +947,7 @@ export function HomeClient({
                 size="compact"
                 onClick={() => router.push("/connect")}
               >
-                Connect your AI
+                Manual setup
               </Button>
             </Inline>
           }

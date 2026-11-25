@@ -7,6 +7,7 @@ import { Card } from "@openboa/yogurt/card";
 import { Divider } from "@openboa/yogurt/divider";
 import { Inline } from "@openboa/yogurt/inline";
 import { Notice } from "@openboa/yogurt/notice";
+import { ProjectMark } from "@openboa/yogurt/project-mark";
 import { Stack } from "@openboa/yogurt/stack";
 import { Text } from "@openboa/yogurt/text";
 import { TextField } from "@openboa/yogurt/text-field";
@@ -94,6 +95,7 @@ export function SignInPanel({
       <PageHeader
         title="Pull up a chair"
         detail="Sign in to My Roastery — Roast private Beans, check Tasting Notes, and Brew your Taste in AI"
+        leading={<ProjectMark project="coffee" size={32} />}
       />
 
       <Card

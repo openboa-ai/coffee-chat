@@ -46,24 +46,27 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     expect(cacheControl).toContain("no-store");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: /Give your AI your Taste/ }),
+      page.getByRole("heading", { level: 1, name: /Give it your Taste/ }),
     ).toBeVisible();
     await expect(page.getByText("Nothing is unimportant.")).toBeVisible();
-    // Interactive 3-act stage: Act 01 Specialist Roast toggle, Act 02 Roast, Act 03 Coffee Chat with @david
+    // Primary Hero CTA copies a universal agent-agnostic start prompt and reveals it cleanly
+    await page
+      .getByRole("button", { name: "Copy prompt to start in your AI" })
+      .click();
+    await expect(
+      page.getByRole("button", { name: /Copied — paste into any AI/ }),
+    ).toBeVisible();
+    await expect(page.getByText(/Connect to Coffee Chat at/)).toBeVisible();
+    // Interactive 3-act stage: Act 01 Specialist Roast toggle + Act 03 Coffee Chat with @david
     await page.getByRole("radio", { name: "Specialist Roast" }).click();
-    await expect(
-      page.getByText(/Hire the proven specialist/),
-    ).toBeVisible();
-    await page.getByRole("tab", { name: /03 · Coffee Chat with other Taste/ }).click();
+    await expect(page.getByText(/Hire the proven specialist/)).toBeVisible();
+    await page
+      .getByRole("tab", { name: /03 · Coffee Chat with other Taste/ })
+      .click();
     await page.getByRole("radio", { name: "Coffee Chat with @david" }).click();
-    await expect(
-      page.getByText(/Based on @david’s Beans/),
-    ).toBeVisible();
+    await expect(page.getByText(/Based on @david’s Beans/)).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Roast a private Bean" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Connect your AI" }).first(),
     ).toBeVisible();
     await assertCleanSurface(page, "unseeded /");
 
@@ -520,7 +523,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     // Populated Home / shows value-first hero + secondary bottom Table preview; /sources search works cleanly
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { level: 1, name: /Give your AI your Taste/ }),
+      page.getByRole("heading", { level: 1, name: /Give it your Taste/ }),
     ).toBeVisible();
     await expect(page.getByText("On the Table right now")).toBeVisible();
     await assertCleanSurface(page, "populated /");

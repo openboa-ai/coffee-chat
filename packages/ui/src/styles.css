@@ -54,43 +54,26 @@
     white-space: nowrap;
   }
 
-  .brand-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--yg-brand-ink);
-  }
-
-  /* Hero Typography */
+  /* Hero Typography — crisp, airy, immediate clarity */
   .hero-section {
-    padding-block: var(--boa-space-16) var(--boa-space-8);
-    max-width: 780px;
+    padding-block: var(--boa-space-16) var(--boa-space-4);
+    max-width: 760px;
   }
 
   .hero-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: var(--boa-space-8);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
     color: var(--yg-muted);
-  }
-
-  .hero-eyebrow-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: var(--yg-radius-pill);
-    background: var(--yg-brand-ink);
-    flex-shrink: 0;
   }
 
   .hero-headline {
     margin: 0;
     font-family: var(--boa-font-family);
     font-weight: 560;
-    font-size: clamp(2.25rem, 4.6vw, 3.35rem);
+    font-size: clamp(2.35rem, 4.6vw, 3.4rem);
     line-height: 1.07;
     letter-spacing: -0.036em;
     color: var(--yg-text);
@@ -99,9 +82,20 @@
   .hero-subline {
     margin: 0;
     font-size: 1.125rem;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--yg-muted);
-    max-width: 56ch;
+    max-width: 58ch;
+  }
+
+  .hero-prompt-preview {
+    padding: var(--boa-space-12) var(--boa-space-16);
+    border-radius: var(--yg-radius-panel);
+    border: 1px solid var(--yg-border-subtle);
+    background: var(--yg-raised);
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--yg-text);
+    max-width: 64ch;
   }
 
   .editorial-lead {
@@ -111,16 +105,19 @@
     color: var(--yg-text);
   }
 
-  .mono-meta {
-    font-size: 0.72rem;
+  .section-kicker {
+    font-size: 0.8125rem;
     font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    font-variant-numeric: tabular-nums;
+    color: var(--yg-brand-ink);
+  }
+
+  .stage-caption {
+    font-size: 0.8125rem;
+    line-height: 1.45;
     color: var(--yg-muted);
   }
 
-  /* Choreographed Agent-Plugin Motion Stage */
+  /* Flat, Zero-Clutter Choreographed AI Stage (directly on neutral stage — no box-in-box!) */
   .stage-act-bar {
     display: flex;
     flex-wrap: wrap;
@@ -144,7 +141,7 @@
     background: transparent;
     color: var(--yg-muted);
     font: inherit;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.2s ease;
@@ -170,8 +167,8 @@
 
   .stage-canvas-grid {
     display: grid;
-    grid-template-columns: minmax(0, 7fr) 72px minmax(260px, 4fr);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 7fr) 72px minmax(280px, 4fr);
+    align-items: center;
   }
 
   @media (max-width: 960px) {
@@ -189,10 +186,10 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 368px;
+    min-height: 356px;
     border: 1px solid var(--yg-border-subtle);
     border-radius: var(--yg-radius-panel);
-    background: var(--yg-surface);
+    background: var(--yg-raised);
     overflow: hidden;
   }
 
@@ -201,30 +198,15 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--boa-space-8);
-    padding: var(--boa-space-10) var(--boa-space-16);
+    padding: var(--boa-space-12) var(--boa-space-16);
     border-bottom: 1px solid var(--yg-border-subtle);
-    background: var(--yg-raised);
-  }
-
-  .stage-window-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .stage-window-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--yg-radius-pill);
-    border: 1px solid var(--yg-border-strong);
-    opacity: 0.7;
   }
 
   .stage-agent-body {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-12);
-    padding: var(--boa-space-16);
+    gap: var(--boa-space-16);
+    padding: var(--boa-space-24);
     flex: 1;
   }
 
@@ -234,27 +216,38 @@
   }
 
   .stage-prompt-bubble {
-    max-width: 92%;
-    padding: var(--boa-space-10) var(--boa-space-12);
+    max-width: 88%;
+    padding: var(--boa-space-12) var(--boa-space-16);
     border-radius: var(--yg-radius-panel);
-    border: 1px solid var(--yg-border-subtle);
-    background: var(--yg-raised);
+    background: var(--yg-surface);
     color: var(--yg-text);
-    font-size: 0.9rem;
+    font-size: 0.9375rem;
     line-height: 1.5;
   }
 
-  .stage-response-box {
-    padding: var(--boa-space-16);
-    border-radius: var(--yg-radius-panel);
-    border: 1px solid var(--yg-border-strong);
-    background: var(--yg-raised);
+  .stage-trace-line {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--boa-space-8);
+    font-size: 0.8125rem;
+    color: var(--yg-muted);
   }
 
-  .stage-response-box[data-mode="decaf"] {
-    border-style: dashed;
-    border-color: var(--yg-border-subtle);
-    opacity: 0.8;
+  .stage-reply {
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-8);
+  }
+
+  .stage-reply-body {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.62;
+    color: var(--yg-text);
+  }
+
+  .stage-reply[data-mode="decaf"] .stage-reply-body {
+    color: var(--yg-muted);
   }
 
   .stage-decaf-strike {
@@ -262,14 +255,20 @@
     color: var(--yg-muted);
   }
 
+  .stage-confirm-card {
+    padding: var(--boa-space-16);
+    border-radius: var(--yg-radius-panel);
+    border: 1px solid var(--yg-border-subtle);
+    background: var(--yg-surface);
+  }
+
   .stage-agent-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--boa-space-12);
-    padding: var(--boa-space-8) var(--boa-space-16);
+    padding: var(--boa-space-10) var(--boa-space-16);
     border-top: 1px solid var(--yg-border-subtle);
-    background: var(--yg-raised);
   }
 
   .stage-agent-footer button {
@@ -286,7 +285,7 @@
   .stage-signal-path {
     fill: none;
     stroke: var(--yg-brand-ink);
-    stroke-width: 1.6;
+    stroke-width: 1.75;
     stroke-linecap: round;
     stroke-dasharray: 240;
     stroke-dashoffset: 240;
@@ -302,7 +301,7 @@
     stroke: var(--yg-border-strong);
     stroke-dasharray: 3 5;
     stroke-dashoffset: 0;
-    opacity: 0.45;
+    opacity: 0.4;
   }
 
   .stage-signal-pulse {
@@ -315,25 +314,20 @@
     opacity: 1;
   }
 
-  .stage-drawer {
+  /* Floating Bean Stack — clean cards directly on stage, no enclosing dashed box */
+  .stage-bean-column {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     gap: var(--boa-space-12);
-    min-height: 368px;
-    padding: var(--boa-space-16);
-    border: 1px dashed var(--yg-border-strong);
-    border-radius: var(--yg-radius-panel);
-    background: var(--yg-surface);
   }
 
   .stage-bean-card {
     position: relative;
-    padding: var(--boa-space-12) var(--boa-space-12) var(--boa-space-12) var(--boa-space-16);
-    border-radius: var(--yg-radius-small);
+    padding: var(--boa-space-16) var(--boa-space-16) var(--boa-space-16) var(--boa-space-20);
+    border-radius: var(--yg-radius-panel);
     border: 1px solid var(--yg-border-subtle);
     background: var(--yg-raised);
-    opacity: 0.5;
+    opacity: 0.52;
     transition: opacity 0.32s ease, border-color 0.32s ease;
   }
 
@@ -345,9 +339,9 @@
   .stage-bean-rail {
     position: absolute;
     left: 0;
-    top: 8px;
-    bottom: 8px;
-    width: 2.5px;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
     border-radius: var(--yg-radius-pill);
     background: var(--yg-brand-ink);
     transform-origin: top;
@@ -397,18 +391,18 @@
     }
   }
 
-  /* Why Coffee Chat & 30s Connect Strip */
+  /* Why Coffee Chat Section */
   .why-section {
-    padding-top: var(--boa-space-24);
+    padding-top: var(--boa-space-32);
     border-top: 1px solid var(--yg-border-subtle);
   }
 
   .why-headline {
     margin: 0;
     font-weight: 560;
-    font-size: clamp(1.5rem, 2.8vw, 2rem);
-    line-height: 1.18;
-    letter-spacing: -0.025em;
+    font-size: clamp(1.625rem, 3vw, 2.15rem);
+    line-height: 1.16;
+    letter-spacing: -0.028em;
     color: var(--yg-text);
   }
 
@@ -416,18 +410,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: var(--boa-space-24);
-  }
-
-  .connect-strip-code {
-    font-size: 0.78rem;
-    padding: var(--boa-space-6) var(--boa-space-12);
-    border-radius: var(--yg-radius-small);
-    border: 1px solid var(--yg-border-subtle);
-    background: var(--yg-surface);
-    color: var(--yg-text);
-    overflow-x: auto;
-    max-width: 100%;
-    white-space: nowrap;
   }
 
   /* Shared Editorial Patterns */
