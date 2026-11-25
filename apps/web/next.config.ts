@@ -3,14 +3,30 @@ import type { NextConfig } from "next";
 
 const MONOREPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
+const BASE_SECURITY_HEADERS = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Strict-Transport-Security", value: "max-age=31536000" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
+  },
+];
+
 const PRIVATE_NO_STORE = [
   {
     key: "Cache-Control",
     value: "private, no-store",
   },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
 ];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  reactStrictMode: true,
   transpilePackages: [
     "@coffee-chat/core",
     "@coffee-chat/ui",
@@ -41,6 +57,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      { source: "/(.*)", headers: BASE_SECURITY_HEADERS },
       { source: "/", headers: PRIVATE_NO_STORE },
       { source: "/me", headers: PRIVATE_NO_STORE },
       { source: "/sources", headers: PRIVATE_NO_STORE },
