@@ -5,7 +5,8 @@ import {
   applyDocumentTheme,
   applyHostStyleVariables,
 } from "@modelcontextprotocol/ext-apps";
-import { Notice, Yogurt } from "@openboa/yogurt";
+import { Notice } from "@openboa/yogurt/notice";
+import { Yogurt } from "@openboa/yogurt/yogurt";
 import type {
   ConfirmBeanEdits,
   UiPreparedBeanData,
@@ -177,7 +178,7 @@ function ConfirmBeanApp() {
   };
 
   return (
-    <Yogurt appearance={appearance} material="neutral" className="cc-widget-frame">
+    <Yogurt appearance={appearance} material="neutral" className="app-widget-frame">
       {cancelled ? (
         <Notice title="Cancelled" tone="neutral">
           No Bean was saved. You can keep editing in conversation or dismiss this card.

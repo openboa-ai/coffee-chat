@@ -22,6 +22,18 @@ Coffee Chat lets you capture author-confirmed perspectives from reading or real 
 | `skills/` | Host-neutral `SKILL.md` definitions (`roast`, `brew`) and host packaging manifests |
 | `evals/` | Candidate-independent Taste evaluation harness and 6 frozen core scenarios |
 
+## UI development with Yogurt
+
+Coffee Chat uses `@openboa/yogurt` components, tokens, and composition rules across Web and MCP Apps. Its [Yogurt configuration](yogurt.config.json) declares all four presentation surfaces (`packages/ui/src`, `packages/mcp-apps/src`, `apps/web/src/components`, and `apps/web/src/app`).
+
+- **Pinned SDK:** `@openboa/yogurt@0.2.0-local.1` (`vendor/openboa-yogurt-0.2.0-local.1.tgz`, bundling `@ui-sdk/core@0.1.0-beta.13` and `@ui-sdk/react@0.1.0-beta.13`).
+- **Verify:**
+
+```sh
+npm install
+npm run check:yogurt
+```
+
 ## Local development
 
 ```sh

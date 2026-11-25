@@ -1,22 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Disclosure,
-  Divider,
-  Heading,
-  Inline,
-  Notice,
-  Stack,
-  Surface,
-  Switch,
-  Text,
-  TextField,
-  Textarea,
-} from "@openboa/yogurt";
+import { Badge } from "@openboa/yogurt/badge";
+import { Button } from "@openboa/yogurt/button";
+import { Card } from "@openboa/yogurt/card";
+import { Checkbox } from "@openboa/yogurt/checkbox";
+import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
+import { Divider } from "@openboa/yogurt/divider";
+import { Inline } from "@openboa/yogurt/inline";
+import { Notice } from "@openboa/yogurt/notice";
+import { Stack } from "@openboa/yogurt/stack";
+import { Surface } from "@openboa/yogurt/surface";
+import { Switch } from "@openboa/yogurt/switch";
+import { Text } from "@openboa/yogurt/text";
+import { TextField } from "@openboa/yogurt/text-field";
+import { Textarea } from "@openboa/yogurt/textarea";
 import type { UiPreparedBeanData, UiVisibility } from "./types.js";
 
 export interface ConfirmBeanEdits {
@@ -69,46 +67,52 @@ export function ConfirmBeanCard({
 
   if (savedReceipt) {
     return (
-      <Surface className="cc-card">
-        <Stack gap={12}>
+      <Card
+        title={title}
+        description="Confirmed Bean saved to My Roastery · ready to Brew in your AI"
+        headerAction={
           <Inline gap={8}>
-            <Badge tone="success">Confirmed &amp; Saved</Badge>
-            <Badge tone={savedReceipt.visibility === "public" ? "brand" : "neutral"}>
-              {savedReceipt.visibility === "public" ? "Public" : "Private"}
+            <Badge tone="success">Confirmed</Badge>
+            <Badge
+              tone={savedReceipt.visibility === "public" ? "brand" : "neutral"}
+              dot={false}
+            >
+              {savedReceipt.visibility === "public"
+                ? "On the Table"
+                : "Private"}
             </Badge>
           </Inline>
-          <Heading level={3}>{title}</Heading>
-          <Text variant="help">
-            Your AI can now reference this take automatically when it fits.{" "}
-            <span className="cc-mono">{savedReceipt.beanId}</span>
-          </Text>
-        </Stack>
-      </Surface>
+        }
+        variant="raised"
+        density="regular"
+      >
+        <Text variant="meta">
+          Revision {savedReceipt.version} · ID {savedReceipt.beanId}
+        </Text>
+      </Card>
     );
   }
 
   return (
-    <Surface className="cc-card">
+    <Card
+      title="Roast a Bean"
+      description="Capture & confirm a take — nothing is saved until you confirm"
+      headerAction={
+        <Badge
+          tone={visibility === "public" ? "brand" : "neutral"}
+          dot={false}
+        >
+          {visibility === "public"
+            ? "On the Table · Public"
+            : "Private · Default"}
+        </Badge>
+      }
+      variant="raised"
+      density="regular"
+    >
       <Stack gap={16}>
-        <div className="cc-row-between">
-          <Stack gap={4}>
-            <Inline gap={8}>
-              <Badge tone="brand">Save Perspective</Badge>
-              <Badge tone={visibility === "public" ? "accent" : "neutral"}>
-                {visibility === "public" ? "Public" : "Private (default)"}
-              </Badge>
-            </Inline>
-            <Heading level={3}>Review and confirm this perspective</Heading>
-          </Stack>
-        </div>
-
-        <Text variant="help">
-          Edit anything below so it sounds exactly like you. Nothing is saved until you click
-          confirm.
-        </Text>
-
         {error ? (
-          <Notice title="Could not save" tone="danger">
+          <Notice title="Could not save Bean" tone="danger">
             {error}
           </Notice>
         ) : null}
@@ -116,70 +120,82 @@ export function ConfirmBeanCard({
         <Stack gap={12}>
           <TextField
             label="Headline"
+            help="One-line summary of your Bean"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="One-line summary of your take"
           />
           <Textarea
-            label="What it meant to you"
+            label="My Take"
+            help="What clicked for you"
             value={take}
             onChange={(e) => setTake(e.target.value)}
             rows={3}
           />
           <Textarea
-            label="What mattered more (the trade-off)"
+            label="Trade-off"
+            help="What mattered more when making this call"
             value={tradeoff}
             onChange={(e) => setTradeoff(e.target.value)}
             rows={2}
           />
           <Textarea
-            label="When it doesn't apply (the exception)"
+            label="Boundary"
+            help="When it doesn't apply"
             value={boundary}
             onChange={(e) => setBoundary(e.target.value)}
             rows={2}
           />
         </Stack>
 
-        <Disclosure label="Optional tags & open questions">
+        <DisclosureRow label="Domains & Open Question (optional)">
           <Stack gap={12}>
             <TextField
-              label="Tags (comma separated)"
+              label="Domains"
+              help="Decision topics, comma separated"
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
               placeholder="product, architecture, hiring"
             />
             <TextField
-              label="What you're still unsure about"
+              label="Open Question"
+              help="What's still uncertain (optional)"
               value={uncertainty}
               onChange={(e) => setUncertainty(e.target.value)}
               placeholder="Optional caveat or open question"
             />
           </Stack>
-        </Disclosure>
+        </DisclosureRow>
 
         <Stack gap={8}>
-          <Text variant="meta">Where this came from</Text>
+          <Text variant="meta">Origins · Where this came from</Text>
           {payload.origins.map((origin, idx) => (
-            <div key={idx} className="cc-muted-box">
+            <Surface key={idx} variant="surface" density="compact">
               <Stack gap={4}>
-                <Inline gap={8}>
-                  <Badge tone="neutral">
-                    {origin.kind === "source_excerpt" ? "From a read" : "From work"}
+                <Inline gap={8} align="center">
+                  <Badge tone="neutral" dot={false}>
+                    {origin.kind === "source_excerpt"
+                      ? "Reading Origin · From reading"
+                      : "Work Origin · From work"}
                   </Badge>
-                  {origin.locator ? <Text variant="meta">{origin.locator}</Text> : null}
+                  {origin.locator ? (
+                    <Text variant="meta">{origin.locator}</Text>
+                  ) : null}
                 </Inline>
                 {origin.kind === "source_excerpt" ? (
                   <>
                     <Text variant="body">{origin.sourceTitle ?? origin.url}</Text>
                     {origin.quotation ? (
-                      <blockquote className="cc-quote">&ldquo;{origin.quotation}&rdquo;</blockquote>
+                      <blockquote className="bean-quote">
+                        <Text variant="body">&ldquo;{origin.quotation}&rdquo;</Text>
+                      </blockquote>
                     ) : null}
                   </>
                 ) : (
                   <Text variant="body">{origin.episodeSummary}</Text>
                 )}
               </Stack>
-            </div>
+            </Surface>
           ))}
         </Stack>
 
@@ -187,8 +203,8 @@ export function ConfirmBeanCard({
 
         <Stack gap={12}>
           <Switch
-            label="Share publicly on my Coffee Chat page"
-            help="Starts private (only you and your AI). You can change this anytime."
+            label="Put on the Table (Shared publicly)"
+            help="Starts Private (only me & my AI). You can switch anytime."
             checked={visibility === "public"}
             onCheckedChange={(checked) => {
               setVisibility(checked ? "public" : "private");
@@ -197,16 +213,18 @@ export function ConfirmBeanCard({
           />
 
           {needsRedaction ? (
-            <Notice title="Quick privacy check before sharing" tone="warning">
+            <Notice title="Work Origin privacy check" tone="warning">
               <Stack gap={8}>
                 <Text variant="help">
-                  Because this take came from a work decision, make sure no company secrets, private
-                  code, or confidential names are included.
+                  Confirm this Work Origin contains no private employer, client,
+                  or confidential details before putting it On the Table.
                 </Text>
                 <Checkbox
                   label="I removed any private or confidential work details"
                   checked={redactionConfirmed}
-                  onCheckedChange={(checked) => setRedactionConfirmed(checked === true)}
+                  onCheckedChange={(checked) =>
+                    setRedactionConfirmed(checked === true)
+                  }
                 />
               </Stack>
             </Notice>
@@ -242,6 +260,6 @@ export function ConfirmBeanCard({
           ) : null}
         </Inline>
       </Stack>
-    </Surface>
+    </Card>
   );
 }

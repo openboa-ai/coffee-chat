@@ -5,7 +5,7 @@ import {
   applyDocumentTheme,
   applyHostStyleVariables,
 } from "@modelcontextprotocol/ext-apps";
-import { Yogurt } from "@openboa/yogurt";
+import { Yogurt } from "@openboa/yogurt/yogurt";
 import { PerspectiveDiffCard, type UiBeanDetail } from "@coffee-chat/ui";
 
 function PerspectiveDiffApp() {
@@ -96,7 +96,7 @@ function PerspectiveDiffApp() {
   };
 
   return (
-    <Yogurt appearance={appearance} material="neutral" className="cc-widget-frame">
+    <Yogurt appearance={appearance} material="neutral" className="app-widget-frame">
       <PerspectiveDiffCard
         subject={subject}
         perspectives={perspectives}

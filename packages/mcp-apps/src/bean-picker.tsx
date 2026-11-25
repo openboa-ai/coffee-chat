@@ -5,7 +5,8 @@ import {
   applyDocumentTheme,
   applyHostStyleVariables,
 } from "@modelcontextprotocol/ext-apps";
-import { Notice, Yogurt } from "@openboa/yogurt";
+import { Notice } from "@openboa/yogurt/notice";
+import { Yogurt } from "@openboa/yogurt/yogurt";
 import { BeanPicker, type UiBeanSummary } from "@coffee-chat/ui";
 
 function BeanPickerApp() {
@@ -92,7 +93,7 @@ function BeanPickerApp() {
   };
 
   return (
-    <Yogurt appearance={appearance} material="neutral" className="cc-widget-frame">
+    <Yogurt appearance={appearance} material="neutral" className="app-widget-frame">
       {appliedCount !== null ? (
         <Notice title="Perspectives attached" tone="success">
           Selected {appliedCount} confirmed perspective(s) for Brew.

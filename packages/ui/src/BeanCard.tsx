@@ -1,18 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import {
-  Avatar,
-  Badge,
-  Divider,
-  Heading,
-  Inline,
-  Link,
-  Post,
-  Stack,
-  Surface,
-  Text,
-} from "@openboa/yogurt";
+import { Avatar } from "@openboa/yogurt/avatar";
+import { Badge } from "@openboa/yogurt/badge";
+import { Card } from "@openboa/yogurt/card";
+import { Divider } from "@openboa/yogurt/divider";
+import { Heading } from "@openboa/yogurt/heading";
+import { Inline } from "@openboa/yogurt/inline";
+import { Link } from "@openboa/yogurt/link";
+import { Stack } from "@openboa/yogurt/stack";
+import { Text } from "@openboa/yogurt/text";
 import type { UiBeanDetail, UiRelationKind } from "./types.js";
 
 export function formatRelationHumanLabel(
@@ -20,12 +17,16 @@ export function formatRelationHumanLabel(
   direction?: "outgoing" | "incoming",
 ): string {
   if (kind === "supersedes") {
-    return direction === "incoming" ? "Updated later by" : "Updates earlier take";
+    return direction === "incoming"
+      ? "Updated Mind · Replaced by"
+      : "Updated Mind · Replaces";
   }
   if (kind === "refines") {
-    return direction === "incoming" ? "Expanded by" : "Builds on";
+    return direction === "incoming"
+      ? "Refined · Built on by"
+      : "Refined · Builds on";
   }
-  return "In tension with";
+  return "In Tension · Conflicts with";
 }
 
 export interface BeanCardProps {
@@ -43,129 +44,144 @@ export function BeanCard({
 }: BeanCardProps) {
   const firstSource = bean.origins.find((o) => o.kind === "source_excerpt");
   const firstWork = bean.origins.find((o) => o.kind === "work_episode");
+  const originLabel =
+    firstSource && firstWork
+      ? "Reading & Work Origins"
+      : firstSource
+        ? "Reading Origin · From reading"
+        : "Work Origin · From work";
 
   return (
-    <Post>
-      <Surface className="cc-card">
-        <Stack gap={16}>
-          <div className="cc-row-between">
-            {showOwner ? (
-              <Inline gap={8}>
-                <Avatar label={bean.ownerDisplayName} size={28} />
-                <Stack gap={2}>
-                  <Link href={`/@${bean.ownerHandle}`}>
-                    <strong>{bean.ownerDisplayName}</strong>
-                  </Link>
-                  <Text variant="meta">@{bean.ownerHandle}</Text>
-                </Stack>
-              </Inline>
-            ) : (
-              <Inline gap={8}>
-                {showVisibilityBadge ? (
-                  <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
-                    {bean.visibility === "public" ? "Public" : "Private"}
-                  </Badge>
-                ) : null}
-                <Badge tone="neutral">
-                  {firstSource ? "From a read" : "From work"}
-                </Badge>
-              </Inline>
-            )}
-
-            <Inline gap={8}>
-              {showOwner && showVisibilityBadge ? (
-                <Badge tone={bean.visibility === "public" ? "brand" : "neutral"}>
-                  {bean.visibility === "public" ? "Public" : "Private"}
-                </Badge>
-              ) : null}
-              {bean.supersededByBeanId ? (
-                <Badge tone="warning">Updated later</Badge>
-              ) : null}
-              {bean.hasTension ? (
-                <Badge tone="warning">Has tension</Badge>
-              ) : null}
+    <Card variant="raised" density="regular">
+      <Stack gap={16}>
+        <Inline justify="between" align="center" gap={12}>
+          {showOwner ? (
+            <Inline gap={8} align="center">
+              <Avatar label={bean.ownerDisplayName} size="compact" />
+              <Stack gap={2}>
+                <Link href={`/@${bean.ownerHandle}`}>
+                  <Text variant="body">{bean.ownerDisplayName}</Text>
+                </Link>
+                <Text variant="meta">@{bean.ownerHandle}</Text>
+              </Stack>
             </Inline>
-          </div>
-
-          <Stack gap={8}>
-            <Heading level={3}>{bean.title}</Heading>
-            <p className="cc-paragraph">
-              <Text variant="body">{bean.take}</Text>
-            </p>
-          </Stack>
-
-          {firstSource?.quotation ? (
-            <blockquote className="cc-quote">
-              &ldquo;{firstSource.quotation}&rdquo;
-              {firstSource.sourceTitle ? (
-                <div>
-                  <Text variant="meta">
-                    — {firstSource.sourceTitle}
-                    {firstSource.locator ? ` · ${firstSource.locator}` : ""}
-                  </Text>
-                </div>
-              ) : null}
-            </blockquote>
-          ) : null}
-
-          <div className="cc-tradeoff-box">
-            <Stack gap={4}>
-              <Text variant="meta">What mattered more</Text>
-              <Text variant="body">
-                <strong>{bean.tradeoff}</strong>
-              </Text>
-            </Stack>
-          </div>
-
-          <div className="cc-boundary-box">
-            <Stack gap={4}>
-              <Text variant="meta">When it doesn&apos;t apply</Text>
-              <Text variant="help">{bean.boundary}</Text>
-            </Stack>
-          </div>
-
-          {firstWork?.episodeSummary ? (
-            <Text variant="meta">Context: {firstWork.episodeSummary}</Text>
-          ) : null}
-
-          {firstSource && !firstSource.quotation && firstSource.url ? (
-            <Text variant="meta">
-              Read: {firstSource.sourceTitle ?? firstSource.url}
-            </Text>
-          ) : null}
-
-          {bean.relations.length > 0 ? (
-            <div className="cc-chip-row">
-              {bean.relations.map((rel, idx) => (
+          ) : (
+            <Inline gap={8} align="center">
+              {showVisibilityBadge ? (
                 <Badge
-                  key={rel.id ?? idx}
-                  tone={rel.kind === "tensions_with" ? "warning" : "accent"}
+                  tone={bean.visibility === "public" ? "brand" : "neutral"}
+                  dot={false}
                 >
-                  {formatRelationHumanLabel(rel.kind, rel.direction)}:{" "}
-                  {rel.relatedBeanTitle || rel.relatedBeanId}
+                  {bean.visibility === "public"
+                    ? "On the Table · Public"
+                    : "Private · Only me & my AI"}
                 </Badge>
-              ))}
-            </div>
-          ) : null}
+              ) : null}
+              <Badge tone="neutral" dot={false}>
+                {originLabel}
+              </Badge>
+            </Inline>
+          )}
 
-          {bean.tags.length > 0 ? (
-            <div className="cc-chip-row">
-              {bean.tags.map((tag) => (
-                <Badge key={tag} tone="neutral">
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
-          ) : null}
+          <Inline gap={8} align="center">
+            {showOwner && showVisibilityBadge ? (
+              <Badge
+                tone={bean.visibility === "public" ? "brand" : "neutral"}
+                dot={false}
+              >
+                {bean.visibility === "public" ? "On the Table" : "Private"}
+              </Badge>
+            ) : null}
+            {bean.supersededByBeanId ? (
+              <Badge tone="warning">Updated Mind</Badge>
+            ) : null}
+            {bean.hasTension ? (
+              <Badge tone="warning">In Tension</Badge>
+            ) : null}
+          </Inline>
+        </Inline>
 
-          {actions ? (
-            <>
-              <Divider />
-              <Inline gap={8}>{actions}</Inline>
-            </>
-          ) : null}
+        <Stack gap={8}>
+          <Heading level={3}>{bean.title}</Heading>
+          <Text as="p" variant="body">
+            {bean.take}
+          </Text>
         </Stack>
-      </Surface>
-    </Post>
+
+        {firstSource?.quotation ? (
+          <blockquote className="bean-quote">
+            <Stack gap={4}>
+              <Text variant="body">&ldquo;{firstSource.quotation}&rdquo;</Text>
+              {firstSource.sourceTitle ? (
+                <Text variant="meta">
+                  — {firstSource.sourceTitle}
+                  {firstSource.locator ? ` · ${firstSource.locator}` : ""}
+                </Text>
+              ) : null}
+            </Stack>
+          </blockquote>
+        ) : null}
+
+        <div className="bean-axis-tradeoff">
+          <Stack gap={4}>
+            <Text variant="meta">Trade-off · What mattered more</Text>
+            <Text as="p" variant="body">
+              {bean.tradeoff}
+            </Text>
+          </Stack>
+        </div>
+
+        <div className="bean-axis-boundary">
+          <Stack gap={4}>
+            <Text variant="meta">Boundary · When it doesn&apos;t apply</Text>
+            <Text as="p" variant="help">
+              {bean.boundary}
+            </Text>
+          </Stack>
+        </div>
+
+        {firstWork?.episodeSummary ? (
+          <Text variant="meta">Work Origin: {firstWork.episodeSummary}</Text>
+        ) : null}
+
+        {firstSource && !firstSource.quotation && firstSource.url ? (
+          <Text variant="meta">
+            Reading Origin: {firstSource.sourceTitle ?? firstSource.url}
+          </Text>
+        ) : null}
+
+        {bean.relations.length > 0 ? (
+          <Inline gap={8}>
+            {bean.relations.map((rel, idx) => (
+              <Badge
+                key={rel.id ?? idx}
+                tone={rel.kind === "tensions_with" ? "warning" : "accent"}
+                dot={false}
+              >
+                {formatRelationHumanLabel(rel.kind, rel.direction)}:{" "}
+                {rel.relatedBeanTitle || rel.relatedBeanId}
+              </Badge>
+            ))}
+          </Inline>
+        ) : null}
+
+        {bean.tags.length > 0 ? (
+          <Inline gap={8}>
+            {bean.tags.map((tag) => (
+              <Badge key={tag} tone="neutral" dot={false}>
+                #{tag}
+              </Badge>
+            ))}
+          </Inline>
+        ) : null}
+
+        {actions ? (
+          <>
+            <Divider />
+            <Inline gap={8}>{actions}</Inline>
+          </>
+        ) : null}
+      </Stack>
+    </Card>
   );
 }

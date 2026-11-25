@@ -1,20 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Divider,
-  EmptyResult,
-  Heading,
-  Inline,
-  Notice,
-  SearchField,
-  Stack,
-  Surface,
-  Text,
-} from "@openboa/yogurt";
+import { Badge } from "@openboa/yogurt/badge";
+import { Button } from "@openboa/yogurt/button";
+import { Card } from "@openboa/yogurt/card";
+import { Checkbox } from "@openboa/yogurt/checkbox";
+import { Divider } from "@openboa/yogurt/divider";
+import { EmptyResult } from "@openboa/yogurt/empty-result";
+import { Inline } from "@openboa/yogurt/inline";
+import { Notice } from "@openboa/yogurt/notice";
+import { SearchField } from "@openboa/yogurt/search-field";
+import { Stack } from "@openboa/yogurt/stack";
+import { Surface } from "@openboa/yogurt/surface";
+import { Text } from "@openboa/yogurt/text";
 import type { UiBeanSummary } from "./types.js";
 
 export interface BeanPickerProps {
@@ -60,69 +58,76 @@ export function BeanPicker({
   };
 
   return (
-    <Surface className="cc-card">
+    <Card
+      title="Brew · Choose Beans for this task"
+      description="Apply confirmed takes to guide trade-offs without overstepping boundaries"
+      headerAction={
+        <Badge tone="neutral" dot={false}>
+          {selectedIds.length} selected
+        </Badge>
+      }
+      variant="raised"
+      density="regular"
+    >
       <Stack gap={16}>
-        <div className="cc-row-between">
-          <Stack gap={4}>
-            <Badge tone="brand">Choose Perspectives</Badge>
-            <Heading level={3}>Choose perspectives for this task</Heading>
-          </Stack>
-          <Text variant="meta">{selectedIds.length} selected</Text>
-        </div>
-
         {reason || hasTensionInList ? (
-          <Notice title="Two of your criteria pull in different directions" tone="warning">
+          <Notice title="In Tension · Two Beans pull in different directions" tone="warning">
             {reason ??
-              "Some matching takes are in tension with each other. Pick which ones should lead here."}
+              "Some matching Beans are in tension with each other. Pick which ones should lead here."}
           </Notice>
         ) : null}
 
         <SearchField
-          label="Filter perspectives"
+          label="Filter Beans"
+          help="Search headline, trade-off, domain, or @voice"
           value={query}
           onValueChange={setQuery}
-          placeholder="Search headline, trade-off, tag, or @person"
+          placeholder="Search headline, trade-off, domain, or @voice"
         />
 
         {filtered.length === 0 ? (
           <EmptyResult
             query={query}
             onClear={() => setQuery("")}
-            empty="No matching perspectives found."
+            empty="No matching Beans found."
           />
         ) : (
           <Stack gap={8}>
             {filtered.map((bean) => {
               const checked = selectedIds.includes(bean.id);
               return (
-                <div key={bean.id} className="cc-muted-box">
+                <Surface key={bean.id} variant="surface" density="compact">
                   <Stack gap={8}>
-                    <div className="cc-row-between">
+                    <Inline justify="between" align="center" gap={8}>
                       <Checkbox
                         label={bean.title}
                         checked={checked}
                         onCheckedChange={() => toggle(bean.id)}
                       />
                       <Inline gap={4}>
-                        <Badge tone="neutral">@{bean.ownerHandle}</Badge>
-                        {bean.hasTension ? <Badge tone="warning">tension</Badge> : null}
+                        <Badge tone="neutral" dot={false}>
+                          @{bean.ownerHandle}
+                        </Badge>
+                        {bean.hasTension ? (
+                          <Badge tone="warning">In Tension</Badge>
+                        ) : null}
                         {bean.supersededByBeanId ? (
-                          <Badge tone="danger">updated later</Badge>
+                          <Badge tone="danger">Updated Mind</Badge>
                         ) : null}
                       </Inline>
-                    </div>
+                    </Inline>
                     <Text variant="help">{bean.tradeoffPreview}</Text>
                     {bean.tags.length > 0 ? (
-                      <div className="cc-chip-row">
+                      <Inline gap={8}>
                         {bean.tags.map((tag) => (
-                          <Badge key={tag} tone="neutral">
+                          <Badge key={tag} tone="neutral" dot={false}>
                             #{tag}
                           </Badge>
                         ))}
-                      </div>
+                      </Inline>
                     ) : null}
                   </Stack>
-                </div>
+                </Surface>
               );
             })}
           </Stack>
@@ -136,15 +141,15 @@ export function BeanPicker({
             tone="brand"
             disabled={selectedIds.length === 0 || applying}
             pending={applying}
-            pendingLabel="Applying…"
+            pendingLabel="Brewing…"
             onClick={() =>
               onApply(beans.filter((b) => selectedIds.includes(b.id)))
             }
           >
-            Apply Selected Perspectives ({selectedIds.length})
+            Brew Selected Beans ({selectedIds.length})
           </Button>
         </Inline>
       </Stack>
-    </Surface>
+    </Card>
   );
 }

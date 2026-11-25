@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
     "@coffee-chat/ui",
     "@coffee-chat/mcp-apps",
     "@openboa/yogurt",
+    "@ui-sdk/core",
+    "@ui-sdk/react",
   ],
   serverExternalPackages: ["@electric-sql/pglite"],
   webpack: (config) => {

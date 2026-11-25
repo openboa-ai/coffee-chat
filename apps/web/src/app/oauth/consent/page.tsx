@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Notice } from "@openboa/yogurt";
+import { Notice } from "@openboa/yogurt/notice";
 import { getCurrentUser } from "@/lib/auth";
 import { getMcpResourceUrl } from "@/lib/runtime";
 import { ConsentClient } from "@/components/ConsentClient";

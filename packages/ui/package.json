@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@openboa/yogurt": "file:../../vendor/openboa-yogurt-0.1.0-local.15.tgz",
+    "@openboa/yogurt": "file:../../vendor/openboa-yogurt-0.2.0-local.1.tgz",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   }
