@@ -32,11 +32,9 @@
     --cc-cup-ceramic: var(--boa-color-neutral-50);
     --cc-cup-saucer: var(--boa-color-earth-100);
     --cc-cup-rim: var(--boa-color-earth-300);
-    --cc-cup-decaf: var(--boa-color-earth-200);
     --cc-cup-light: var(--boa-color-earth-700);
     --cc-cup-dark: var(--boa-color-earth-950);
-    --cc-cup-bean-fill: var(--boa-color-earth-900);
-    --cc-slip-bg: var(--boa-color-neutral-50);
+    --cc-card-bg: var(--boa-color-neutral-50);
     background: var(--cc-linen);
     color: var(--cc-espresso);
   }
@@ -58,11 +56,9 @@
     --cc-cup-ceramic: var(--boa-color-earth-800);
     --cc-cup-saucer: var(--boa-color-earth-900);
     --cc-cup-rim: var(--boa-color-earth-700);
-    --cc-cup-decaf: var(--boa-color-earth-700);
     --cc-cup-light: var(--boa-color-ochre-700);
     --cc-cup-dark: var(--boa-color-neutral-950);
-    --cc-cup-bean-fill: var(--boa-color-earth-800);
-    --cc-slip-bg: var(--boa-color-earth-900);
+    --cc-card-bg: var(--boa-color-earth-900);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -83,15 +79,12 @@
       --cc-cup-ceramic: var(--boa-color-earth-800);
       --cc-cup-saucer: var(--boa-color-earth-900);
       --cc-cup-rim: var(--boa-color-earth-700);
-      --cc-cup-decaf: var(--boa-color-earth-700);
       --cc-cup-light: var(--boa-color-ochre-700);
       --cc-cup-dark: var(--boa-color-neutral-950);
-      --cc-cup-bean-fill: var(--boa-color-earth-800);
-      --cc-slip-bg: var(--boa-color-earth-900);
+      --cc-card-bg: var(--boa-color-earth-900);
     }
   }
 
-  /* Harmonize top masthead and footer into warm café linen on Home */
   .app-shell-home .app-masthead-wrap {
     background: var(--cc-linen);
     border-block-end-color: var(--cc-linen-line);
@@ -127,7 +120,6 @@
     gap: clamp(var(--boa-space-16), 3vw, var(--boa-space-40));
   }
 
-  /* Clean typographic nav links — no boxed pills around active route */
   .app-masthead .yg-nav-list[data-orientation="horizontal"] {
     gap: clamp(var(--boa-space-4), 1.4vw, var(--boa-space-16));
   }
@@ -241,7 +233,6 @@
     color: var(--yg-text);
   }
 
-  /* Quiet architectural footer */
   .app-footer {
     border-block-start: 1px solid var(--yg-border-subtle);
     padding-block: var(--boa-space-24);
@@ -275,7 +266,6 @@
     text-decoration: none;
   }
 
-  /* Architectural PageHeader: title left, actions right, anchored on bottom hairline */
   .app-shell .yg-page-header {
     display: flex;
     flex-wrap: wrap;
@@ -297,7 +287,6 @@
     flex-shrink: 0;
   }
 
-  /* Quiet inline identity link — never hard underlined */
   .person-inline-link.yg-link {
     display: inline-flex;
     align-items: baseline;
@@ -311,14 +300,13 @@
     text-decoration: none;
   }
 
-  /* Plain-language prompt CodeBlocks wrap cleanly instead of clipping */
   .prompt-code-wrap pre {
     white-space: pre-wrap;
     word-break: break-word;
   }
 
   /* =========================================================================
-     HOME — WARM SPECIALTY ROASTERY × OPENBOA INK BLUE
+     HOME — VISUAL-FIRST ANIMATED STORYTELLING (COFFEE PALETTE × INK BLUE)
      ========================================================================= */
 
   .cc-landing {
@@ -334,7 +322,7 @@
     box-sizing: border-box;
   }
 
-  /* ACT 01 — WARM CAFÉ TABLE OPENING */
+  /* SCENE 1 — HERO */
   .cc-cafe-hero {
     background: var(--cc-linen);
     padding-block: clamp(var(--boa-space-32), 6vh, var(--boa-space-64));
@@ -345,8 +333,8 @@
 
   .cc-cafe-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    gap: clamp(var(--boa-space-32), 6vw, 5.5rem);
+    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+    gap: clamp(var(--boa-space-32), 5vw, 4.75rem);
     align-items: center;
   }
 
@@ -365,16 +353,16 @@
 
   .cc-cafe-eyebrow {
     font-size: 0.875rem;
-    font-weight: 540;
+    font-weight: 580;
     letter-spacing: -0.01em;
     color: var(--cc-roast);
   }
 
   .cc-cafe-h1 {
     margin: 0;
-    font-size: clamp(2.75rem, 5.2vw, 4.55rem);
+    font-size: clamp(2.5rem, 4.45vw, 3.95rem);
     font-weight: 540;
-    line-height: 0.98;
+    line-height: 0.99;
     letter-spacing: -0.042em;
     color: var(--cc-espresso);
   }
@@ -393,18 +381,18 @@
 
   .cc-cafe-lead {
     margin: 0;
-    font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
-    line-height: 1.54;
-    letter-spacing: -0.01em;
+    font-size: clamp(1.125rem, 1.5vw, 1.3125rem);
+    line-height: 1.48;
+    letter-spacing: -0.012em;
     color: var(--cc-roast-muted);
-    max-inline-size: 40ch;
+    max-inline-size: 32ch;
   }
 
   .cc-cta-cluster {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--boa-space-16) var(--boa-space-24);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--boa-space-12);
   }
 
   .cc-warm-links {
@@ -445,395 +433,251 @@
     user-select: none;
   }
 
-  .cc-agents-note {
-    margin: 0;
-    font-size: 0.8125rem;
-    color: var(--cc-roast-muted);
-  }
-
   .cc-prompt-drawer {
     inline-size: 100%;
-    max-inline-size: 36rem;
+    max-inline-size: 34rem;
   }
 
   /* =========================================================================
-     BESPOKE OVERHEAD PORCELAIN CUP & ROAST EXTRACTION VISUAL
+     HERO ANIMATED BEAN-DROP INTO AI STAGE
      ========================================================================= */
 
-  .cc-tasting-bar {
+  .cc-hero-visual {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-20);
-    padding-inline-start: clamp(var(--boa-space-20), 3vw, var(--boa-space-40));
-    border-inline-start: 1px solid var(--cc-linen-line);
+    align-items: stretch;
+    padding: var(--boa-space-24);
+    border-radius: var(--yg-radius-card);
+    background: var(--cc-linen-deep);
+    border: 1px solid var(--cc-linen-line);
   }
 
-  .cc-cup-stage {
+  .cc-bean-tray {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--boa-space-10);
+  }
+
+  .cc-bean-pill {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: var(--boa-space-6);
+    gap: var(--boa-space-8);
+    padding: var(--boa-space-10) var(--boa-space-12);
+    border-radius: var(--yg-radius-panel);
+    border: 1.5px solid var(--cc-linen-line);
+    background: var(--cc-card-bg);
+    color: var(--cc-roast-muted);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition:
+      border-color 0.22s ease,
+      transform 0.22s ease,
+      opacity 0.22s ease;
+    opacity: 0.72;
   }
 
-  .cc-cup-svg {
-    inline-size: 204px;
-    block-size: 204px;
+  .cc-bean-pill:hover {
+    opacity: 0.96;
+  }
+
+  .cc-bean-pill[data-active="true"] {
+    opacity: 1;
+    border-color: var(--cc-roast);
+    transform: translateY(-2px);
+  }
+
+  .cc-bean-pill[data-active="true"][data-variant="craft"] {
+    border-color: var(--yg-brand-ink);
+  }
+
+  .cc-bean-svg {
+    flex-shrink: 0;
+  }
+
+  .cc-bean-pill-text {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+    gap: 1px;
+  }
+
+  .cc-bean-pill-text strong {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--cc-espresso);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cc-bean-pill-text span {
+    font-size: 0.6875rem;
+    color: var(--cc-roast-muted);
+    white-space: nowrap;
+  }
+
+  .cc-drop-conduit {
+    inline-size: 100%;
+    block-size: 72px;
+  }
+
+  .cc-drop-svg {
+    inline-size: 100%;
+    block-size: 100%;
     display: block;
     overflow: visible;
   }
 
-  .cc-cup-dial-dot {
-    fill: var(--yg-brand-ink);
-    transition:
-      cx 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      cy 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      fill 0.25s ease;
+  .cc-ai-window {
+    border-radius: var(--yg-radius-panel);
+    background: var(--cc-card-bg);
+    border: 1.5px solid var(--cc-linen-line);
+    padding: var(--boa-space-20);
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-16);
+    transition: border-color 0.3s ease;
   }
 
-  .cc-cup-stage[data-mode="decaf"] .cc-cup-dial-dot {
-    fill: var(--cc-roast-muted);
+  .cc-ai-window[data-mode="growth"] {
+    border-color: var(--cc-roast);
   }
 
-  .cc-cup-brew {
-    fill: var(--cc-cup-light);
-    transition: fill 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  .cc-ai-window[data-mode="craft"] {
+    border-color: var(--yg-brand-ink);
   }
 
-  .cc-cup-stage[data-mode="decaf"] .cc-cup-brew {
-    fill: var(--cc-cup-decaf);
+  .cc-ai-window-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--boa-space-8);
+    padding-block-end: var(--boa-space-12);
+    border-block-end: 1px solid var(--cc-linen-line);
   }
 
-  .cc-cup-stage[data-mode="craft"] .cc-cup-brew {
-    fill: var(--cc-cup-dark);
-  }
-
-  .cc-cup-crema-group {
-    opacity: 0.94;
-    transition:
-      opacity 0.4s ease,
-      transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .cc-cup-stage[data-mode="decaf"] .cc-cup-crema-group {
-    opacity: 0;
-  }
-
-  .cc-cup-crema {
-    fill: var(--cc-crema);
-    opacity: 0.85;
-  }
-
-  .cc-cup-stage[data-mode="craft"] .cc-cup-crema {
-    opacity: 0.5;
-  }
-
-  .cc-cup-crema-ring {
-    stroke: var(--cc-crema);
-    opacity: 0.82;
-  }
-
-  .cc-cup-bean {
-    opacity: 0.88;
-  }
-
-  .cc-cup-steam {
-    opacity: 0.78;
-    transition: opacity 0.4s ease;
-  }
-
-  .cc-cup-stage[data-mode="decaf"] .cc-cup-steam {
-    opacity: 0;
-  }
-
-  .cc-steam-line {
-    animation: cc-steam-float 3.2s ease-in-out infinite;
-  }
-
-  .cc-steam-2 {
-    animation-delay: 0.65s;
-  }
-
-  .cc-steam-3 {
-    animation-delay: 1.3s;
-  }
-
-  @keyframes cc-steam-float {
-    0%,
-    100% {
-      transform: translateY(3px);
-      opacity: 0.35;
-    }
-    50% {
-      transform: translateY(-5px);
-      opacity: 0.9;
-    }
-  }
-
-  .cc-cup-caption {
+  .cc-ai-dots {
     display: inline-flex;
-    align-items: center;
-    gap: var(--boa-space-8);
-    font-size: 0.8125rem;
-    font-weight: 540;
-    color: var(--cc-roast);
+    gap: 5px;
   }
 
-  .cc-cup-roast-dot {
-    inline-size: 8px;
-    block-size: 8px;
+  .cc-ai-dots i {
+    inline-size: 7px;
+    block-size: 7px;
     border-radius: var(--yg-radius-pill);
-    background: var(--cc-cup-light);
-    transition: background-color 0.3s ease;
-  }
-
-  .cc-cup-stage[data-mode="decaf"] .cc-cup-roast-dot {
-    background: var(--cc-roast-muted);
-  }
-
-  .cc-cup-stage[data-mode="craft"] .cc-cup-roast-dot {
-    background: var(--cc-cup-dark);
-  }
-
-  /* Question & Tactile Roast Dial */
-  .cc-tasting-question {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-6);
-  }
-
-  .cc-kicker-warm {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--cc-roast);
-  }
-
-  .cc-kicker-ink {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--yg-brand-ink);
-  }
-
-  .cc-kicker-crema {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--cc-crema);
-  }
-
-  .cc-question-text {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 500;
-    line-height: 1.38;
-    letter-spacing: -0.018em;
-    color: var(--cc-espresso);
-  }
-
-  .cc-dial-control {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-8);
-  }
-
-  .cc-dial-stops {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--boa-space-8);
-  }
-
-  .cc-dial-stop {
-    background: transparent;
-    border: 0;
-    padding: 0 0 var(--boa-space-6);
-    text-align: start;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    color: var(--cc-roast-muted);
-    transition: color 0.18s ease;
-  }
-
-  .cc-dial-stop-center {
-    text-align: center;
-    align-items: center;
-  }
-
-  .cc-dial-stop-end {
-    text-align: end;
-    align-items: flex-end;
-  }
-
-  .cc-dial-stop:hover,
-  .cc-dial-stop[data-active="true"] {
-    color: var(--cc-espresso);
-  }
-
-  .cc-dial-stop-name {
-    font-size: 0.875rem;
-    font-weight: 580;
-    letter-spacing: -0.015em;
-  }
-
-  .cc-dial-stop[data-active="true"] .cc-dial-stop-name {
-    color: var(--yg-brand-ink);
-  }
-
-  .cc-dial-stop-center[data-active="true"] .cc-dial-stop-name {
-    color: var(--cc-espresso);
-  }
-
-  .cc-dial-stop-pole {
-    font-size: 0.75rem;
-    color: var(--cc-roast-muted);
-  }
-
-  .cc-slider-shell {
-    position: relative;
-    block-size: 28px;
-    display: flex;
-    align-items: center;
-  }
-
-  .cc-slider-rail {
-    position: relative;
-    inline-size: 100%;
-    block-size: 3px;
     background: var(--cc-linen-line);
-    border-radius: var(--yg-radius-pill);
   }
 
-  .cc-slider-center-tick {
-    position: absolute;
-    inset-inline-start: 50%;
-    inset-block: -5px;
-    inline-size: 1px;
-    background: var(--cc-roast-muted);
+  .cc-ai-hosts {
+    font-size: 0.75rem;
+    color: var(--cc-roast-muted);
+    font-weight: 500;
   }
 
-  .cc-slider-fill {
-    position: absolute;
-    inset-block: 0;
-    background: var(--cc-roast);
-    border-radius: var(--yg-radius-pill);
-    transition:
-      inset-inline-start 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      inline-size 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 0.22s ease;
-  }
-
-  .cc-slider-fill[data-mode="craft"] {
-    background: var(--yg-brand-ink);
-  }
-
-  .cc-slider-fill[data-mode="decaf"] {
-    background: var(--cc-roast-muted);
-  }
-
-  .cc-slider-thumb {
-    position: absolute;
-    inset-block-start: 50%;
-    inline-size: 16px;
-    block-size: 16px;
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-roast);
-    border: 3px solid var(--cc-linen);
-    transform: translate(-50%, -50%);
-    transition:
-      inset-inline-start 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.18s ease,
-      background-color 0.22s ease;
-  }
-
-  .cc-slider-thumb[data-mode="craft"] {
-    background: var(--yg-brand);
-  }
-
-  .cc-slider-thumb[data-mode="decaf"] {
-    background: var(--cc-roast-muted);
-  }
-
-  .cc-slider-shell:hover .cc-slider-thumb {
-    transform: translate(-50%, -50%) scale(1.18);
-  }
-
-  .cc-slider-input {
-    position: absolute;
-    inset: 0;
-    inline-size: 100%;
-    block-size: 100%;
-    margin: 0;
-    opacity: 0;
-    cursor: ew-resize;
-  }
-
-  .cc-slider-input:focus-visible ~ .cc-slider-rail {
-    outline: 2px solid var(--yg-brand-ink);
-    outline-offset: 6px;
-  }
-
-  /* Live Verdict Slip (warm hairline accent, never heavy box) */
-  .cc-verdict-slip {
-    padding-block-start: var(--boa-space-20);
-    border-block-start: 1px solid var(--cc-linen-line);
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-8);
-    animation: cc-reveal-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  .cc-verdict-stamp {
+  .cc-ai-status {
     display: inline-flex;
     align-items: center;
-    gap: var(--boa-space-8);
+    gap: 6px;
     font-size: 0.75rem;
     font-weight: 600;
+    color: var(--cc-roast);
+  }
+
+  .cc-ai-status i {
+    inline-size: 7px;
+    block-size: 7px;
+    border-radius: var(--yg-radius-pill);
+    background: currentColor;
+  }
+
+  .cc-ai-status[data-mode="craft"] {
     color: var(--yg-brand-ink);
   }
 
-  .cc-stamp-dot {
+  .cc-ai-status[data-mode="decaf"] {
+    color: var(--cc-roast-muted);
+  }
+
+  .cc-ai-user-msg {
+    align-self: flex-end;
+    padding: var(--boa-space-8) var(--boa-space-16);
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-linen-deep);
+    color: var(--cc-espresso);
+    font-size: 0.875rem;
+    font-weight: 520;
+  }
+
+  .cc-ai-reply {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--boa-space-12);
+    padding: var(--boa-space-12) var(--boa-space-8) var(--boa-space-6);
+    animation: cc-reveal-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .cc-mini-seesaw {
+    inline-size: 180px;
+    block-size: 30px;
+    overflow: visible;
+  }
+
+  .cc-mini-seesaw-beam {
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-ai-verdict {
+    margin: 0;
+    font-size: clamp(1.375rem, 2.2vw, 1.85rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--cc-espresso);
+  }
+
+  .cc-ai-reply[data-mode="decaf"] .cc-ai-verdict {
+    color: var(--cc-roast-muted);
+    font-weight: 480;
+  }
+
+  /* Visual skeleton fluff bars under Decaf "It depends..." */
+  .cc-decaf-fluff {
+    inline-size: 100%;
+    max-inline-size: 16rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .cc-decaf-fluff span {
+    display: block;
+    block-size: 6px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-linen-line);
+    opacity: 0.7;
+  }
+
+  .cc-ai-guard {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--boa-space-6);
+    padding: var(--boa-space-4) var(--boa-space-12);
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-linen-deep);
+    color: var(--cc-roast-muted);
+    font-size: 0.75rem;
+    font-weight: 520;
+  }
+
+  .cc-ai-guard-dot {
     inline-size: 6px;
     block-size: 6px;
     border-radius: var(--yg-radius-pill);
-    background: var(--yg-brand-ink);
-  }
-
-  .cc-verdict-slip[data-mode="decaf"] .cc-verdict-stamp {
-    color: var(--cc-roast-muted);
-  }
-
-  .cc-verdict-slip[data-mode="decaf"] .cc-stamp-dot {
-    background: var(--cc-roast-muted);
-  }
-
-  .cc-verdict-headline {
-    margin: 0;
-    font-size: clamp(1.3125rem, 2.1vw, 1.75rem);
-    font-weight: 570;
-    line-height: 1.18;
-    letter-spacing: -0.028em;
-    color: var(--cc-espresso);
-  }
-
-  .cc-verdict-slip[data-mode="decaf"] .cc-verdict-headline {
-    color: var(--cc-roast-muted);
-    font-weight: 460;
-  }
-
-  .cc-verdict-note {
-    margin: 0;
-    font-size: 0.96875rem;
-    line-height: 1.52;
-    color: var(--cc-roast-muted);
-  }
-
-  .cc-verdict-boundary {
-    font-size: 0.8125rem;
-    color: var(--cc-roast-muted);
-    padding-inline-start: var(--boa-space-12);
-    border-inline-start: 2px solid var(--cc-crema-deep);
+    background: var(--cc-crema-deep);
   }
 
   @keyframes cc-reveal-up {
@@ -848,20 +692,20 @@
   }
 
   /* =========================================================================
-     ACT 02 — DEEP ESPRESSO ROAST BAND (THE THESIS + CREMA TASTING BARS)
+     SCENE 2 — VELVETY ESPRESSO BAND + ANIMATED BRASS BALANCE SCALE
      ========================================================================= */
 
   .cc-espresso-band {
     background: var(--cc-dark-band-bg);
     color: var(--cc-dark-band-ink);
-    padding-block: clamp(4.5rem, 10vh, 7.25rem);
+    padding-block: clamp(4.25rem, 9vh, 6.75rem);
   }
 
-  .cc-split-editorial {
+  .cc-scale-band-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(var(--boa-space-32), 6vw, 5.5rem);
-    align-items: start;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: clamp(var(--boa-space-24), 5vw, 4.5rem);
+    align-items: center;
   }
 
   .cc-band-lead {
@@ -870,9 +714,23 @@
     gap: var(--boa-space-16);
   }
 
+  .cc-kicker-warm {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--cc-roast);
+  }
+
+  .cc-kicker-crema {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--cc-crema);
+  }
+
   .cc-espresso-h2 {
     margin: 0;
-    font-size: clamp(1.85rem, 3.1vw, 2.65rem);
+    font-size: clamp(1.9rem, 3.2vw, 2.75rem);
     font-weight: 540;
     line-height: 1.08;
     letter-spacing: -0.036em;
@@ -882,203 +740,104 @@
   .cc-espresso-p {
     margin: 0;
     font-size: clamp(1.0625rem, 1.35vw, 1.1875rem);
-    line-height: 1.56;
+    line-height: 1.52;
     color: var(--cc-dark-band-muted);
-    max-inline-size: 40ch;
+    max-inline-size: 34ch;
   }
 
-  .cc-espresso-caption {
-    margin: 0;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--cc-dark-band-muted);
-  }
-
-  /* Frameless underline text selector */
-  .cc-underline-tabs {
+  .cc-scale-scene {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--boa-space-20);
+  }
+
+  .cc-brass-scale-svg {
+    inline-size: 100%;
+    max-inline-size: 29rem;
+    block-size: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  .cc-scale-beam-group,
+  .cc-scale-pan {
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-pan-orb {
+    transition:
+      r 0.4s ease,
+      fill 0.35s ease;
+  }
+
+  .cc-scale-svg-label {
+    font-size: 14px;
+    font-weight: 560;
+    fill: var(--cc-dark-band-muted);
+  }
+
+  .cc-scale-svg-label[data-wins="true"] {
+    fill: var(--cc-dark-band-ink);
+    font-weight: 650;
+  }
+
+  .cc-scale-svg-status {
+    font-size: 13px;
+    font-weight: 560;
+    fill: var(--cc-crema);
+  }
+
+  .cc-scale-scene[data-accent="ink"] .cc-scale-svg-status {
+    fill: var(--boa-color-slate-300);
+  }
+
+  .cc-scale-scene[data-accent="muted"] .cc-scale-svg-status {
+    fill: var(--cc-dark-band-muted);
+  }
+
+  .cc-scale-toggles {
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: var(--boa-space-24);
-    border-block-end: 1px solid var(--cc-linen-line);
-  }
-
-  .cc-underline-tabs-dark {
-    border-block-end-color: var(--cc-dark-band-line);
-  }
-
-  .cc-underline-tab {
-    position: relative;
-    background: transparent;
-    border: 0;
-    padding: 0 0 var(--boa-space-10);
-    font: inherit;
-    font-size: 0.9375rem;
-    font-weight: 500;
-    color: var(--cc-roast-muted);
-    cursor: pointer;
-    transition: color 0.18s ease;
-  }
-
-  .cc-underline-tab:hover {
-    color: var(--cc-espresso);
-  }
-
-  .cc-underline-tab[data-active="true"] {
-    color: var(--cc-espresso);
-    font-weight: 590;
-  }
-
-  .cc-underline-tab[data-active="true"]::after {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    inset-block-end: -1px;
-    block-size: 2px;
-    background: var(--yg-brand-ink);
-  }
-
-  .cc-underline-tabs-dark .cc-underline-tab {
-    color: var(--cc-dark-band-muted);
-  }
-
-  .cc-underline-tabs-dark .cc-underline-tab:hover,
-  .cc-underline-tabs-dark .cc-underline-tab[data-active="true"] {
-    color: var(--cc-dark-band-ink);
-  }
-
-  .cc-underline-tabs-dark .cc-underline-tab[data-active="true"]::after {
-    background: var(--cc-crema);
-  }
-
-  .cc-lens-panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-24);
-  }
-
-  .cc-lens-beams {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-24);
-  }
-
-  /* Tasting Balance Beams (Coffee Roast / OpenBoa Ink / Golden Crema) */
-  .cc-beam {
-    display: flex;
-    flex-direction: column;
+    justify-content: center;
     gap: var(--boa-space-8);
   }
 
-  .cc-beam-labels {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--boa-space-12);
-    font-size: 0.875rem;
-  }
-
-  .cc-beam-pole {
-    color: var(--cc-roast-muted);
-    font-weight: 470;
-    transition: color 0.25s ease;
-  }
-
-  .cc-beam[data-tone="coffee"] .cc-beam-pole[data-wins="true"] {
-    color: var(--cc-roast);
-    font-weight: 600;
-  }
-
-  .cc-beam[data-tone="ink"] .cc-beam-pole[data-wins="true"] {
-    color: var(--yg-brand-ink);
-    font-weight: 600;
-  }
-
-  .cc-beam[data-tone="crema"] .cc-beam-pole {
+  .cc-scale-toggle {
+    padding: var(--boa-space-8) var(--boa-space-16);
+    border-radius: var(--yg-radius-pill);
+    border: 1px solid var(--cc-dark-band-line);
+    background: transparent;
     color: var(--cc-dark-band-muted);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 540;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
   }
 
-  .cc-beam[data-tone="crema"] .cc-beam-pole[data-wins="true"] {
-    color: var(--cc-crema);
+  .cc-scale-toggle:hover {
+    color: var(--cc-dark-band-ink);
+    border-color: var(--cc-dark-band-muted);
+  }
+
+  .cc-scale-toggle[data-active="true"] {
+    background: var(--cc-crema);
+    border-color: var(--cc-crema);
+    color: var(--boa-color-earth-950);
     font-weight: 600;
-  }
-
-  .cc-beam-rail {
-    position: relative;
-    block-size: 3px;
-    background: var(--cc-linen-line);
-    border-radius: var(--yg-radius-pill);
-  }
-
-  .cc-beam[data-tone="crema"] .cc-beam-rail {
-    background: var(--cc-dark-band-line);
-  }
-
-  .cc-beam-center {
-    position: absolute;
-    inset-inline-start: 50%;
-    inset-block: -4px;
-    inline-size: 1px;
-    background: var(--cc-roast-muted);
-    opacity: 0.6;
-  }
-
-  .cc-beam-active {
-    position: absolute;
-    inset-block: 0;
-    background: var(--cc-roast);
-    border-radius: var(--yg-radius-pill);
-    transition:
-      inset-inline-start 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-      inline-size 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 0.28s ease;
-  }
-
-  .cc-beam[data-tone="ink"] .cc-beam-active {
-    background: var(--yg-brand-ink);
-  }
-
-  .cc-beam[data-tone="crema"] .cc-beam-active {
-    background: var(--cc-crema);
-  }
-
-  .cc-beam-active[data-muted="true"] {
-    background: var(--cc-roast-muted);
-  }
-
-  .cc-beam-node {
-    position: absolute;
-    inset-block-start: 50%;
-    inline-size: 11px;
-    block-size: 11px;
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-roast);
-    border: 2px solid var(--cc-linen);
-    transform: translate(-50%, -50%);
-    transition:
-      inset-inline-start 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 0.28s ease;
-  }
-
-  .cc-beam[data-tone="ink"] .cc-beam-node {
-    background: var(--yg-brand);
-  }
-
-  .cc-beam[data-tone="crema"] .cc-beam-node {
-    background: var(--cc-crema);
-    border-color: var(--cc-dark-band-bg);
-  }
-
-  .cc-beam-node[data-muted="true"] {
-    background: var(--cc-roast-muted);
   }
 
   /* =========================================================================
-     ACT 03 & 04 — WARM LINEN BANDS (ROAST, COFFEE CHAT, ON THE TABLE)
+     SCENE 3 — 3-PANEL VISUAL STORYBOARD TRIO
      ========================================================================= */
 
   .cc-linen-band {
     background: var(--cc-linen);
-    padding-block: clamp(4.5rem, 10vh, 7rem);
+    padding-block: clamp(4.25rem, 9vh, 6.5rem);
   }
 
   .cc-linen-band-alt {
@@ -1086,28 +845,16 @@
     border-block-start: 1px solid var(--cc-linen-line);
   }
 
-  .cc-moments-stack {
+  .cc-story-section {
     display: flex;
     flex-direction: column;
-    gap: clamp(3.5rem, 8vh, 5.25rem);
+    gap: var(--boa-space-32);
   }
 
-  .cc-moment-row {
-    display: grid;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: clamp(var(--boa-space-24), 6vw, 5.5rem);
-    align-items: start;
-  }
-
-  .cc-moment-divider {
-    padding-block-start: clamp(3.5rem, 8vh, 5.25rem);
-    border-block-start: 1px solid var(--cc-linen-line);
-  }
-
-  .cc-moment-copy {
+  .cc-story-head {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-12);
+    gap: var(--boa-space-6);
   }
 
   .cc-moment-h2 {
@@ -1119,156 +866,297 @@
     color: var(--cc-espresso);
   }
 
-  .cc-warm-p {
-    margin: 0;
-    font-size: 1rem;
-    line-height: 1.58;
-    color: var(--cc-roast-muted);
-    max-inline-size: 38ch;
+  .cc-story-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--boa-space-20);
+    align-items: stretch;
   }
 
-  .cc-tasting-slip {
+  .cc-story-card {
     display: flex;
     flex-direction: column;
     gap: var(--boa-space-20);
+    padding: var(--boa-space-24);
+    border-radius: var(--yg-radius-card);
+    background: var(--cc-card-bg);
+    border: 1px solid var(--cc-linen-line);
   }
 
-  .cc-roast-diff {
+  .cc-story-num {
+    font-size: 0.75rem;
+    font-weight: 640;
+    letter-spacing: 0.08em;
+    color: var(--cc-roast);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cc-story-canvas {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-10);
+    align-items: center;
+    justify-content: center;
+    gap: var(--boa-space-16);
+    min-block-size: 15.5rem;
+    padding: var(--boa-space-16);
+    border-radius: var(--yg-radius-panel);
+    background: var(--cc-linen);
   }
 
-  .cc-roast-struck {
-    font-size: 0.9375rem;
-    text-decoration: line-through;
-    color: var(--cc-terracotta);
-  }
-
-  .cc-roast-quote {
+  .cc-story-title {
     margin: 0;
-    padding-inline-start: var(--boa-space-16);
-    border-inline-start: 2.5px solid var(--cc-roast);
-    font-size: clamp(1.125rem, 1.5vw, 1.3125rem);
-    font-weight: 520;
-    line-height: 1.4;
-    letter-spacing: -0.02em;
+    font-size: 1.25rem;
+    font-weight: 560;
+    line-height: 1.22;
+    letter-spacing: -0.025em;
     color: var(--cc-espresso);
   }
 
-  .cc-confirm-row {
+  /* Story Panel 01: Slide Correction -> Roasted Bean */
+  .cc-mini-slide {
+    inline-size: 100%;
+    padding: var(--boa-space-12);
+    border-radius: var(--yg-radius-small);
+    background: var(--cc-card-bg);
+    border: 1px solid var(--cc-linen-line);
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--boa-space-16);
+    flex-direction: column;
+    gap: var(--boa-space-8);
+    font-size: 0.8125rem;
   }
 
-  .cc-roast-stamp-btn {
+  .cc-mini-slide-row {
+    display: flex;
+    align-items: center;
+    gap: var(--boa-space-8);
+    color: var(--cc-espresso);
+    font-weight: 520;
+  }
+
+  .cc-mini-slide-row[data-struck="true"] {
+    color: var(--cc-terracotta);
+    text-decoration: line-through;
+  }
+
+  .cc-mini-dot-ink {
+    inline-size: 7px;
+    block-size: 7px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--yg-brand-ink);
+    flex-shrink: 0;
+  }
+
+  .cc-mini-dot-muted {
+    inline-size: 7px;
+    block-size: 7px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-linen-line);
+    flex-shrink: 0;
+  }
+
+  .cc-story-action-pill {
     display: inline-flex;
     align-items: center;
-    gap: var(--boa-space-10);
+    gap: var(--boa-space-8);
     padding: var(--boa-space-8) var(--boa-space-16);
     border-radius: var(--yg-radius-pill);
     border: 1.5px solid var(--yg-brand-ink);
-    background: transparent;
+    background: var(--cc-card-bg);
     color: var(--yg-brand-ink);
     font: inherit;
-    font-size: 0.875rem;
-    font-weight: 580;
+    font-size: 0.8125rem;
+    font-weight: 600;
     cursor: pointer;
     transition:
       background-color 0.22s ease,
-      color 0.22s ease,
-      border-color 0.22s ease;
+      color 0.22s ease;
   }
 
-  .cc-roast-stamp-btn:hover {
-    background: var(--yg-brand-soft);
-  }
-
-  .cc-roast-stamp-btn[data-confirmed="true"] {
+  .cc-story-action-pill[data-confirmed="true"] {
     background: var(--yg-brand);
     border-color: var(--yg-brand);
     color: var(--yg-on-brand);
   }
 
-  .cc-roast-stamp-dot {
-    inline-size: 7px;
-    block-size: 7px;
-    border-radius: var(--yg-radius-pill);
-    background: currentColor;
-  }
-
-  .cc-roast-result {
-    padding-block-start: var(--boa-space-20);
-    border-block-start: 1px solid var(--cc-linen-line);
+  .cc-mini-bean-card {
+    inline-size: 100%;
+    padding: var(--boa-space-10) var(--boa-space-12);
+    border-radius: var(--yg-radius-small);
+    border: 1px dashed var(--cc-linen-line);
+    background: var(--cc-card-bg);
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-12);
-    opacity: 0.62;
-    transition: opacity 0.3s ease;
+    align-items: center;
+    text-align: center;
+    gap: 2px;
+    opacity: 0.68;
+    transition:
+      opacity 0.25s ease,
+      border-color 0.25s ease;
   }
 
-  .cc-roast-result[data-confirmed="true"] {
+  .cc-mini-bean-card[data-saved="true"] {
     opacity: 1;
+    border-style: solid;
+    border-color: var(--yg-brand-ink);
   }
 
-  .cc-roast-title {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 560;
-    letter-spacing: -0.02em;
+  .cc-mini-bean-card strong {
+    font-size: 0.875rem;
     color: var(--cc-espresso);
   }
 
-  .cc-chat-question {
-    margin: 0;
-    font-size: 1.0625rem;
-    line-height: 1.45;
+  .cc-mini-bean-card span {
+    font-size: 0.75rem;
     color: var(--cc-roast-muted);
   }
 
-  .cc-chat-verdict {
+  /* Story Panel 02: Interactive 2-Cup Café Table */
+  .cc-cafe-table-visual {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: var(--boa-space-12);
-    animation: cc-reveal-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    inline-size: 100%;
   }
 
-  .cc-invariants-strip {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--boa-space-32);
-    padding-block-start: var(--boa-space-32);
-    border-block-start: 1px solid var(--cc-linen-line);
-  }
-
-  .cc-invariant {
+  .cc-cup-seat {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    gap: var(--boa-space-6);
+    padding: var(--boa-space-10) var(--boa-space-6);
+    border-radius: var(--yg-radius-panel);
+    border: 1.5px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.58;
+    transition:
+      opacity 0.22s ease,
+      border-color 0.22s ease,
+      background-color 0.22s ease,
+      transform 0.22s ease;
+  }
+
+  .cc-cup-seat:hover {
+    opacity: 0.9;
+  }
+
+  .cc-cup-seat[data-active="true"] {
+    opacity: 1;
+    background: var(--cc-card-bg);
+    border-color: var(--cc-roast);
+    transform: translateY(-2px);
+  }
+
+  .cc-seat-cup-svg {
+    inline-size: 56px;
+    block-size: 56px;
+    display: block;
+  }
+
+  .cc-seat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cc-espresso);
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .cc-table-vs {
+    color: var(--cc-roast-muted);
+    font-size: 0.875rem;
+  }
+
+  .cc-table-reply {
+    inline-size: 100%;
+    padding: var(--boa-space-12);
+    border-radius: var(--yg-radius-small);
+    background: var(--cc-card-bg);
+    border: 1px solid var(--cc-linen-line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+    animation: cc-reveal-up 0.28s ease both;
+  }
+
+  .cc-table-reply[data-guest="david"] {
+    border-color: var(--yg-brand-ink);
+  }
+
+  .cc-table-reply strong {
+    font-size: 0.875rem;
+    line-height: 1.35;
+    color: var(--cc-espresso);
+  }
+
+  .cc-table-reply span {
+    font-size: 0.75rem;
+    color: var(--cc-roast-muted);
+  }
+
+  /* Story Panel 03: One Roastery Pouring into 5 AI Tools */
+  .cc-hub-jar {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--boa-space-8);
+    padding: var(--boa-space-8) var(--boa-space-16);
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-card-bg);
+    border: 1.5px solid var(--cc-roast);
+    color: var(--cc-espresso);
+    font-size: 0.8125rem;
+  }
+
+  .cc-fan-svg {
+    inline-size: 100%;
+    max-inline-size: 15rem;
+    block-size: 46px;
+    display: block;
+    overflow: visible;
+  }
+
+  .cc-host-chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: var(--boa-space-6);
   }
 
-  .cc-invariant-text {
-    margin: 0;
-    font-size: 0.9375rem;
-    line-height: 1.54;
+  .cc-host-chips span {
+    padding: var(--boa-space-4) var(--boa-space-10);
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-card-bg);
+    border: 1px solid var(--cc-linen-line);
+    font-size: 0.75rem;
+    font-weight: 560;
+    color: var(--cc-espresso);
+  }
+
+  .cc-hub-note {
+    font-size: 0.75rem;
     color: var(--cc-roast-muted);
   }
 
-  /* Open 2-Column Table Spread */
+  /* =========================================================================
+     SCENE 4 & 5 — LIVE ON THE TABLE SPREAD + WARM CLOSER
+     ========================================================================= */
+
   .cc-table-head {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
     gap: var(--boa-space-16);
-    padding-block-end: var(--boa-space-32);
+    padding-block-end: var(--boa-space-24);
     border-block-end: 1px solid var(--cc-linen-line);
   }
 
   .cc-table-source {
-    margin: var(--boa-space-6) 0 0;
+    margin: var(--boa-space-4) 0 0;
     font-size: 0.9375rem;
     color: var(--cc-roast-muted);
   }
@@ -1279,14 +1167,14 @@
   }
 
   .cc-open-spread-col {
-    padding: var(--boa-space-32) var(--boa-space-32) var(--boa-space-16) 0;
+    padding: var(--boa-space-24) var(--boa-space-32) var(--boa-space-12) 0;
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-20);
+    gap: var(--boa-space-16);
   }
 
   .cc-open-spread-col + .cc-open-spread-col {
-    padding: var(--boa-space-32) 0 var(--boa-space-16) var(--boa-space-32);
+    padding: var(--boa-space-24) 0 var(--boa-space-12) var(--boa-space-32);
     border-inline-start: 1px solid var(--cc-linen-line);
   }
 
@@ -1322,11 +1210,89 @@
 
   .cc-spread-title {
     margin: 0;
-    font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+    font-size: clamp(1.1875rem, 1.7vw, 1.45rem);
     font-weight: 550;
     line-height: 1.24;
     letter-spacing: -0.025em;
     color: var(--cc-espresso);
+  }
+
+  .cc-beam {
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-8);
+  }
+
+  .cc-beam-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--boa-space-12);
+    font-size: 0.875rem;
+  }
+
+  .cc-beam-pole {
+    color: var(--cc-roast-muted);
+    font-weight: 470;
+  }
+
+  .cc-beam[data-tone="coffee"] .cc-beam-pole[data-wins="true"] {
+    color: var(--cc-roast);
+    font-weight: 600;
+  }
+
+  .cc-beam[data-tone="ink"] .cc-beam-pole[data-wins="true"] {
+    color: var(--yg-brand-ink);
+    font-weight: 600;
+  }
+
+  .cc-beam-rail {
+    position: relative;
+    block-size: 3px;
+    background: var(--cc-linen-line);
+    border-radius: var(--yg-radius-pill);
+  }
+
+  .cc-beam-center {
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block: -4px;
+    inline-size: 1px;
+    background: var(--cc-roast-muted);
+    opacity: 0.6;
+  }
+
+  .cc-beam-active {
+    position: absolute;
+    inset-block: 0;
+    background: var(--cc-roast);
+    border-radius: var(--yg-radius-pill);
+  }
+
+  .cc-beam[data-tone="ink"] .cc-beam-active {
+    background: var(--yg-brand-ink);
+  }
+
+  .cc-beam-node {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 11px;
+    block-size: 11px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-roast);
+    border: 2px solid var(--cc-linen-deep);
+    transform: translate(-50%, -50%);
+  }
+
+  .cc-beam[data-tone="ink"] .cc-beam-node {
+    background: var(--yg-brand);
+  }
+
+  .cc-verdict-boundary {
+    font-size: 0.8125rem;
+    color: var(--cc-roast-muted);
+    padding-inline-start: var(--boa-space-12);
+    border-inline-start: 2px solid var(--cc-crema-deep);
   }
 
   .cc-empty-closing {
@@ -1336,11 +1302,10 @@
     gap: var(--boa-space-16);
   }
 
-  /* ACT 05 — WARM CLOSING INVITATION */
   .cc-closer-band {
     background: var(--cc-linen);
     border-block-start: 1px solid var(--cc-linen-line);
-    padding-block: clamp(4.5rem, 9vh, 6.5rem);
+    padding-block: clamp(4rem, 8vh, 6rem);
   }
 
   .cc-closer-inner {
@@ -1368,19 +1333,14 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .cc-steam-line,
-    .cc-verdict-slip,
-    .cc-chat-verdict {
+    .cc-ai-reply,
+    .cc-table-reply {
       animation: none !important;
     }
 
-    .cc-cup-dial-dot,
-    .cc-cup-brew,
-    .cc-cup-crema-group,
-    .cc-slider-fill,
-    .cc-slider-thumb,
-    .cc-beam-active,
-    .cc-beam-node {
+    .cc-scale-beam-group,
+    .cc-scale-pan,
+    .cc-mini-seesaw-beam {
       transition: none !important;
     }
   }
@@ -1389,7 +1349,6 @@
      SHARED INTERNAL WORKSPACE PATTERNS (/me, /sources, /connect, /signin)
      ========================================================================= */
 
-  /* Hairline 2-column criteria ledger (What mattered more / Except when) */
   .cc-criteria-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1398,7 +1357,6 @@
     border-block-start: 1px solid var(--yg-border-subtle);
   }
 
-  /* Clean typographic pull-quote — no gray rounded box prison */
   .cc-quote {
     margin: 0;
     padding-inline-start: var(--boa-space-16);
@@ -1416,7 +1374,6 @@
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 
-  /* Symmetrical 2-column Table Comparison grid (no 3+1 orphan row) */
   .table-dialogue-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1424,7 +1381,6 @@
     align-items: stretch;
   }
 
-  /* Equal-height Brew Bar starter prompt cards with aligned footers */
   .cc-equal-cards {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1441,7 +1397,6 @@
     flex: 1;
   }
 
-  /* My Roastery compact inline Quick Roast bar + 2-pane workbench */
   .cc-quick-roast-bar {
     display: flex;
     align-items: center;
@@ -1465,7 +1420,6 @@
     inset-block-start: 80px;
   }
 
-  /* Tasting Notes hairline typographic metrics */
   .taste-strip {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1492,7 +1446,6 @@
     color: var(--yg-text);
   }
 
-  /* Focused task containers (Sign In & OAuth Consent) */
   .auth-split-shell {
     max-inline-size: 56rem;
     margin-inline: auto;
@@ -1523,24 +1476,16 @@
     word-break: break-all;
   }
 
-  @media (max-width: 960px) {
+  @media (max-width: 1024px) {
     .cc-cafe-hero {
       min-block-size: auto;
     }
 
     .cc-cafe-grid,
-    .cc-split-editorial,
-    .cc-moment-row,
-    .cc-invariants-strip,
+    .cc-scale-band-grid,
+    .cc-story-grid,
     .cc-open-spread {
       grid-template-columns: minmax(0, 1fr);
-    }
-
-    .cc-tasting-bar {
-      padding-inline-start: 0;
-      padding-block-start: var(--boa-space-32);
-      border-inline-start: 0;
-      border-block-start: 1px solid var(--cc-linen-line);
     }
 
     .cc-open-spread-col,
@@ -1554,35 +1499,28 @@
     }
 
     .table-dialogue-grid,
-    .cc-equal-cards {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .roastery-split {
+    .cc-equal-cards,
+    .roastery-split,
+    .auth-split-shell {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .roastery-inspector {
       position: static;
     }
-
-    .auth-split-shell {
-      grid-template-columns: minmax(0, 1fr);
-    }
   }
 
   @media (max-width: 640px) {
-    .cc-cup-svg {
-      inline-size: 176px;
-      block-size: 176px;
+    .cc-hero-visual {
+      padding: var(--boa-space-16);
     }
 
-    .cc-underline-tabs {
-      gap: var(--boa-space-16);
+    .cc-bean-tray {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .cc-underline-tab {
-      font-size: 0.875rem;
+    .cc-drop-conduit {
+      block-size: 46px;
     }
 
     .cc-criteria-grid {
