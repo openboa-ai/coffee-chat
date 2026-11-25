@@ -60,8 +60,8 @@ export function AgentHandoffDialog({
                 </Link>
               }
             >
-              Connect ChatGPT, Claude, Codex, Antigravity, or Cursor once so
-              your AI can read your Beans and Shelf automatically.
+              Connect your Agents once so they can read your Beans and Shelf
+              automatically.
             </Notice>
           )
         ) : (

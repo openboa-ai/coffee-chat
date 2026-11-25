@@ -46,15 +46,15 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     expect(cacheControl).toContain("no-store");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: /Give it your Taste/ }),
+      page.getByRole("heading", { level: 1, name: /Give them your Taste/ }),
     ).toBeVisible();
     await expect(page.getByText("Nothing is unimportant.")).toBeVisible();
     // Primary Hero CTA copies a universal agent-agnostic start prompt and reveals it cleanly
     await page
-      .getByRole("button", { name: "Copy prompt to start in your AI" })
+      .getByRole("button", { name: "Copy prompt to start in your Agent" })
       .click();
     await expect(
-      page.getByRole("button", { name: /Copied — paste into any AI/ }),
+      page.getByRole("button", { name: /Copied — paste into any Agent/ }),
     ).toBeVisible();
     await expect(page.getByText(/Connect to Coffee Chat at/)).toBeVisible();
     // Interactive tactile Hero Taste Beam (Specialist Roast) + Frameless Coffee Chat with @david
@@ -520,7 +520,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     // Populated Home / shows value-first hero + secondary bottom Table preview; /sources search works cleanly
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { level: 1, name: /Give it your Taste/ }),
+      page.getByRole("heading", { level: 1, name: /Give them your Taste/ }),
     ).toBeVisible();
     await expect(page.getByText("On the Table right now")).toBeVisible();
     await assertCleanSurface(page, "populated /");

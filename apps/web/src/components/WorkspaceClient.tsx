@@ -1557,7 +1557,7 @@ export function WorkspaceClient({
                 density="regular"
               >
                 {grants.length === 0 ? (
-                  <EmptyResult empty="No AI apps connected yet. Visit the Brew Bar to connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor." />
+                  <EmptyResult empty="No Agents connected yet. Visit the Brew Bar to connect your Agents." />
                 ) : (
                   <List label="Connected AI apps" divided>
                     {grants.map((g) => (

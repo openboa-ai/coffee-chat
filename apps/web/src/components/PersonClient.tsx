@@ -180,8 +180,8 @@ export function PersonClient({
       ) : null}
 
       <Card
-        title={`Coffee Chat with @${profile.handle} in your AI`}
-        description="Paste into ChatGPT, Claude, Codex, Cursor, or Antigravity — attributed to confirmed Beans, never impersonated"
+        title={`Coffee Chat with @${profile.handle} in your Agent`}
+        description="Paste into any Agent — attributed to confirmed Beans, never impersonated"
         variant="raised"
         density="regular"
       >

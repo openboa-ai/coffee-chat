@@ -23,7 +23,7 @@ const SEESAW_STATES: Record<
     angle: 0,
     leftWins: false,
     rightWins: false,
-    status: "Default AI · Stuck at 50 / 50",
+    status: "Default Agent · Stuck at 50 / 50",
     accent: "muted",
   },
   claire: {
@@ -48,20 +48,25 @@ export function KineticTypoSeesaw() {
 
   return (
     <div className="cc-typo-seesaw" data-accent={state.accent}>
-      {/* Monumental pivoting typographic beam spanning freely across the espresso canvas */}
       <div className="cc-seesaw-stage">
         <div
           className="cc-seesaw-beam"
           style={{ transform: `rotate(${state.angle}deg)` }}
         >
-          <span className="cc-seesaw-word cc-seesaw-left" data-wins={state.leftWins}>
+          <span
+            className="cc-seesaw-word cc-seesaw-left"
+            data-wins={state.leftWins}
+          >
             Speed &amp; Feedback
           </span>
           <span className="cc-seesaw-bar" aria-hidden="true">
             <i className="cc-seesaw-dot-left" data-wins={state.leftWins} />
             <i className="cc-seesaw-dot-right" data-wins={state.rightWins} />
           </span>
-          <span className="cc-seesaw-word cc-seesaw-right" data-wins={state.rightWins}>
+          <span
+            className="cc-seesaw-word cc-seesaw-right"
+            data-wins={state.rightWins}
+          >
             Craft &amp; Trust
           </span>
         </div>
@@ -75,7 +80,6 @@ export function KineticTypoSeesaw() {
         <p className="cc-seesaw-readout">{state.status}</p>
       </div>
 
-      {/* Minimal bare-pill selector floating cleanly underneath */}
       <div
         className="cc-scale-toggles"
         role="radiogroup"
@@ -83,7 +87,7 @@ export function KineticTypoSeesaw() {
       >
         {(
           [
-            ["default", "Default AI (50/50)"],
+            ["default", "Default Agent (50/50)"],
             ["claire", "@claire"],
             ["david", "@david"],
           ] as const
@@ -106,7 +110,7 @@ export function KineticTypoSeesaw() {
 }
 
 /* ============================================================================
-   ACT 03 — INTERACTIVE CAFÉ TABLE GALLERY (CLICK DIRECTLY ON EITHER CUP!)
+   ACT 03 — INTERACTIVE CAFÉ TABLE PHOTOGRAPH WITH ANIMATED SIGNAL ARC
    ============================================================================ */
 
 export function InteractiveCafeTable() {
@@ -114,7 +118,7 @@ export function InteractiveCafeTable() {
 
   return (
     <div className="cc-table-editorial">
-      {/* Left / Wide Editorial Studio Photograph with Direct Clickable Cup Hotspots */}
+      {/* Realistic Café Table Studio Photo + Animated Connection Arc + Direct Cup Tap */}
       <div className="cc-table-photo-wrap" data-guest={guest}>
         <img
           src="/art/cafe-table.jpg"
@@ -122,7 +126,68 @@ export function InteractiveCafeTable() {
           className="cc-table-photo"
         />
 
-        {/* Subtle interactive focus hotspots aligned right over the two real ceramic cups */}
+        {/* Delicate animated signal arc flowing across the realistic table from the active cup */}
+        <svg
+          viewBox="0 0 800 600"
+          className="cc-table-motion-overlay"
+          aria-hidden="true"
+        >
+          {/* Animated aroma pulse radiating cleanly from active cup toward the right verdict */}
+          <path
+            key={`arc-${guest}`}
+            d={
+              guest === "claire"
+                ? "M 164 300 C 340 165, 580 185, 792 275"
+                : "M 642 300 C 700 250, 748 255, 792 275"
+            }
+            fill="none"
+            stroke={
+              guest === "claire"
+                ? "var(--cc-roast)"
+                : "var(--yg-brand-ink)"
+            }
+            strokeWidth="2.5"
+            strokeDasharray="6 8"
+            opacity="0.72"
+          />
+          <circle
+            key={`pulse1-${guest}`}
+            r="6"
+            fill={
+              guest === "claire" ? "var(--cc-roast)" : "var(--yg-brand)"
+            }
+            stroke="var(--cc-crema)"
+            strokeWidth="2"
+          >
+            <animateMotion
+              dur="1.8s"
+              repeatCount="indefinite"
+              path={
+                guest === "claire"
+                  ? "M 164 300 C 340 165, 580 185, 792 275"
+                  : "M 642 300 C 700 250, 748 255, 792 275"
+              }
+            />
+          </circle>
+          <circle
+            key={`pulse2-${guest}`}
+            r="4"
+            fill="var(--cc-crema)"
+          >
+            <animateMotion
+              dur="1.8s"
+              begin="0.9s"
+              repeatCount="indefinite"
+              path={
+                guest === "claire"
+                  ? "M 164 300 C 340 165, 580 185, 792 275"
+                  : "M 642 300 C 700 250, 748 255, 792 275"
+              }
+            />
+          </circle>
+        </svg>
+
+        {/* Direct interactive focus hotspots dead-center over the two real cups */}
         <div
           className="cc-table-hotspots"
           role="radiogroup"
@@ -137,6 +202,7 @@ export function InteractiveCafeTable() {
             onClick={() => setGuest("claire")}
           >
             <span className="cc-hotspot-ring" aria-hidden="true" />
+            <span className="cc-hotspot-pulse" aria-hidden="true" />
             <span className="cc-hotspot-tag">Coffee Chat with @claire</span>
           </button>
 
@@ -149,12 +215,13 @@ export function InteractiveCafeTable() {
             onClick={() => setGuest("david")}
           >
             <span className="cc-hotspot-ring" aria-hidden="true" />
+            <span className="cc-hotspot-pulse" aria-hidden="true" />
             <span className="cc-hotspot-tag">Coffee Chat with @david</span>
           </button>
         </div>
       </div>
 
-      {/* Right — Open Editorial Verdict Floating Freely (Zero Boxes!) */}
+      {/* Right — Open Editorial Verdict Floating Freely */}
       <div className="cc-table-editorial-copy">
         <span className="cc-kicker-warm">Coffee Chat · Tap either cup</span>
         <h2 className="cc-editorial-h2">
@@ -184,131 +251,6 @@ export function InteractiveCafeTable() {
               : "Attributed to @david · Flips on sample-data prototypes · Never roleplayed"}
           </span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================================
-   ACT 04 — OPEN FREE-FORM EDITORIAL DUO (ROAST IN ONE EDIT + EVERY AI POUR)
-   ============================================================================ */
-
-export function OpenRoastAndPour() {
-  const [roastSaved, setRoastSaved] = useState(false);
-
-  return (
-    <div className="cc-free-duo">
-      {/* LEFT OPEN SPACE: FREE-FLOATING TYPOGRAPHIC EDIT -> ROAST */}
-      <div className="cc-free-col">
-        <span className="cc-kicker-warm">Roast once</span>
-        <h2 className="cc-editorial-h2">Correct once. Never repeat it.</h2>
-
-        <div className="cc-typo-edit">
-          <span className="cc-edit-old" data-saved={roastSaved}>
-            Slide 4 · Missed Q3 target (-12%)
-          </span>
-
-          <svg
-            viewBox="0 0 120 34"
-            className="cc-edit-curve"
-            aria-hidden="true"
-          >
-            <path
-              d="M 10 4 C 12 24, 52 24, 96 20"
-              fill="none"
-              stroke={roastSaved ? "var(--yg-brand-ink)" : "var(--cc-roast)"}
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M 90 14 L 99 20 L 91 26"
-              fill="none"
-              stroke={roastSaved ? "var(--yg-brand-ink)" : "var(--cc-roast)"}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-
-          <p className="cc-edit-new" data-saved={roastSaved}>
-            Sentence 1 · Lead with the hard truth.
-          </p>
-        </div>
-
-        <div className="cc-edit-actions">
-          <button
-            type="button"
-            className="cc-roast-stamp-btn"
-            data-confirmed={roastSaved}
-            onClick={() => setRoastSaved((v) => !v)}
-          >
-            <i aria-hidden="true" />
-            <span>
-              {roastSaved
-                ? "Roasted privately ✓ · Hard truth > Soft build-up"
-                : "Tap to Confirm & Roast privately"}
-            </span>
-          </button>
-          <span className="cc-quiet-meta">Never saves without your tap.</span>
-        </div>
-      </div>
-
-      {/* RIGHT OPEN SPACE: FLOWING OPEN POUR STREAM TO EVERY AI */}
-      <div className="cc-free-col cc-free-col-right">
-        <span className="cc-kicker-ink">Portable Taste</span>
-        <h2 className="cc-editorial-h2">One Roastery. Every AI.</h2>
-
-        <div className="cc-pour-ribbon">
-          <span className="cc-ribbon-source">Your Private Roastery</span>
-
-          <svg
-            viewBox="0 0 380 42"
-            className="cc-ribbon-svg"
-            aria-hidden="true"
-          >
-            <path
-              d="M 4 21 C 90 21, 120 6, 190 21 C 260 36, 290 21, 376 21"
-              fill="none"
-              stroke="var(--cc-linen-line)"
-              strokeWidth="2"
-            />
-            <path
-              d="M 4 21 C 90 21, 120 6, 190 21 C 260 36, 290 21, 376 21"
-              fill="none"
-              stroke="var(--yg-brand-ink)"
-              strokeWidth="2"
-              strokeDasharray="8 10"
-              opacity="0.65"
-            />
-            <circle r="5" fill="var(--yg-brand)">
-              <animateMotion
-                dur="2.4s"
-                repeatCount="indefinite"
-                path="M 4 21 C 90 21, 120 6, 190 21 C 260 36, 290 21, 376 21"
-              />
-            </circle>
-            <circle r="4" fill="var(--cc-roast)">
-              <animateMotion
-                dur="2.4s"
-                begin="1.2s"
-                repeatCount="indefinite"
-                path="M 4 21 C 90 21, 120 6, 190 21 C 260 36, 290 21, 376 21"
-              />
-            </circle>
-          </svg>
-
-          <div className="cc-ribbon-hosts">
-            <span>ChatGPT</span>
-            <span>Claude</span>
-            <span>Codex</span>
-            <span>Cursor</span>
-            <span>Antigravity</span>
-          </div>
-        </div>
-
-        <span className="cc-verdict-boundary">
-          Private by default · Zero server AI · Connects via MCP
-        </span>
       </div>
     </div>
   );

@@ -14,8 +14,8 @@ import type {
 import {
   InteractiveCafeTable,
   KineticTypoSeesaw,
-  OpenRoastAndPour,
 } from "./EditorialScenes";
+import { RealAiChatSession } from "./RealAiChatSession";
 
 export interface FeaturedTableData {
   originId: string;
@@ -45,30 +45,30 @@ type HeroRoastMode = "decaf" | "growth" | "craft";
 const HERO_MODES: Array<{
   id: HeroRoastMode;
   label: string;
-  placard: string;
+  aiTag: string;
   verdict: string;
   guard: string;
 }> = [
   {
     id: "decaf",
-    label: "No Bean (Decaf)",
-    placard: "Decaf · Default AI (50 / 50)",
+    label: "No Bean",
+    aiTag: "Default Agent · 50 / 50",
     verdict: "“It depends…”",
     guard: "Generic pros & cons — no priority applied",
   },
   {
     id: "growth",
     label: "Growth Roast",
-    placard: "Growth Roast · Learning speed > Craft",
+    aiTag: "Your Agent · Growth Roast applied",
     verdict: "Hire the fast learner.",
-    guard: "Flips if day-1 certification is required",
+    guard: "Speed > Playbooks · Flips if day-1 cert needed",
   },
   {
     id: "craft",
     label: "Specialist Roast",
-    placard: "Specialist Roast · Proven craft > Speed",
+    aiTag: "Your Agent · Specialist Roast applied",
     verdict: "Hire the proven specialist.",
-    guard: "Flips if role scope keeps shifting",
+    guard: "Craft > Speed · Flips if scope keeps shifting",
   },
 ];
 
@@ -137,9 +137,10 @@ export function HomeClient({
 
   const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
   const [copiedFooterPrompt, setCopiedFooterPrompt] = useState(false);
+  const [copiedChatPrompt, setCopiedChatPrompt] = useState(false);
   const [showPromptPreview, setShowPromptPreview] = useState(false);
 
-  // Gently cycle Growth -> Specialist -> Decaf so visitors see the photo & call react live
+  // Gently cycle Growth -> Specialist -> Decaf so visitors instantly see the photo & AI verdict flip
   useEffect(() => {
     if (heroLocked) return;
     const reduced =
@@ -153,7 +154,7 @@ export function HomeClient({
         const nextIdx = (order.indexOf(cur) + 1) % order.length;
         return order[nextIdx] ?? "growth";
       });
-    }, 4600);
+    }, 4500);
 
     return () => window.clearInterval(timer);
   }, [heroLocked]);
@@ -186,6 +187,12 @@ export function HomeClient({
     window.setTimeout(() => setCopiedFooterPrompt(false), 3500);
   };
 
+  const handleCopyChatPrompt = async () => {
+    await copyPromptText(universalStartPrompt);
+    setCopiedChatPrompt(true);
+    window.setTimeout(() => setCopiedChatPrompt(false), 3500);
+  };
+
   const contrastingPreview = (() => {
     if (!featuredTable) return [];
     const ordered = [...featuredTable.beans].sort(
@@ -205,11 +212,11 @@ export function HomeClient({
   return (
     <div className="cc-landing">
       {/* ================================================================
-          ACT 01 — SUNLIT EDITORIAL OPENING + LIVING COFFEE PHOTOGRAPH
+          ACT 01 — ABOVE-THE-FOLD HERO: ZERO SCROLL NEEDED TO FEEL THE VALUE
          ================================================================ */}
       <section className="cc-editorial-hero" aria-label="Introduction">
         <div className="cc-wrap cc-hero-split">
-          {/* LEFT: OPEN-AIR MONUMENTAL TYPE + PRIMARY CTA + LIVE TASTE SWITCH */}
+          {/* LEFT: PURE MONUMENTAL VALUE HOOK + ONE PRIMARY ACTION */}
           <div className="cc-hero-left">
             <div className="cc-cafe-mark-row">
               <ProjectMark project="coffee" label="" size={26} />
@@ -217,15 +224,17 @@ export function HomeClient({
             </div>
 
             <h1 className="cc-cafe-h1">
-              Your AI knows
+              Your Agents know
               <br />
               everything.
               <br />
-              Give it <em className="cc-roast-em">your Taste.</em>
+              Give them <em className="cc-roast-em">your Taste.</em>
             </h1>
 
             <p className="cc-cafe-lead">
-              Drop your priorities into any AI—so it stops saying “it depends.”
+              Stop getting “it depends.” Plug what you put first into your
+              Agents—so they decide like you, or pour you someone else’s real
+              take.
             </p>
 
             <div className="cc-cta-cluster">
@@ -237,8 +246,8 @@ export function HomeClient({
                 onClick={() => void handleCopyHeroPrompt()}
               >
                 {copiedHeroPrompt
-                  ? "Copied — paste into any AI"
-                  : "Copy prompt to start in your AI"}
+                  ? "Copied — paste into any Agent"
+                  : "Copy prompt to start in your Agent"}
               </Button>
 
               <div className="cc-warm-links">
@@ -281,12 +290,63 @@ export function HomeClient({
               </div>
             ) : null}
 
-            {/* FRAMELESS LIVE TASTE SWITCH — DIRECTLY DRIVES THE PHOTO & VERDICT */}
-            <div className="cc-hero-live-rail">
+            {/* Crisp 3-step whisper flow directly under CTA */}
+            <div className="cc-micro-flow" aria-label="How Coffee Chat works in three steps">
+              <span>1. Roast a priority</span>
+              <i aria-hidden="true">→</i>
+              <span>2. Plug into your Agents</span>
+              <i aria-hidden="true">→</i>
+              <span>3. Get decisive calls</span>
+            </div>
+          </div>
+
+          {/* RIGHT: REALISTIC COFFEE PHOTO ALIVE WITH INTERACTIVE AI OVERLAYS */}
+          <figure className="cc-hero-art-frame" data-mode={heroMode}>
+            <img
+              src="/art/hero-pour.jpg"
+              alt="Overhead studio still life of a porcelain espresso cup with golden crema on a deep ink-blue saucer beside roasted coffee beans on warm linen"
+              className="cc-hero-art-img"
+            />
+
+            {/* Animated saucer aura + rising steam wisps right over the realistic espresso cup */}
+            <span className="cc-hero-art-aura" aria-hidden="true" />
+            <svg
+              viewBox="0 0 120 80"
+              className="cc-hero-steam-svg"
+              aria-hidden="true"
+            >
+              <path
+                className="cc-hero-steam-line cc-hero-steam-1"
+                d="M 40 68 C 32 48, 48 34, 40 14"
+                fill="none"
+                stroke="var(--cc-crema)"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+              <path
+                className="cc-hero-steam-line cc-hero-steam-2"
+                d="M 62 72 C 54 50, 72 34, 62 10"
+                fill="none"
+                stroke="var(--boa-color-neutral-50)"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+              <path
+                className="cc-hero-steam-line cc-hero-steam-3"
+                d="M 84 66 C 76 48, 92 36, 84 18"
+                fill="none"
+                stroke="var(--cc-crema)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            {/* TOP OVERLAY: TACTILE ROAST SWITCHER + USER QUESTION PILL */}
+            <div className="cc-hero-overlay-top">
               <div
-                className="cc-bare-switches"
+                className="cc-photo-roast-bar"
                 role="radiogroup"
-                aria-label="Choose a Taste roast to change the AI call"
+                aria-label="Switch Taste roast on the live Agent preview"
               >
                 {HERO_MODES.map((m) => (
                   <button
@@ -294,7 +354,7 @@ export function HomeClient({
                     type="button"
                     role="radio"
                     aria-checked={heroMode === m.id}
-                    className="cc-bare-switch"
+                    className="cc-photo-roast-btn"
                     data-active={heroMode === m.id}
                     data-mode={m.id}
                     onClick={() => {
@@ -307,37 +367,29 @@ export function HomeClient({
                 ))}
               </div>
 
-              <div
-                key={heroMode}
-                className="cc-hero-verdict-open"
-                data-mode={heroMode}
-              >
-                <span className="cc-hero-question-tag">
-                  Ask your AI: “Fast learner or proven specialist?”
-                </span>
-                <p className="cc-hero-verdict-text">{activeHero.verdict}</p>
-                {heroMode === "decaf" ? (
-                  <div className="cc-decaf-lines" aria-hidden="true">
-                    <span style={{ inlineSize: "78%" }} />
-                    <span style={{ inlineSize: "56%" }} />
-                  </div>
-                ) : null}
-                <span className="cc-verdict-boundary">{activeHero.guard}</span>
+              <div className="cc-photo-user-pill">
+                <span>You: “Fast learner or proven specialist?”</span>
               </div>
             </div>
-          </div>
 
-          {/* RIGHT: BESPOKE EDITORIAL STUDIO PHOTOGRAPH (NO PPT BOX!) */}
-          <figure className="cc-hero-art-frame" data-mode={heroMode}>
-            <img
-              src="/art/hero-pour.jpg"
-              alt="Overhead studio still life of a porcelain espresso cup with golden crema on a deep ink-blue saucer beside roasted coffee beans on warm linen"
-              className="cc-hero-art-img"
-            />
-            <span className="cc-hero-art-aura" aria-hidden="true" />
-            <figcaption className="cc-hero-placard" data-mode={heroMode}>
-              <i aria-hidden="true" />
-              <span>{activeHero.placard}</span>
+            {/* BOTTOM OVERLAY: FROSTED LIVE AI ANSWER REACTING DIRECTLY OVER THE COFFEE */}
+            <figcaption
+              key={heroMode}
+              className="cc-hero-live-card"
+              data-mode={heroMode}
+            >
+              <div className="cc-live-card-head">
+                <span className="cc-live-card-dot" aria-hidden="true" />
+                <span>{activeHero.aiTag}</span>
+              </div>
+              <p className="cc-live-card-verdict">{activeHero.verdict}</p>
+              {heroMode === "decaf" ? (
+                <div className="cc-decaf-lines" aria-hidden="true">
+                  <span style={{ inlineSize: "84%" }} />
+                  <span style={{ inlineSize: "62%" }} />
+                </div>
+              ) : null}
+              <span className="cc-live-card-guard">{activeHero.guard}</span>
             </figcaption>
           </figure>
         </div>
@@ -360,7 +412,7 @@ export function HomeClient({
       </section>
 
       {/* ================================================================
-          ACT 03 — INTERACTIVE CAFÉ TABLE GALLERY (CLICK EITHER REAL CUP!)
+          ACT 03 — INTERACTIVE REALISTIC CAFÉ TABLE WITH ANIMATED SIGNAL ARC
          ================================================================ */}
       <section className="cc-linen-band" aria-label="Coffee Chat across the table">
         <div className="cc-wrap">
@@ -369,14 +421,17 @@ export function HomeClient({
       </section>
 
       {/* ================================================================
-          ACT 04 — OPEN TYPOGRAPHIC DUO (ROAST ONCE + EVERY AI POUR STREAM)
+          ACT 04 — REALISTIC AGENT LIVE CONVERSATION EXAMPLE
          ================================================================ */}
       <section
         className="cc-linen-band cc-linen-band-hairline"
-        aria-label="Roast and portability"
+        aria-label="Real Agent chat session example"
       >
         <div className="cc-wrap">
-          <OpenRoastAndPour />
+          <RealAiChatSession
+            onCopyStarter={() => void handleCopyChatPrompt()}
+            copied={copiedChatPrompt}
+          />
         </div>
       </section>
 
@@ -511,7 +566,7 @@ export function HomeClient({
             onClick={() => void handleCopyFooterPrompt()}
           >
             {copiedFooterPrompt
-              ? "Copied — paste into your AI"
+              ? "Copied — paste into any Agent"
               : "Copy prompt & start now"}
           </Button>
         </div>
