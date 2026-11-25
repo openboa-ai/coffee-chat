@@ -21,6 +21,17 @@ export function isTestAuthEnabled(): boolean {
   );
 }
 
+/**
+ * Validates same-origin relative returnTo paths to prevent open redirects.
+ */
+export function sanitizeReturnTo(raw?: string | null): string {
+  if (!raw) return "/me";
+  if (raw.startsWith("/") && !raw.startsWith("//") && !raw.includes("\\")) {
+    return raw;
+  }
+  return "/me";
+}
+
 export interface SessionUser {
   id: string;
   handle: string;
@@ -59,8 +70,12 @@ export async function createBetterAuthInstance(db: CoffeeChatDb) {
     }),
     account: {
       accountLinking: {
-        // Spec invariant: implicit linking is OFF. Users explicitly link providers in Settings.
-        enabled: false,
+        // Spec invariant: implicit OAuth sign-in auto-merge stays OFF via disableImplicitLinking,
+        // while authenticated users can explicitly link GitHub/Google via /api/auth/link-social.
+        enabled: true,
+        disableImplicitLinking: true,
+        trustedProviders: ["github", "google"],
+        allowDifferentEmails: true,
       },
     },
     user: {

@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Badge,
-  Button,
-  Heading,
-  Inline,
-  Notice,
-  Stack,
-  Surface,
-  Text,
-} from "@openboa/yogurt";
+import { Button } from "@openboa/yogurt/button";
+import { Card } from "@openboa/yogurt/card";
+import { Inline } from "@openboa/yogurt/inline";
+import { Notice } from "@openboa/yogurt/notice";
+import { RecordFacts } from "@openboa/yogurt/record-facts";
+import { Stack } from "@openboa/yogurt/stack";
+import { Text } from "@openboa/yogurt/text";
+import { PageHeader } from "@openboa/yogurt/top";
 
 export interface ConsentClientProps {
   clientId: string;
@@ -21,6 +19,17 @@ export interface ConsentClientProps {
   codeChallengeMethod: string;
   state?: string;
   userHandle: string;
+}
+
+function describePermissions(scopeStr: string): string {
+  const parts = scopeStr.split(/\s+/).filter(Boolean);
+  const labels = parts.map((s) => {
+    if (s === "beans:read") return "Read Beans & Shelf";
+    if (s === "beans:write") return "Save confirmed Beans";
+    if (s === "offline_access") return "Stay connected";
+    return s;
+  });
+  return labels.join(" · ");
 }
 
 export function ConsentClient(props: ConsentClientProps) {
@@ -57,48 +66,66 @@ export function ConsentClient(props: ConsentClientProps) {
   };
 
   return (
-    <Surface className="cc-card">
-      <Stack gap={16}>
-        <Badge tone="brand">OAuth 2.1 MCP Consent</Badge>
-        <Heading level={2}>Authorize MCP Client</Heading>
-        <Text variant="help">
-          Signed in as <strong>@{props.userHandle}</strong>. An external agent host is requesting
-          access to your Coffee Chat MCP endpoint.
-        </Text>
+    <Stack gap={24}>
+      <PageHeader
+        title="Brew Authorization"
+        detail="Connect an AI app to your Roastery"
+      />
 
-        {error ? (
-          <Notice title="Authorization error" tone="danger">
-            {error}
-          </Notice>
-        ) : null}
+      <Card
+        title="Review AI app permissions"
+        description={`Signed in as @${props.userHandle} — you can revoke access anytime from AI & Account`}
+        variant="raised"
+        density="regular"
+      >
+        <Stack gap={16}>
+          {error ? (
+            <Notice title="Authorization error" tone="danger">
+              {error}
+            </Notice>
+          ) : null}
 
-        <div className="cc-muted-box">
-          <Stack gap={4}>
-            <Text variant="meta">Client ID: {props.clientId}</Text>
-            <Text variant="meta">Resource: {props.resource}</Text>
-            <Text variant="meta">Requested scopes: {props.scope}</Text>
-          </Stack>
-        </div>
+          <RecordFacts
+            title="Connection request"
+            source="Coffee Chat"
+            asOf="Active request"
+            facts={[
+              { id: "client", label: "AI App", value: props.clientId },
+              {
+                id: "permissions",
+                label: "Permissions",
+                value: describePermissions(props.scope),
+              },
+              { id: "resource", label: "Endpoint", value: props.resource },
+            ]}
+          />
 
-        <Inline gap={12}>
-          <Button
-            emphasis="filled"
-            tone="brand"
-            pending={submitting}
-            onClick={handleApprove}
-          >
-            Approve Access
-          </Button>
-          <Button
-            emphasis="quiet"
-            onClick={() => {
-              window.location.href = "/me";
-            }}
-          >
-            Cancel
-          </Button>
-        </Inline>
-      </Stack>
-    </Surface>
+          <Text variant="help">
+            Nothing is saved automatically by a connected AI app without your explicit confirmation.
+          </Text>
+
+          <Inline gap={12}>
+            <Button
+              emphasis="filled"
+              tone="brand"
+              pending={submitting}
+              pendingLabel="Authorizing…"
+              onClick={handleApprove}
+            >
+              Approve Brew Access
+            </Button>
+            <Button
+              emphasis="quiet"
+              disabled={submitting}
+              onClick={() => {
+                window.location.href = "/me?tab=settings";
+              }}
+            >
+              Deny
+            </Button>
+          </Inline>
+        </Stack>
+      </Card>
+    </Stack>
   );
 }

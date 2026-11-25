@@ -1,198 +1,245 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Avatar,
-  Badge,
-  Button,
-  Divider,
-  EmptyResult,
-  Heading,
-  Inline,
-  Link,
-  Notice,
-  Stack,
-  Surface,
-  Text,
-} from "@openboa/yogurt";
-import { BeanCard, type UiBeanDetail } from "@coffee-chat/ui";
+import { useRouter } from "next/navigation";
+import { Avatar } from "@openboa/yogurt/avatar";
+import { Badge } from "@openboa/yogurt/badge";
+import { Button } from "@openboa/yogurt/button";
+import { EmptyResult } from "@openboa/yogurt/empty-result";
+import { Inline } from "@openboa/yogurt/inline";
+import { Link } from "@openboa/yogurt/link";
+import { RecordFacts } from "@openboa/yogurt/record-facts";
+import { Stack } from "@openboa/yogurt/stack";
+import { Toast } from "@openboa/yogurt/toast";
+import { PageHeader } from "@openboa/yogurt/top";
+import { BeanCard } from "@coffee-chat/ui";
+import type { HydratedShelfRef, PersonProfileView } from "@coffee-chat/core";
 import { AgentHandoffDialog } from "./AgentHandoffDialog";
 
 export interface PersonClientProps {
-  profile: {
-    handle: string;
-    displayName: string;
-    publicCount: number;
-    privateCount: number;
-    publicBeans: UiBeanDetail[];
-  };
+  profile: PersonProfileView;
+  initialShelfRefs: HydratedShelfRef[];
   signedIn: boolean;
+  activeGrantCount?: number;
 }
 
-export function PersonClient({ profile, signedIn }: PersonClientProps) {
-  const [savedPerson, setSavedPerson] = useState(false);
-  const [savedBeans, setSavedBeans] = useState<string[]>([]);
-  const [handoffOpen, setHandoffOpen] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+export function PersonClient({
+  profile,
+  initialShelfRefs,
+  signedIn,
+  activeGrantCount,
+}: PersonClientProps) {
+  const router = useRouter();
+  const [personShelfId, setPersonShelfId] = useState<string | null>(
+    () =>
+      initialShelfRefs.find(
+        (r) => r.targetType === "person" && r.targetId === profile.userId,
+      )?.shelfItemId ?? null,
+  );
+  const [beanShelfMap, setBeanShelfMap] = useState<Record<string, string>>(
+    () => {
+      const map: Record<string, string> = {};
+      for (const ref of initialShelfRefs) {
+        if (ref.targetType === "bean") map[ref.targetId] = ref.shelfItemId;
+      }
+      return map;
+    },
+  );
+  const [brewOpen, setBrewOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const topTags = useMemo(() => {
-    const counts = new Map<string, number>();
+  // Public-only Tasting Notes derived strictly from profile.publicBeans
+  const publicInsights = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    let readingCount = 0;
+    let workCount = 0;
     for (const b of profile.publicBeans) {
+      if (b.origins.some((o) => o.kind === "source_excerpt")) readingCount++;
+      if (b.origins.some((o) => o.kind === "work_episode")) workCount++;
       for (const t of b.tags) {
-        counts.set(t, (counts.get(t) ?? 0) + 1);
+        tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
       }
     }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([t]) => t);
+    const topPublicTags = Array.from(tagCounts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, 5)
+      .map(([t]) => `#${t}`);
+    return { readingCount, workCount, topPublicTags };
   }, [profile.publicBeans]);
 
-  const talkPrompt = `Use Coffee Chat (Talk mode) with list_beans(scope="public", ownerHandle="${profile.handle}") to explore how @${profile.handle} makes sense of this topic. Cite their confirmed trade-offs and boundaries clearly, note anything outside their records, and never impersonate them.`;
-  const workPrompt = `Use Coffee Chat (Work mode) with @${profile.handle}'s public Beans alongside my own Beans to review my plan. Show clearly where @${profile.handle}'s trade-offs agree or diverge from mine.`;
+  const toggleSavePerson = async () => {
+    if (!signedIn) {
+      router.push(`/signin?returnTo=${encodeURIComponent(`/@${profile.handle}`)}`);
+      return;
+    }
+    if (personShelfId) {
+      const res = await fetch("/api/shelf", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ shelfItemId: personShelfId }),
+      });
+      if (res.ok) {
+        setPersonShelfId(null);
+        setToastMsg(`Removed @${profile.handle} from your Shelf.`);
+      }
+      return;
+    }
 
-  const handleSavePerson = async () => {
     const res = await fetch("/api/shelf", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ targetType: "person", handle: profile.handle }),
     });
-    if (res.ok) {
-      setSavedPerson(true);
-      setNotice(`Saved @${profile.handle} to your Saved Voices.`);
-    } else {
-      setNotice("Sign in first to save perspectives to your Saved Voices.");
+    const data = (await res.json()) as { item?: { id: string } };
+    if (res.ok && data.item?.id) {
+      setPersonShelfId(data.item.id);
+      setToastMsg(`Added @${profile.handle} to your Shelf.`);
     }
   };
 
-  const handleSaveBean = async (beanId: string) => {
+  const toggleSaveBean = async (beanId: string, title: string) => {
+    if (!signedIn) {
+      router.push(`/signin?returnTo=${encodeURIComponent(`/@${profile.handle}`)}`);
+      return;
+    }
+    const existingId = beanShelfMap[beanId];
+    if (existingId) {
+      const res = await fetch("/api/shelf", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ shelfItemId: existingId }),
+      });
+      if (res.ok) {
+        setBeanShelfMap((prev) => {
+          const next = { ...prev };
+          delete next[beanId];
+          return next;
+        });
+        setToastMsg(`Removed "${title}" from your Shelf.`);
+      }
+      return;
+    }
     const res = await fetch("/api/shelf", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ targetType: "bean", beanId }),
     });
-    if (res.ok) {
-      setSavedBeans((prev) => [...prev, beanId]);
-      setNotice("Saved take to your Saved Voices (live reference).");
-    } else {
-      setNotice("Sign in first to save takes to your Saved Voices.");
+    const data = (await res.json()) as { item?: { id: string } };
+    if (res.ok && data.item?.id) {
+      setBeanShelfMap((prev) => ({ ...prev, [beanId]: data.item!.id }));
+      setToastMsg(`Saved "${title}" to your Shelf.`);
     }
   };
 
   return (
     <Stack gap={24}>
-      <Surface className="cc-hero">
-        <Stack gap={16}>
-          <div className="cc-row-between">
-            <Inline gap={12}>
-              <Avatar label={profile.displayName} size={48} />
-              <Stack gap={2}>
-                <Heading level={1}>{profile.displayName}</Heading>
-                <Text variant="meta">@{profile.handle}</Text>
-              </Stack>
-            </Inline>
-            <Inline gap={8}>
-              <Badge tone="brand">{profile.publicCount} public</Badge>
-              <Badge tone="neutral">{profile.privateCount} private</Badge>
-            </Inline>
-          </div>
-
-          <Text variant="help">
-            Private notes stay strictly between {profile.displayName} and their AI—only counts and
-            explicitly shared takes appear here.
-          </Text>
-
-          {topTags.length > 0 ? (
-            <div className="cc-chip-row">
-              {topTags.map((tag) => (
-                <Badge key={tag} tone="neutral">
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
-          ) : null}
-
-          <Inline gap={12}>
+      <PageHeader
+        title={profile.displayName}
+        detail={`@${profile.handle} · Voice Profile · Public Beans & Coffee Chat`}
+        leading={<Avatar label={profile.displayName} size="large" />}
+        action={
+          <Inline gap={8}>
+            <Button
+              emphasis={personShelfId ? "quiet" : "soft"}
+              size="compact"
+              onClick={() => void toggleSavePerson()}
+            >
+              {personShelfId ? "Voice on Shelf" : "Add Voice to Shelf"}
+            </Button>
             <Button
               emphasis="filled"
               tone="brand"
-              onClick={() => setHandoffOpen(true)}
+              size="compact"
+              onClick={() => setBrewOpen(true)}
             >
-              Use @{profile.handle}&apos;s perspective in my AI
-            </Button>
-            <Button
-              emphasis="soft"
-              disabled={!signedIn || savedPerson}
-              onClick={handleSavePerson}
-            >
-              {savedPerson ? "Saved to Shelf" : `Save @${profile.handle} to Shelf`}
+              Brew their voice
             </Button>
           </Inline>
-        </Stack>
-      </Surface>
-
-      <AgentHandoffDialog
-        open={handoffOpen}
-        onOpenChange={setHandoffOpen}
-        title={`Coffee chat with @${profile.handle}'s takes`}
-        description="Bring these confirmed perspectives straight into Claude, Codex, ChatGPT, or Antigravity."
-        talkPrompt={talkPrompt}
-        workPrompt={workPrompt}
+        }
       />
 
-      {notice ? (
-        <Notice title="Saved Voices" tone="brand">
-          {notice}
-        </Notice>
+      {toastMsg ? (
+        <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      <Divider />
+      <RecordFacts
+        title="Voice Tasting Notes"
+        source={`@${profile.handle} public profile`}
+        asOf="Live"
+        facts={[
+          {
+            id: "public",
+            label: "On the Table · Public Beans",
+            value: profile.publicCount,
+          },
+          {
+            id: "private",
+            label: "Private Beans (count only)",
+            value: profile.privateCount,
+          },
+          {
+            id: "mix",
+            label: "Public Origin Mix",
+            value: `${publicInsights.readingCount} from reading · ${publicInsights.workCount} from work`,
+          },
+          ...(publicInsights.topPublicTags.length > 0
+            ? [
+                {
+                  id: "domains",
+                  label: "Top Public Domains",
+                  value: publicInsights.topPublicTags.join(" · "),
+                },
+              ]
+            : []),
+        ]}
+      />
 
-      <Stack gap={12}>
-        <Heading level={2}>
-          Shared Perspectives ({profile.publicBeans.length})
-        </Heading>
-        {profile.publicBeans.length === 0 ? (
-          <EmptyResult
-            empty={`@${profile.handle} hasn't shared any public perspectives yet.`}
-          />
-        ) : (
-          <Stack gap={12}>
-            {profile.publicBeans.map((bean) => {
-              const firstSource = bean.origins.find(
-                (o) => o.kind === "source_excerpt" && o.originId,
-              );
-              return (
-                <BeanCard
-                  key={bean.id}
-                  bean={bean}
-                  showOwner={false}
-                  showVisibilityBadge={false}
-                  actions={
-                    <>
-                      <Button
-                        emphasis="soft"
-                        size="compact"
-                        disabled={!signedIn || savedBeans.includes(bean.id)}
-                        onClick={() => handleSaveBean(bean.id)}
-                      >
-                        {savedBeans.includes(bean.id)
-                          ? "Saved to Shelf"
-                          : "Save Bean to Shelf"}
-                      </Button>
-                      {firstSource?.originId ? (
-                        <Link href={`/sources/${firstSource.originId}`}>
-                          Compare on Source Page
-                        </Link>
-                      ) : null}
-                    </>
-                  }
-                />
-              );
-            })}
-          </Stack>
-        )}
-      </Stack>
+      {profile.publicBeans.length === 0 ? (
+        <EmptyResult
+          empty={`@${profile.handle} has not put any Beans On the Table yet.`}
+        />
+      ) : (
+        <Stack gap={16}>
+          {profile.publicBeans.map((bean) => {
+            const firstSourceOriginId = bean.origins.find(
+              (o) => o.kind === "source_excerpt" && o.originId,
+            )?.originId;
+            const isSaved = Boolean(beanShelfMap[bean.id]);
+            return (
+              <BeanCard
+                key={bean.id}
+                bean={bean}
+                showOwner={false}
+                actions={
+                  <Inline gap={8} align="center">
+                    <Button
+                      emphasis={isSaved ? "quiet" : "soft"}
+                      size="compact"
+                      onClick={() => void toggleSaveBean(bean.id, bean.title)}
+                    >
+                      {isSaved ? "On Shelf" : "Save to Shelf"}
+                    </Button>
+                    {firstSourceOriginId ? (
+                      <Link href={`/sources/${firstSourceOriginId}`}>
+                        Open Table →
+                      </Link>
+                    ) : null}
+                  </Inline>
+                }
+              />
+            );
+          })}
+        </Stack>
+      )}
+
+      <AgentHandoffDialog
+        open={brewOpen}
+        onOpenChange={setBrewOpen}
+        title={`Brew · Explore @${profile.handle}'s Beans`}
+        description="Bring their public trade-offs and boundaries into a Coffee Chat without impersonation"
+        activeGrantCount={activeGrantCount}
+        prompt={`Review the public Coffee Chat Beans shared by ${profile.displayName} (@${profile.handle}) that relate to my current question. Summarize what trade-offs they prioritize, where their boundaries stop, and attribute every takeaway explicitly to their confirmed Beans without speaking as them.`}
+      />
     </Stack>
   );
 }

@@ -1,9 +1,10 @@
 import {
+  CoffeeChatError,
   linkProviderAccount,
   listLinkedAccounts,
   unlinkProviderAccount,
 } from "@coffee-chat/core";
-import { requireCurrentUser } from "@/lib/auth";
+import { isTestAuthEnabled, requireCurrentUser } from "@/lib/auth";
 import { getDb, handleApiError, jsonNoStore } from "@/lib/runtime";
 
 export async function GET(request: Request) {
@@ -19,6 +20,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    if (!isTestAuthEnabled()) {
+      throw new CoffeeChatError(
+        "FORBIDDEN",
+        403,
+        "Direct account linking is disabled outside test-auth mode. Use verified OAuth linking.",
+      );
+    }
     const user = await requireCurrentUser(request);
     const db = await getDb();
     const body = (await request.json()) as {

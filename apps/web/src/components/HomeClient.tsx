@@ -1,90 +1,122 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  Avatar,
-  Badge,
-  Button,
-  Divider,
-  EmptyResult,
-  Heading,
-  Inline,
-  Link,
-  Notice,
-  SearchField,
-  Stack,
-  Surface,
-  Text,
-} from "@openboa/yogurt";
-import {
-  BeanCard,
-  PerspectiveDiffCard,
-  type UiBeanDetail,
-} from "@coffee-chat/ui";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Avatar } from "@openboa/yogurt/avatar";
+import { Badge } from "@openboa/yogurt/badge";
+import { Button } from "@openboa/yogurt/button";
+import { Card } from "@openboa/yogurt/card";
+import { EmptyResult } from "@openboa/yogurt/empty-result";
+import { FilterBar } from "@openboa/yogurt/filter-bar";
+import { Inline } from "@openboa/yogurt/inline";
+import { Link } from "@openboa/yogurt/link";
+import { Pagination } from "@openboa/yogurt/pagination";
+import { Result } from "@openboa/yogurt/result";
+import { Stack } from "@openboa/yogurt/stack";
+import { Surface } from "@openboa/yogurt/surface";
+import { Text } from "@openboa/yogurt/text";
+import { Toast } from "@openboa/yogurt/toast";
+import { PageHeader } from "@openboa/yogurt/top";
+import { BeanCard } from "@coffee-chat/ui";
+import type {
+  BeanDetail,
+  HydratedShelfRef,
+  PublicPersonCard,
+} from "@coffee-chat/core";
 import { AgentHandoffDialog } from "./AgentHandoffDialog";
+
+export interface FeaturedTableData {
+  originId: string;
+  normalizedUrl: string;
+  sourceTitle: string | null;
+  beans: BeanDetail[];
+}
 
 export interface HomeClientProps {
   signedIn: boolean;
-  featuredSource: {
-    originId: string;
-    normalizedUrl: string;
-    sourceTitle: string | null;
-    beans: UiBeanDetail[];
-  } | null;
-  people: Array<{
-    handle: string;
-    displayName: string;
-    publicCount: number;
-    privateCount: number;
-    signatureTradeoff: string | null;
-    topTags: string[];
-  }>;
-  recentPublicBeans: UiBeanDetail[];
+  totalCorpusPublicCount: number;
+  featuredTable: FeaturedTableData | null;
+  people: PublicPersonCard[];
+  publicBeans: BeanDetail[];
+  filteredTotalCount: number;
+  page: number;
+  pageSize: number;
+  initialQuery: string;
+  initialTag: string;
+  initialShelfRefs: HydratedShelfRef[];
+  activeGrantCount?: number;
 }
 
 export function HomeClient({
   signedIn,
-  featuredSource,
+  totalCorpusPublicCount,
+  featuredTable,
   people,
-  recentPublicBeans,
+  publicBeans,
+  filteredTotalCount,
+  page,
+  pageSize,
+  initialQuery,
+  initialTag,
+  initialShelfRefs,
+  activeGrantCount,
 }: HomeClientProps) {
-  const [query, setQuery] = useState("");
-  const [activeTag, setActiveTag] = useState<string>("all");
-  const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
-  const [handoffOpen, setHandoffOpen] = useState(false);
-
-  const allTags = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const b of recentPublicBeans) {
-      for (const t of b.tags) {
-        counts.set(t, (counts.get(t) ?? 0) + 1);
+  const router = useRouter();
+  const [query, setQuery] = useState(initialQuery);
+  const [beanShelfMap, setBeanShelfMap] = useState<Record<string, string>>(
+    () => {
+      const map: Record<string, string> = {};
+      for (const ref of initialShelfRefs) {
+        if (ref.targetType === "bean") map[ref.targetId] = ref.shelfItemId;
       }
-    }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([tag]) => tag);
-  }, [recentPublicBeans]);
+      return map;
+    },
+  );
+  const [personShelfMap, setPersonShelfMap] = useState<Record<string, string>>(
+    () => {
+      const map: Record<string, string> = {};
+      for (const ref of initialShelfRefs) {
+        if (ref.targetType === "person") map[ref.targetId] = ref.shelfItemId;
+      }
+      return map;
+    },
+  );
+  const [brewDialog, setBrewDialog] = useState<{
+    title: string;
+    description: string;
+    prompt: string;
+  } | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const filteredBeans = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return recentPublicBeans.filter((b) => {
-      if (activeTag !== "all" && !b.tags.includes(activeTag)) return false;
-      if (!q) return true;
-      return (
-        b.title.toLowerCase().includes(q) ||
-        b.take.toLowerCase().includes(q) ||
-        b.tradeoff.toLowerCase().includes(q) ||
-        b.ownerHandle.toLowerCase().includes(q) ||
-        b.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    });
-  }, [recentPublicBeans, query, activeTag]);
+  const navigate = (nextQ: string, nextTag: string, nextPage: number) => {
+    const params = new URLSearchParams();
+    if (nextQ.trim()) params.set("q", nextQ.trim());
+    if (nextTag.trim()) params.set("tag", nextTag.trim());
+    if (nextPage > 1) params.set("page", String(nextPage));
+    const qs = params.toString();
+    router.push(qs ? `/?${qs}` : "/");
+  };
 
-  const handleSaveBean = async (bean: UiBeanDetail) => {
+  const toggleSaveBean = async (bean: BeanDetail) => {
     if (!signedIn) {
-      setNotice("Sign in first to save perspectives to your Saved Voices.");
+      router.push("/signin?returnTo=/");
+      return;
+    }
+    const existingId = beanShelfMap[bean.id];
+    if (existingId) {
+      const res = await fetch("/api/shelf", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ shelfItemId: existingId }),
+      });
+      if (res.ok) {
+        setBeanShelfMap((prev) => {
+          const next = { ...prev };
+          delete next[bean.id];
+          return next;
+        });
+        setToastMsg(`Removed "${bean.title}" from your Shelf.`);
+      }
       return;
     }
     const res = await fetch("/api/shelf", {
@@ -92,241 +124,397 @@ export function HomeClient({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ targetType: "bean", beanId: bean.id }),
     });
-    if (res.ok) {
-      setSavedIds((prev) => [...prev, bean.id]);
-      setNotice(`Saved "${bean.title}" to your Saved Voices.`);
+    const data = (await res.json()) as { item?: { id: string } };
+    if (res.ok && data.item?.id) {
+      setBeanShelfMap((prev) => ({ ...prev, [bean.id]: data.item!.id }));
+      setToastMsg(`Saved "${bean.title}" to your Shelf.`);
     }
   };
 
-  const featuredTitle =
-    featuredSource?.sourceTitle ??
-    featuredSource?.normalizedUrl ??
-    "Shared Perspectives";
-  const featuredHandles = Array.from(
-    new Set((featuredSource?.beans ?? []).map((b) => `@${b.ownerHandle}`)),
-  ).join(" and ");
+  const toggleSavePerson = async (person: PublicPersonCard) => {
+    if (!signedIn) {
+      router.push("/signin?returnTo=/");
+      return;
+    }
+    const existingId = personShelfMap[person.userId];
+    if (existingId) {
+      const res = await fetch("/api/shelf", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ shelfItemId: existingId }),
+      });
+      if (res.ok) {
+        setPersonShelfMap((prev) => {
+          const next = { ...prev };
+          delete next[person.userId];
+          return next;
+        });
+        setToastMsg(`Removed @${person.handle} from your Shelf.`);
+      }
+      return;
+    }
+    const res = await fetch("/api/shelf", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ targetType: "person", handle: person.handle }),
+    });
+    const data = (await res.json()) as { item?: { id: string } };
+    if (res.ok && data.item?.id) {
+      setPersonShelfMap((prev) => ({ ...prev, [person.userId]: data.item!.id }));
+      setToastMsg(`Added @${person.handle} to your Shelf.`);
+    }
+  };
 
-  return (
-    <Stack gap={32}>
-      <Surface className="cc-hero">
-        <Stack gap={16}>
-          <Badge tone="brand">Coffee Chat</Badge>
-          <Heading level={1}>
-            Knowledge is shared. What a person makes of it is personal.
-          </Heading>
-          <p className="cc-paragraph">
-            <Text variant="body">
-              Two sharp people read the exact same essay and walk away with different trade-offs.
-              Save the perspectives you actually stand behind—private by default—and bring them
-              straight into your AI work and conversations.
-            </Text>
-          </p>
-          <Inline gap={12}>
-            <Link href={signedIn ? "/me?compose=1" : "/signin?returnTo=/me?compose=1"}>
-              <Button emphasis="filled" tone="brand">
-                Write your first take
-              </Button>
-            </Link>
-            <Link href="/connect">
-              <Button emphasis="soft">Connect to Claude, Codex, or ChatGPT</Button>
-            </Link>
-          </Inline>
-        </Stack>
-      </Surface>
+  // Unseeded production onboarding when the database has 0 public Beans
+  if (totalCorpusPublicCount === 0 && !initialQuery && !initialTag) {
+    return (
+      <Stack gap={24}>
+        <PageHeader
+          title="Coffee Chat"
+          detail="Knowledge is shared. What a person makes of it is personal."
+          featured
+        />
 
-      {notice ? (
-        <Notice title="Saved Voices" tone="brand">
-          {notice}
-        </Notice>
-      ) : null}
-
-      {featuredSource ? (
-        <Stack gap={12}>
-          <div className="cc-row-between">
-            <Stack gap={2}>
-              <Heading level={2}>At the Table Right Now</Heading>
-              <Text variant="help">
-                Compare how {featuredHandles || "different people"} read the exact same piece.
-              </Text>
-            </Stack>
-            <Inline gap={8}>
-              <Link href={`/sources/${featuredSource.originId}?add=1`}>
-                <Button emphasis="soft" size="compact">
-                  Add your take
-                </Button>
-              </Link>
+        <Result
+          title="Start Coffee Chat · Roast your first Bean"
+          action={
+            <Inline gap={12}>
               <Button
                 emphasis="filled"
                 tone="brand"
-                size="compact"
-                onClick={() => setHandoffOpen(true)}
+                onClick={() =>
+                  router.push(
+                    signedIn
+                      ? "/me?compose=1"
+                      : "/signin?returnTo=%2Fme%3Fcompose%3D1",
+                  )
+                }
               >
-                Coffee chat with these takes in AI
+                Roast a private Bean
+              </Button>
+              <Button emphasis="soft" onClick={() => router.push("/connect")}>
+                Open Brew Setup
               </Button>
             </Inline>
-          </div>
+          }
+        >
+          <Text as="p" variant="body">
+            No public Beans are on the Table yet. Start privately in My Roastery,
+            connect your AI app to Brew your own judgment criteria, and share
+            selected Beans whenever you want to open the first Table.
+          </Text>
+        </Result>
 
-          <PerspectiveDiffCard
-            subject={featuredTitle}
-            subtitle={featuredSource.normalizedUrl}
-            perspectives={featuredSource.beans}
-            savedIds={savedIds}
-            linkAuthors
-            onSaveToShelf={handleSaveBean}
-            onOpenUrl={(url) => window.open(url, "_blank", "noopener,noreferrer")}
-          />
+        <div className="split-grid">
+          <Card
+            title="1. Roast · Capture & confirm"
+            description="Private by default in My Roastery"
+            variant="raised"
+            density="regular"
+          >
+            <Text variant="help">
+              Save a Reading Origin or Work Origin with your exact Trade-off
+              (what mattered more) and Boundary (when it doesn&apos;t apply).
+            </Text>
+          </Card>
+          <Card
+            title="2. Brew · Apply in your AI"
+            description="Connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor"
+            variant="raised"
+            density="regular"
+          >
+            <Text variant="help">
+              Let your AI consult your confirmed Beans and Tasting Notes so you
+              stop repeating the same corrections.
+            </Text>
+          </Card>
+          <Card
+            title="3. Tables · Compare takes"
+            description="Share selected Beans publicly on a shared source"
+            variant="raised"
+            density="regular"
+          >
+            <Text variant="help">
+              Put a Reading Origin Bean On the Table to start the first
+              side-by-side comparison.
+            </Text>
+          </Card>
+        </div>
+      </Stack>
+    );
+  }
 
-          <AgentHandoffDialog
-            open={handoffOpen}
-            onOpenChange={setHandoffOpen}
-            title={`Coffee chat on "${featuredTitle}"`}
-            description="Bring these contrasting confirmed takes straight into your own AI assistant."
-            talkPrompt={`Use Coffee Chat (Talk mode) with compare_perspectives(url="${featuredSource.normalizedUrl}") to unpack how ${featuredHandles} disagree on this read—citing their exact trade-offs and boundaries without impersonating them.`}
-            workPrompt={`Use Coffee Chat (Work mode) with compare_perspectives(url="${featuredSource.normalizedUrl}") alongside my own Beans to stress-test my current plan from both angles and tell me which trade-offs conflict.`}
-          />
-        </Stack>
+  const totalPages = Math.max(1, Math.ceil(filteredTotalCount / pageSize));
+
+  return (
+    <Stack gap={24}>
+      <PageHeader
+        title="Explore"
+        detail="Fresh Beans & active Tables — compare what mattered more across shared sources"
+        action={
+          <Inline gap={8}>
+            <Button
+              emphasis="soft"
+              size="compact"
+              onClick={() => router.push("/sources")}
+            >
+              Browse Tables
+            </Button>
+            <Button
+              emphasis="filled"
+              tone="brand"
+              size="compact"
+              onClick={() =>
+                router.push(
+                  signedIn
+                    ? "/me?compose=1"
+                    : "/signin?returnTo=%2Fme%3Fcompose%3D1",
+                )
+              }
+            >
+              Roast a Bean
+            </Button>
+          </Inline>
+        }
+      />
+
+      {toastMsg ? (
+        <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      {people.length > 0 ? (
-        <Stack gap={12}>
-          <div className="cc-row-between">
-            <Stack gap={2}>
-              <Heading level={2}>Voices at the Table</Heading>
-              <Text variant="help">
-                Explore how people weigh trade-offs. Private notes stay hidden—only counts show.
-              </Text>
-            </Stack>
-            <Link href="/sources">See all shared reads →</Link>
-          </div>
+      <Card variant="raised" density="compact">
+        <FilterBar
+          label="Search public Beans"
+          placeholder="Search takes, trade-offs, boundaries, or domains…"
+          query={query}
+          onQueryChange={setQuery}
+        >
+          <Button
+            emphasis="soft"
+            size="compact"
+            onClick={() => navigate(query, initialTag, 1)}
+          >
+            Search
+          </Button>
+          {initialQuery || initialTag ? (
+            <Button
+              emphasis="quiet"
+              size="compact"
+              onClick={() => {
+                setQuery("");
+                navigate("", "", 1);
+              }}
+            >
+              Clear filters
+            </Button>
+          ) : null}
+        </FilterBar>
+      </Card>
 
-          <div className="cc-people-grid">
-            {people.map((person) => (
-              <Surface key={person.handle} className="cc-card-compact">
-                <Stack gap={12}>
-                  <div className="cc-row-between">
-                    <Inline gap={8}>
-                      <Avatar label={person.displayName} size={32} />
-                      <Stack gap={2}>
-                        <Link href={`/@${person.handle}`}>
-                          <strong>{person.displayName}</strong>
-                        </Link>
-                        <Text variant="meta">@{person.handle}</Text>
-                      </Stack>
-                    </Inline>
-                    <Inline gap={4}>
-                      <Badge tone="brand">{person.publicCount} public</Badge>
-                      <Badge tone="neutral">{person.privateCount} private</Badge>
-                    </Inline>
-                  </div>
-
-                  {person.signatureTradeoff ? (
-                    <Text variant="help">&ldquo;{person.signatureTradeoff}&rdquo;</Text>
-                  ) : null}
-
-                  <div className="cc-row-between">
-                    <div className="cc-chip-row">
-                      {person.topTags.map((t) => (
-                        <Badge key={t} tone="neutral">
-                          #{t}
-                        </Badge>
-                      ))}
-                    </div>
-                    <Link href={`/@${person.handle}`}>Sit down →</Link>
-                  </div>
+      {featuredTable && !initialQuery && !initialTag && page === 1 ? (
+        <Card
+          title={`Featured Table · ${featuredTable.sourceTitle ?? featuredTable.normalizedUrl}`}
+          description="Same source, contrasting trade-offs — open the Table for full axis-by-axis comparison"
+          headerAction={
+            <Badge tone="neutral" dot={false}>
+              {featuredTable.beans.length}{" "}
+              {featuredTable.beans.length === 1 ? "Bean" : "Beans"}
+            </Badge>
+          }
+          action={
+            <Inline gap={8}>
+              <Button
+                emphasis="soft"
+                size="compact"
+                onClick={() =>
+                  router.push(`/sources/${featuredTable.originId}`)
+                }
+              >
+                Open Table →
+              </Button>
+              <Button
+                emphasis="quiet"
+                size="compact"
+                onClick={() =>
+                  setBrewDialog({
+                    title: "Brew · Compare this Table in my AI",
+                    description:
+                      "Bring these contrasting trade-offs into your connected AI",
+                    prompt: `Review the Coffee Chat Table for "${featuredTable.sourceTitle ?? featuredTable.normalizedUrl}" (${featuredTable.normalizedUrl}). Compare the differing trade-offs and boundaries shared there, and tell me which criteria fit my current context.`,
+                  })
+                }
+              >
+                Brew this Table
+              </Button>
+            </Inline>
+          }
+          variant="raised"
+          density="regular"
+        >
+          <div className="split-grid">
+            {featuredTable.beans.slice(0, 2).map((b) => (
+              <Surface key={b.id} variant="surface" density="compact">
+                <Stack gap={8}>
+                  <Inline justify="between" align="center" gap={8}>
+                    <Link href={`/@${b.ownerHandle}`}>
+                      {b.ownerDisplayName} (@{b.ownerHandle})
+                    </Link>
+                  </Inline>
+                  <Text variant="body">{b.title}</Text>
+                  <Text variant="help">Trade-off: {b.tradeoff}</Text>
+                  <Text variant="meta">Boundary: {b.boundary}</Text>
                 </Stack>
               </Surface>
             ))}
           </div>
-        </Stack>
+        </Card>
       ) : null}
 
-      <Divider />
-
       <Stack gap={16}>
-        <div className="cc-row-between">
+        <Inline justify="between" align="center" gap={8}>
           <Stack gap={2}>
-            <Heading level={2}>Recent Public Takes</Heading>
-            <Text variant="help">
-              Filter by topic or keyword to find perspectives worth bringing into your next decision.
+            <Text variant="body">Fresh Beans on the Table</Text>
+            <Text variant="meta">
+              {filteredTotalCount} public{" "}
+              {filteredTotalCount === 1 ? "Bean" : "Beans"}
+              {initialTag ? ` in #${initialTag}` : ""}
+              {initialQuery ? ` matching "${initialQuery}"` : ""}
             </Text>
           </Stack>
-        </div>
+        </Inline>
 
-        <SearchField
-          label="Search takes, trade-offs, or @people"
-          value={query}
-          onValueChange={setQuery}
-          placeholder="Try 'monolith', 'craft', 'security', or '@mina'"
-        />
-
-        {allTags.length > 0 ? (
-          <div className="cc-chip-row">
-            <Button
-              emphasis={activeTag === "all" ? "filled" : "soft"}
-              tone={activeTag === "all" ? "brand" : undefined}
-              size="compact"
-              onClick={() => setActiveTag("all")}
-            >
-              All
-            </Button>
-            {allTags.map((tag) => (
-              <Button
-                key={tag}
-                emphasis={activeTag === tag ? "filled" : "soft"}
-                tone={activeTag === tag ? "brand" : undefined}
-                size="compact"
-                onClick={() => setActiveTag(tag)}
-              >
-                #{tag}
-              </Button>
-            ))}
-          </div>
-        ) : null}
-
-        {filteredBeans.length === 0 ? (
+        {publicBeans.length === 0 ? (
           <EmptyResult
-            query={query}
+            query={initialQuery || initialTag || undefined}
             onClear={() => {
               setQuery("");
-              setActiveTag("all");
+              navigate("", "", 1);
             }}
-            empty="No public perspectives yet. Share the first one from My Table."
+            empty="No public Beans matched your search."
           />
         ) : (
-          <Stack gap={12}>
-            {filteredBeans.map((bean) => {
-              const firstSource = bean.origins.find(
+          <Stack gap={16}>
+            {publicBeans.map((bean) => {
+              const firstSourceOriginId = bean.origins.find(
                 (o) => o.kind === "source_excerpt" && o.originId,
-              );
-              const isSaved = savedIds.includes(bean.id);
+              )?.originId;
+              const isSaved = Boolean(beanShelfMap[bean.id]);
               return (
                 <BeanCard
                   key={bean.id}
                   bean={bean}
-                  showVisibilityBadge={false}
                   actions={
-                    <>
+                    <Inline gap={8} align="center">
                       <Button
                         emphasis={isSaved ? "quiet" : "soft"}
                         size="compact"
-                        disabled={isSaved}
-                        onClick={() => handleSaveBean(bean)}
+                        onClick={() => void toggleSaveBean(bean)}
                       >
-                        {isSaved ? "Saved to Shelf" : "Save to Shelf"}
+                        {isSaved ? "On Shelf" : "Save to Shelf"}
                       </Button>
-                      {firstSource?.originId ? (
-                        <Link href={`/sources/${firstSource.originId}`}>
-                          Compare takes on this read →
+                      <Button
+                        emphasis="quiet"
+                        size="compact"
+                        onClick={() =>
+                          setBrewDialog({
+                            title: `Brew · Apply @${bean.ownerHandle}'s Bean`,
+                            description:
+                              "Consult this public trade-off in your AI without impersonation",
+                            prompt: `Consult the public Coffee Chat Bean "${bean.title}" by @${bean.ownerHandle}. Consider their trade-off ("${bean.tradeoff}"), respect its boundary ("${bean.boundary}"), and attribute any guidance clearly to their confirmed Bean.`,
+                          })
+                        }
+                      >
+                        Brew in my AI
+                      </Button>
+                      {firstSourceOriginId ? (
+                        <Link href={`/sources/${firstSourceOriginId}`}>
+                          Open Table →
                         </Link>
                       ) : null}
-                    </>
+                    </Inline>
                   }
                 />
               );
             })}
           </Stack>
         )}
+
+        {totalPages > 1 ? (
+          <Pagination
+            label="Explore pages"
+            page={page}
+            pages={totalPages}
+            onPageChange={(nextPage) => navigate(query, initialTag, nextPage)}
+          />
+        ) : null}
       </Stack>
+
+      {people.length > 0 ? (
+        <Stack gap={12}>
+          <Stack gap={2}>
+            <Text variant="body">Active Voices</Text>
+            <Text variant="meta">
+              People sharing confirmed Beans — add voices to your Shelf to Brew
+              their perspectives
+            </Text>
+          </Stack>
+          <div className="split-grid">
+            {people.map((person) => {
+              const isSaved = Boolean(personShelfMap[person.userId]);
+              return (
+                <Card
+                  key={person.userId}
+                  title={person.displayName}
+                  description={`@${person.handle} · ${person.publicCount} public · ${person.privateCount} private`}
+                  headerAction={
+                    <Avatar label={person.displayName} size="compact" />
+                  }
+                  action={
+                    <Inline gap={8} align="center">
+                      <Button
+                        emphasis={isSaved ? "quiet" : "soft"}
+                        size="compact"
+                        onClick={() => void toggleSavePerson(person)}
+                      >
+                        {isSaved ? "Voice on Shelf" : "Add to Shelf"}
+                      </Button>
+                      <Link href={`/@${person.handle}`}>Profile →</Link>
+                    </Inline>
+                  }
+                  variant="raised"
+                  density="compact"
+                >
+                  <Stack gap={8}>
+                    {person.signatureTradeoff ? (
+                      <Text variant="help">{person.signatureTradeoff}</Text>
+                    ) : null}
+                    {person.topTags.length > 0 ? (
+                      <Inline gap={4}>
+                        {person.topTags.map((t) => (
+                          <Badge key={t} tone="neutral" dot={false}>
+                            #{t}
+                          </Badge>
+                        ))}
+                      </Inline>
+                    ) : null}
+                  </Stack>
+                </Card>
+              );
+            })}
+          </div>
+        </Stack>
+      ) : null}
+
+      <AgentHandoffDialog
+        open={Boolean(brewDialog)}
+        onOpenChange={(next) => {
+          if (!next) setBrewDialog(null);
+        }}
+        title={brewDialog?.title ?? "Brew in my AI"}
+        description={brewDialog?.description ?? ""}
+        prompt={brewDialog?.prompt ?? ""}
+        activeGrantCount={activeGrantCount}
+      />
     </Stack>
   );
 }

@@ -1,25 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Badge,
-  Button,
-  CodeBlock,
-  Dialog,
-  Inline,
-  Link,
-  Stack,
-  Tabs,
-  Text,
-} from "@openboa/yogurt";
+import { Badge } from "@openboa/yogurt/badge";
+import { Button } from "@openboa/yogurt/button";
+import { CodeBlock } from "@openboa/yogurt/code-block";
+import { Dialog } from "@openboa/yogurt/dialog";
+import { Inline } from "@openboa/yogurt/inline";
+import { Link } from "@openboa/yogurt/link";
+import { CopyButton } from "@openboa/yogurt/motion-copy-button";
+import { Notice } from "@openboa/yogurt/notice";
+import { Stack } from "@openboa/yogurt/stack";
+import { Text } from "@openboa/yogurt/text";
 
 export interface AgentHandoffDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
-  talkPrompt: string;
-  workPrompt: string;
+  prompt: string;
+  activeGrantCount?: number;
 }
 
 export function AgentHandoffDialog({
@@ -27,19 +25,12 @@ export function AgentHandoffDialog({
   onOpenChange,
   title,
   description,
-  talkPrompt,
-  workPrompt,
+  prompt,
+  activeGrantCount,
 }: AgentHandoffDialogProps) {
-  const [tab, setTab] = useState("work");
-  const [copiedMode, setCopiedMode] = useState<string | null>(null);
-
-  const copyText = async (mode: string, value: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopiedMode(mode);
-      setTimeout(() => setCopiedMode(null), 2000);
-    } catch {
-      setCopiedMode(null);
+  const copyText = async (text: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
     }
   };
 
@@ -51,74 +42,48 @@ export function AgentHandoffDialog({
       description={description}
     >
       <Stack gap={16}>
-        <Tabs
-          label="Choose how to use in AI"
-          value={tab}
-          onValueChange={setTab}
-          items={[
-            {
-              id: "work",
-              label: "Apply to my work",
-              panel: (
-                <Stack gap={12}>
-                  <Text variant="help">
-                    Paste this into Claude, Codex, ChatGPT, or Antigravity to review your own draft
-                    or decision using these confirmed trade-offs.
-                  </Text>
-                  <CodeBlock
-                    code={workPrompt}
-                    language="text"
-                    onCopy={(text) => copyText("work", text)}
-                  />
-                  <Inline gap={8}>
-                    <Button
-                      emphasis="filled"
-                      tone="brand"
-                      size="compact"
-                      onClick={() => copyText("work", workPrompt)}
-                    >
-                      {copiedMode === "work" ? "Copied prompt" : "Copy Work prompt"}
-                    </Button>
-                    <Badge tone="neutral">Attributes every trade-off</Badge>
-                  </Inline>
-                </Stack>
-              ),
-            },
-            {
-              id: "talk",
-              label: "Coffee chat (Talk)",
-              panel: (
-                <Stack gap={12}>
-                  <Text variant="help">
-                    Explore how these perspectives see a topic—grounded strictly in confirmed
-                    records, without impersonating anyone.
-                  </Text>
-                  <CodeBlock
-                    code={talkPrompt}
-                    language="text"
-                    onCopy={(text) => copyText("talk", text)}
-                  />
-                  <Inline gap={8}>
-                    <Button
-                      emphasis="filled"
-                      tone="brand"
-                      size="compact"
-                      onClick={() => copyText("talk", talkPrompt)}
-                    >
-                      {copiedMode === "talk" ? "Copied prompt" : "Copy Talk prompt"}
-                    </Button>
-                    <Badge tone="neutral">No impersonation</Badge>
-                  </Inline>
-                </Stack>
-              ),
-            },
-          ]}
-        />
+        {typeof activeGrantCount === "number" ? (
+          activeGrantCount > 0 ? (
+            <Notice title="Brew Ready · AI connected" tone="success">
+              You have {activeGrantCount} active connected AI{" "}
+              {activeGrantCount === 1 ? "app" : "apps"}. Paste this prompt into your AI chat to
+              Brew these Beans directly.
+            </Notice>
+          ) : (
+            <Notice
+              title="No AI app connected yet"
+              tone="warning"
+              action={<Link href="/connect">Open Brew Setup →</Link>}
+            >
+              Connect Codex, Claude Code, ChatGPT, Antigravity, or Cursor once so your AI can read
+              your Beans and Shelf automatically.
+            </Notice>
+          )
+        ) : (
+          <Inline gap={8} align="center">
+            <Badge tone="neutral" dot={false}>
+              Works with your connected AI
+            </Badge>
+            <Link href="/connect">Need Brew Setup?</Link>
+          </Inline>
+        )}
 
-        <div className="cc-row-between">
-          <Text variant="meta">Haven&apos;t connected Coffee Chat to your AI yet?</Text>
-          <Link href="/connect">30-second setup →</Link>
-        </div>
+        <CodeBlock code={prompt} language="text" onCopy={copyText} />
+
+        <Inline justify="between" align="center" gap={12}>
+          <CopyButton value={prompt} onCopy={copyText} />
+          <Inline gap={8} align="center">
+            <Link href="/connect">Brew Setup</Link>
+            <Button emphasis="quiet" size="compact" onClick={() => onOpenChange(false)}>
+              Done
+            </Button>
+          </Inline>
+        </Inline>
+
+        <Text variant="meta">
+          Plain-language handoff — your connected AI checks confirmed trade-offs and respects every
+          stated boundary without impersonating anyone.
+        </Text>
       </Stack>
     </Dialog>
   );

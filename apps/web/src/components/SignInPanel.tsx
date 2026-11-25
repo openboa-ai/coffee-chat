@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Badge,
-  Button,
-  Divider,
-  Heading,
-  Inline,
-  Notice,
-  Stack,
-  Surface,
-  Text,
-  TextField,
-} from "@openboa/yogurt";
+import { Badge } from "@openboa/yogurt/badge";
+import { Button } from "@openboa/yogurt/button";
+import { Card } from "@openboa/yogurt/card";
+import { Divider } from "@openboa/yogurt/divider";
+import { Inline } from "@openboa/yogurt/inline";
+import { Notice } from "@openboa/yogurt/notice";
+import { Stack } from "@openboa/yogurt/stack";
+import { Text } from "@openboa/yogurt/text";
+import { TextField } from "@openboa/yogurt/text-field";
+import { PageHeader } from "@openboa/yogurt/top";
 
 export interface SignInPanelProps {
   testAuthEnabled: boolean;
@@ -32,6 +30,11 @@ export function SignInPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const safeReturnTo =
+    returnTo.startsWith("/") && !returnTo.startsWith("//") && !returnTo.includes("\\")
+      ? returnTo
+      : "/me";
+
   const handleSocial = async (provider: "github" | "google") => {
     setLoading(true);
     setError(null);
@@ -39,7 +42,7 @@ export function SignInPanel({
       const res = await fetch("/api/auth/sign-in/social", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ provider, callbackURL: returnTo }),
+        body: JSON.stringify({ provider, callbackURL: safeReturnTo }),
       });
       const data = (await res.json()) as { url?: string; message?: string };
       if (data.url) {
@@ -73,7 +76,7 @@ export function SignInPanel({
         const data = (await res.json()) as { message?: string };
         throw new Error(data.message ?? "Local sign-in failed.");
       }
-      window.location.href = returnTo;
+      window.location.href = safeReturnTo;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
     } finally {
@@ -82,115 +85,122 @@ export function SignInPanel({
   };
 
   return (
-    <Surface className="cc-card">
-      <Stack gap={16}>
-        <Stack gap={4}>
-          <Badge tone="brand">Welcome to Coffee Chat</Badge>
-          <Heading level={1}>Pull up a chair</Heading>
-          <Text variant="help">
-            Sign in to save your perspectives privately, share selected takes publicly, and bring
-            other people&apos;s voices into your AI work.
-          </Text>
+    <Stack gap={24}>
+      <PageHeader
+        title="Sign In"
+        detail="Enter your Roastery — Roast private Beans, review Tasting Notes, and Brew in your AI"
+      />
+
+      <Card
+        title="Sign in with your account"
+        description="Accounts stay separate unless you explicitly link them in AI & Account"
+        variant="raised"
+        density="regular"
+      >
+        <Stack gap={16}>
+          {error ? (
+            <Notice title="Sign-in error" tone="danger">
+              {error}
+            </Notice>
+          ) : null}
+
+          <Inline gap={12}>
+            <Button
+              emphasis="filled"
+              tone="brand"
+              disabled={!hasGithub || loading}
+              onClick={() => handleSocial("github")}
+            >
+              Continue with GitHub
+            </Button>
+            <Button
+              emphasis="soft"
+              disabled={!hasGoogle || loading}
+              onClick={() => handleSocial("google")}
+            >
+              Continue with Google
+            </Button>
+          </Inline>
+
+          {!hasGithub && !hasGoogle ? (
+            <Text variant="meta">
+              GitHub and Google sign-in activate automatically once OAuth client credentials are
+              configured in the environment.
+            </Text>
+          ) : null}
+
+          {testAuthEnabled ? (
+            <>
+              <Divider />
+              <Stack gap={12}>
+                <Inline gap={8} align="center">
+                  <Badge tone="accent" dot={false}>
+                    Local Test Auth
+                  </Badge>
+                  <Text variant="meta">
+                    Development and E2E only — disabled in production
+                  </Text>
+                </Inline>
+
+                <Inline gap={8}>
+                  <Button
+                    emphasis="soft"
+                    size="compact"
+                    disabled={loading}
+                    onClick={() => handleTestLogin("mina", "Mina Seo")}
+                  >
+                    Sign in as @mina
+                  </Button>
+                  <Button
+                    emphasis="soft"
+                    size="compact"
+                    disabled={loading}
+                    onClick={() => handleTestLogin("jun", "Jun Park")}
+                  >
+                    Sign in as @jun
+                  </Button>
+                  <Button
+                    emphasis="soft"
+                    size="compact"
+                    disabled={loading}
+                    onClick={() => handleTestLogin("sora", "Sora Han")}
+                  >
+                    Sign in as @sora
+                  </Button>
+                </Inline>
+
+                <Stack gap={12}>
+                  <TextField
+                    label="Handle"
+                    help="Lowercase profile handle for local testing"
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                    placeholder="alice"
+                  />
+                  <TextField
+                    label="Display Name"
+                    help="Shown on public Beans and your Voice Profile"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Alice Park"
+                  />
+                  <Inline gap={8}>
+                    <Button
+                      emphasis="filled"
+                      tone="neutral"
+                      pending={loading}
+                      disabled={!handle.trim() || loading}
+                      onClick={() => handleTestLogin()}
+                    >
+                      Enter Roastery (Test Auth)
+                    </Button>
+                  </Inline>
+                </Stack>
+              </Stack>
+            </>
+          ) : null}
         </Stack>
-
-        {error ? (
-          <Notice title="Sign-in error" tone="danger">
-            {error}
-          </Notice>
-        ) : null}
-
-        <Inline gap={12}>
-          <Button
-            emphasis="filled"
-            tone="brand"
-            disabled={!hasGithub || loading}
-            onClick={() => handleSocial("github")}
-          >
-            Continue with GitHub
-          </Button>
-          <Button
-            emphasis="soft"
-            disabled={!hasGoogle || loading}
-            onClick={() => handleSocial("google")}
-          >
-            Continue with Google
-          </Button>
-        </Inline>
-
-        {!hasGithub && !hasGoogle ? (
-          <Text variant="meta">
-            Social login activates automatically once GitHub or Google OAuth keys are configured.
-          </Text>
-        ) : null}
-
-        {testAuthEnabled ? (
-          <>
-            <Divider />
-            <Stack gap={12}>
-              <Inline gap={8}>
-                <Badge tone="accent">Instant Local Preview</Badge>
-                <Text variant="meta">Dev/test only — disabled in production</Text>
-              </Inline>
-
-              <div className="cc-chip-row">
-                <Button
-                  emphasis="soft"
-                  size="compact"
-                  disabled={loading}
-                  onClick={() => handleTestLogin("mina", "Mina Seo")}
-                >
-                  Try as @mina
-                </Button>
-                <Button
-                  emphasis="soft"
-                  size="compact"
-                  disabled={loading}
-                  onClick={() => handleTestLogin("jun", "Jun Park")}
-                >
-                  Try as @jun
-                </Button>
-                <Button
-                  emphasis="soft"
-                  size="compact"
-                  disabled={loading}
-                  onClick={() => handleTestLogin("alice", "Alice Park")}
-                >
-                  Quick sign in as @alice
-                </Button>
-                <Button
-                  emphasis="soft"
-                  size="compact"
-                  disabled={loading}
-                  onClick={() => handleTestLogin("bob", "Bob Kim")}
-                >
-                  Quick sign in as @bob
-                </Button>
-              </div>
-
-              <TextField
-                label="Or start with your own handle"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-              />
-              <TextField
-                label="Display name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <div>
-                <Button
-                  emphasis="filled"
-                  tone="brand"
-                  pending={loading}
-                  onClick={() => handleTestLogin()}
-                >
-                  Enter Coffee Chat
-                </Button>
-              </div>
-            </Stack>
-          </>
-        ) : null}
-      </Stack>
-    </Surface>
+      </Card>
+    </Stack>
   );
 }
