@@ -1,12 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { Chart } from "@openboa/yogurt/chart";
 import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
+import { Grid } from "@openboa/yogurt/grid";
 import { Inline } from "@openboa/yogurt/inline";
+import { List } from "@openboa/yogurt/list";
+import { ListRow } from "@openboa/yogurt/list-row";
 import { RecordFacts } from "@openboa/yogurt/record-facts";
 import { Stack } from "@openboa/yogurt/stack";
 import { Text } from "@openboa/yogurt/text";
@@ -28,7 +33,6 @@ export function InsightsPanel({
   onSelectLifecycle,
   onOpenConnect,
 }: InsightsPanelProps) {
-  const maxTagCount = insights.topTags[0]?.count ?? 1;
   const asOfLabel = new Date(insights.asOf).toLocaleString("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -106,7 +110,6 @@ export function InsightsPanel({
         leading={leading}
       />
 
-      {/* Primary hairline typographic summary (no cramped StatCard pill boxes) */}
       <Card variant="raised" density="regular">
         <Stack gap={16}>
           <div className="taste-strip">
@@ -122,7 +125,8 @@ export function InsightsPanel({
             <div className="taste-metric">
               <Text variant="meta">Reading vs Work Origins</Text>
               <span className="taste-metric-value">
-                {insights.originMix.readingCount} : {insights.originMix.workCount}
+                {insights.originMix.readingCount} :{" "}
+                {insights.originMix.workCount}
               </span>
               <Text variant="meta">
                 {insights.originMix.uniqueSourceUrlCount} unique{" "}
@@ -149,34 +153,35 @@ export function InsightsPanel({
 
           <Divider />
 
-          <Inline gap={8} align="center" wrap>
-            <Text variant="meta">Filter My Beans:</Text>
-            <Button
-              emphasis="soft"
-              size="compact"
-              onClick={() => onSelectLifecycle("active")}
-            >
-              Active ({insights.lifecycle.activeCount})
-            </Button>
-            <Button
-              emphasis="soft"
-              size="compact"
-              onClick={() => onSelectLifecycle("in_tension")}
-            >
-              In Tension ({insights.lifecycle.inTensionCount})
-            </Button>
-            <Button
-              emphasis="soft"
-              size="compact"
-              onClick={() => onSelectLifecycle("superseded")}
-            >
-              Updated Mind ({insights.lifecycle.supersededCount})
-            </Button>
+          <Inline gap={12} align="center" wrap>
+            <Text variant="meta">Filter My Beans</Text>
+            <ButtonGroup label="Filter My Beans by lifecycle">
+              <Button
+                emphasis="soft"
+                size="compact"
+                onClick={() => onSelectLifecycle("active")}
+              >
+                Active ({insights.lifecycle.activeCount})
+              </Button>
+              <Button
+                emphasis="soft"
+                size="compact"
+                onClick={() => onSelectLifecycle("in_tension")}
+              >
+                In Tension ({insights.lifecycle.inTensionCount})
+              </Button>
+              <Button
+                emphasis="soft"
+                size="compact"
+                onClick={() => onSelectLifecycle("superseded")}
+              >
+                Updated Mind ({insights.lifecycle.supersededCount})
+              </Button>
+            </ButtonGroup>
           </Inline>
         </Stack>
       </Card>
 
-      {/* Deterministic Taste Reflections */}
       {reflections.length > 0 ? (
         <Card
           title="Palate Check"
@@ -184,69 +189,52 @@ export function InsightsPanel({
           variant="raised"
           density="regular"
         >
-          <Stack gap={12}>
+          <List label="Palate check observations" divided>
             {reflections.map((item) => (
-              <Inline
+              <ListRow
                 key={item.id}
-                justify="between"
-                align="center"
-                gap={12}
-                wrap
-              >
-                <Text variant="body">{item.text}</Text>
-                {item.actionLabel && item.onAction ? (
-                  <Button
-                    emphasis="soft"
-                    size="compact"
-                    onClick={item.onAction}
-                  >
-                    {item.actionLabel}
-                  </Button>
-                ) : null}
-              </Inline>
+                title={item.text}
+                actions={
+                  item.actionLabel && item.onAction ? (
+                    <Button
+                      emphasis="soft"
+                      size="compact"
+                      onClick={item.onAction}
+                    >
+                      {item.actionLabel}
+                    </Button>
+                  ) : undefined
+                }
+              />
             ))}
-          </Stack>
+          </List>
         </Card>
       ) : null}
 
-      <div className="split-grid">
-        {/* Clean proportional domain bars (zero "coverage 50%" boilerplate) */}
+      <Grid className="split-grid" gap={16}>
         <Card
           title="Taste Profile by Domain"
-          description="Topics you have sharpened most — click any domain to filter My Beans"
+          description="Topics you have sharpened most — select any domain to filter My Beans"
           variant="raised"
           density="regular"
         >
           {insights.topTags.length === 0 ? (
             <EmptyResult empty="Add Domains when Roasting Beans to see where your judgment concentrates." />
           ) : (
-            <Stack gap={4}>
-              {insights.topTags.map((item) => {
-                const pct = Math.max(
-                  8,
-                  Math.round((item.count / maxTagCount) * 100),
-                );
-                return (
-                  <button
-                    key={item.tag}
-                    type="button"
-                    className="domain-bar-row"
-                    onClick={() => onSelectDomain(item.tag)}
-                  >
-                    <Text variant="body">#{item.tag}</Text>
-                    <div className="domain-bar-track" aria-hidden="true">
-                      <div
-                        className="domain-bar-fill"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <Text variant="meta">
+            <List label="Taste profile by domain" divided>
+              {insights.topTags.map((item) => (
+                <ListRow
+                  key={item.tag}
+                  title={`#${item.tag}`}
+                  trailing={
+                    <Badge tone="neutral" dot={false}>
                       {item.count} {item.count === 1 ? "Bean" : "Beans"}
-                    </Text>
-                  </button>
-                );
-              })}
-            </Stack>
+                    </Badge>
+                  }
+                  onActivate={() => onSelectDomain(item.tag)}
+                />
+              ))}
+            </List>
           )}
         </Card>
 
@@ -284,7 +272,7 @@ export function InsightsPanel({
             },
           ]}
         />
-      </div>
+      </Grid>
 
       {insights.monthlyActivity.length >= 2 ? (
         <Chart
@@ -303,6 +291,11 @@ export function InsightsPanel({
         <Card
           title="Roast Cadence"
           description={`${insights.monthlyActivity[0]!.count} confirmed ${insights.monthlyActivity[0]!.count === 1 ? "revision" : "revisions"} in ${insights.monthlyActivity[0]!.month}`}
+          headerAction={
+            <Badge tone="neutral" dot={false}>
+              {insights.monthlyActivity[0]!.month}
+            </Badge>
+          }
           variant="raised"
           density="compact"
         >

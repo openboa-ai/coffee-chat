@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
-import { Inline } from "@openboa/yogurt/inline";
 import { Notice } from "@openboa/yogurt/notice";
 import { RecordFacts } from "@openboa/yogurt/record-facts";
 import { Stack } from "@openboa/yogurt/stack";
@@ -53,7 +53,10 @@ export function ConsentClient(props: ConsentClientProps) {
           state: props.state,
         }),
       });
-      const data = (await res.json()) as { redirectTo?: string; message?: string };
+      const data = (await res.json()) as {
+        redirectTo?: string;
+        message?: string;
+      };
       if (!res.ok || !data.redirectTo) {
         throw new Error(data.message ?? "Authorization failed.");
       }
@@ -66,66 +69,70 @@ export function ConsentClient(props: ConsentClientProps) {
   };
 
   return (
-    <Stack gap={24}>
-      <PageHeader
-        title="Brew Authorization"
-        detail="Connect an AI app to your Roastery"
-      />
+    <div className="focused-task-shell">
+      <Stack gap={24}>
+        <PageHeader
+          title="Brew Authorization"
+          detail="Connect an AI app to your Roastery"
+        />
 
-      <Card
-        title="Review AI app permissions"
-        description={`Signed in as @${props.userHandle} — you can revoke access anytime from AI & Account`}
-        variant="raised"
-        density="regular"
-      >
-        <Stack gap={16}>
-          {error ? (
-            <Notice title="Authorization error" tone="danger">
-              {error}
-            </Notice>
-          ) : null}
+        <Card
+          title="Review AI app permissions"
+          description={`Signed in as @${props.userHandle} — you can revoke access anytime from Brew Bar & Account`}
+          action={
+            <ButtonGroup label="Authorization decision" justify="end">
+              <Button
+                emphasis="quiet"
+                disabled={submitting}
+                onClick={() => {
+                  window.location.href = "/me?tab=settings";
+                }}
+              >
+                Deny
+              </Button>
+              <Button
+                emphasis="filled"
+                tone="brand"
+                pending={submitting}
+                pendingLabel="Authorizing…"
+                onClick={handleApprove}
+              >
+                Approve Brew Access
+              </Button>
+            </ButtonGroup>
+          }
+          variant="raised"
+          density="regular"
+        >
+          <Stack gap={16}>
+            {error ? (
+              <Notice title="Authorization error" tone="danger">
+                {error}
+              </Notice>
+            ) : null}
 
-          <RecordFacts
-            title="Connection request"
-            source="Coffee Chat"
-            asOf="Active request"
-            facts={[
-              { id: "client", label: "AI App", value: props.clientId },
-              {
-                id: "permissions",
-                label: "Permissions",
-                value: describePermissions(props.scope),
-              },
-              { id: "resource", label: "Endpoint", value: props.resource },
-            ]}
-          />
+            <RecordFacts
+              title="Connection request"
+              source="Coffee Chat"
+              asOf="Active request"
+              facts={[
+                { id: "client", label: "AI App", value: props.clientId },
+                {
+                  id: "permissions",
+                  label: "Permissions",
+                  value: describePermissions(props.scope),
+                },
+                { id: "resource", label: "Endpoint", value: props.resource },
+              ]}
+            />
 
-          <Text variant="help">
-            Nothing is saved automatically by a connected AI app without your explicit confirmation.
-          </Text>
-
-          <Inline gap={12}>
-            <Button
-              emphasis="filled"
-              tone="brand"
-              pending={submitting}
-              pendingLabel="Authorizing…"
-              onClick={handleApprove}
-            >
-              Approve Brew Access
-            </Button>
-            <Button
-              emphasis="quiet"
-              disabled={submitting}
-              onClick={() => {
-                window.location.href = "/me?tab=settings";
-              }}
-            >
-              Deny
-            </Button>
-          </Inline>
-        </Stack>
-      </Card>
-    </Stack>
+            <Text variant="help">
+              Nothing is saved automatically by a connected AI app without your
+              explicit confirmation.
+            </Text>
+          </Stack>
+        </Card>
+      </Stack>
+    </div>
   );
 }

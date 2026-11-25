@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Avatar } from "@openboa/yogurt/avatar";
 import { Button } from "@openboa/yogurt/button";
-import { Icon } from "@openboa/yogurt/icon";
+import { IconButton } from "@openboa/yogurt/icon-button";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
 import { Navbar } from "@openboa/yogurt/navbar";
@@ -72,59 +72,62 @@ export function NavHeader({
   };
 
   return (
-    <div className="app-header-bar">
-      <div className="app-header-inner">
-        <Navbar
-          variant="sections"
-          label="Coffee Chat navigation"
-          identity={
-            <Link href="/" className="brand-identity">
-              <ProjectMark project="coffee" size={26} />
-              <Text variant="body">Coffee Chat</Text>
-            </Link>
-          }
-          destinations={destinations}
-          current={currentId}
-          expanded={expanded}
-          onExpandedChange={setExpanded}
-          action={
-            <Inline gap={8} align="center">
-              <Button
-                emphasis="quiet"
-                size="compact"
-                aria-label={`Appearance: ${APPEARANCE_LABELS[appearance]}. Switch appearance`}
-                onClick={nextAppearance}
-              >
-                <Inline gap={4} align="center">
-                  <Icon
-                    name={appearance === "dark" ? "moon" : "sun"}
-                    label=""
-                  />
-                  <Text variant="meta">{APPEARANCE_LABELS[appearance]}</Text>
-                </Inline>
-              </Button>
-              {user ? (
-                <>
-                  <Link href={`/@${user.handle}`} className="brand-identity">
-                    <Avatar label={user.name} size="compact" />
-                    <Text variant="meta">@{user.handle}</Text>
-                  </Link>
-                  <Button
-                    emphasis="quiet"
-                    size="compact"
-                    pending={signingOut}
-                    onClick={handleSignOut}
-                  >
-                    Sign out
-                  </Button>
-                </>
-              ) : (
-                <Link href="/signin">Sign in</Link>
-              )}
-            </Inline>
-          }
-        />
-      </div>
+    <div className="app-masthead-wrap">
+      <Navbar
+        variant="sections"
+        className="app-masthead"
+        label="Coffee Chat navigation"
+        identity={
+          <Link
+            href="/"
+            className="app-brand-identity"
+            aria-label="Coffee Chat home"
+          >
+            <ProjectMark project="coffee" label="" size={24} />
+            <span>Coffee Chat</span>
+          </Link>
+        }
+        destinations={destinations}
+        current={currentId}
+        currentKind="page"
+        expanded={expanded}
+        onExpandedChange={setExpanded}
+        action={
+          <Inline gap={8} align="center" wrap={false}>
+            <IconButton
+              emphasis="quiet"
+              size="compact"
+              icon={appearance === "dark" ? "sun" : "moon"}
+              label={`Appearance: ${APPEARANCE_LABELS[appearance]}. Switch appearance`}
+              onClick={nextAppearance}
+            />
+            {user ? (
+              <Inline gap={6} align="center" wrap={false}>
+                <Link
+                  href={`/@${user.handle}`}
+                  className="app-nav-profile"
+                  aria-label={`View @${user.handle} public profile`}
+                >
+                  <Avatar label={user.name} size="compact" />
+                  <Text variant="meta">@{user.handle}</Text>
+                </Link>
+                <Button
+                  emphasis="soft"
+                  size="compact"
+                  pending={signingOut}
+                  onClick={handleSignOut}
+                >
+                  Sign out
+                </Button>
+              </Inline>
+            ) : (
+              <Link href="/signin" emphasis="soft" size="compact">
+                Sign in
+              </Link>
+            )}
+          </Inline>
+        }
+      />
     </div>
   );
 }

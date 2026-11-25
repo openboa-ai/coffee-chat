@@ -6,9 +6,11 @@ import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Breadcrumb } from "@openboa/yogurt/breadcrumb";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
 import { Divider } from "@openboa/yogurt/divider";
+import { Grid } from "@openboa/yogurt/grid";
 import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
@@ -161,7 +163,7 @@ export function SourceCompareClient({
         title={displayTitle}
         detail="Table · Same source, different Taste — compare what each person prioritized and where their rule stops"
         action={
-          <Inline gap={8}>
+          <ButtonGroup label="Table actions">
             <Button
               emphasis="soft"
               size="compact"
@@ -185,7 +187,7 @@ export function SourceCompareClient({
             >
               Roast your Bean
             </Button>
-          </Inline>
+          </ButtonGroup>
         }
       />
 
@@ -193,33 +195,37 @@ export function SourceCompareClient({
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      {/* Calm editorial source anchor strip */}
-      <div className="trust-band">
-        <Link
-          href={normalizedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="source-url-link"
-        >
-          {normalizedUrl} ↗
-        </Link>
-        <Text variant="meta">
-          {uniqueAuthors.length}{" "}
-          {uniqueAuthors.length === 1 ? "person" : "people"} · {beans.length}{" "}
-          {beans.length === 1 ? "Bean" : "Beans"}
-        </Text>
-        {sharedDomains.length > 0 ? (
-          <Inline gap={6} align="center" wrap>
-            {sharedDomains.map((tag) => (
-              <Badge key={tag} tone="neutral" dot={false}>
-                {tag}
-              </Badge>
-            ))}
+      <Card variant="subtle" density="compact">
+        <Inline justify="between" align="center" gap={12} wrap>
+          <Inline gap={12} align="center" wrap>
+            <Link
+              href={normalizedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              emphasis="quiet"
+              size="compact"
+              className="source-url-link"
+            >
+              {normalizedUrl} ↗
+            </Link>
+            <Text variant="meta">
+              {uniqueAuthors.length}{" "}
+              {uniqueAuthors.length === 1 ? "person" : "people"} ·{" "}
+              {beans.length} {beans.length === 1 ? "Bean" : "Beans"}
+            </Text>
           </Inline>
-        ) : null}
-      </div>
+          {sharedDomains.length > 0 ? (
+            <Inline gap={6} align="center" wrap>
+              {sharedDomains.map((tag) => (
+                <Badge key={tag} tone="neutral" dot={false}>
+                  {tag}
+                </Badge>
+              ))}
+            </Inline>
+          ) : null}
+        </Inline>
+      </Card>
 
-      {/* Viewer Stance Banner — signed-in only; private-only URLs already 404 before lookup */}
       {signedIn ? (
         viewerPublic.length > 0 ? (
           <Notice
@@ -263,7 +269,12 @@ export function SourceCompareClient({
               <DisclosureRow label="Preview my private stance (only visible to me)">
                 <Stack gap={8}>
                   {viewerPrivate.map((pb) => (
-                    <Surface key={pb.id} variant="surface" density="compact">
+                    <Surface
+                      key={pb.id}
+                      variant="surface"
+                      density="compact"
+                      className="bean-criteria-box"
+                    >
                       <Stack gap={4}>
                         <Inline gap={8} align="center">
                           <Badge tone="neutral" dot={false}>
@@ -302,14 +313,16 @@ export function SourceCompareClient({
         )
       ) : null}
 
-      {/* Editorial Side-by-Side Comparison Dialogue (replaces cramped spreadsheet table) */}
-      <Stack gap={12}>
+      <Stack gap={16}>
         <Stack gap={2}>
-          <Text variant="meta">At this Table</Text>
+          <Text variant="meta">
+            At this Table · {uniqueAuthors.length}{" "}
+            {uniqueAuthors.length === 1 ? "person" : "people"}
+          </Text>
           <Heading level={2}>How each person read this source</Heading>
         </Stack>
 
-        <div className="table-dialogue-grid">
+        <Grid className="table-dialogue-grid" gap={16}>
           {beans.map((b) => {
             const matchingOrigin =
               b.origins.find((o) => o.url === normalizedUrl) ??
@@ -323,12 +336,13 @@ export function SourceCompareClient({
                     <Inline gap={8} align="center">
                       <Avatar label={b.ownerDisplayName} size="compact" />
                       <Stack gap={2}>
-                        <Inline gap={6} align="baseline">
-                          <Link href={`/@${b.ownerHandle}`}>
-                            <Text variant="body">{b.ownerDisplayName}</Text>
-                          </Link>
+                        <Link
+                          href={`/@${b.ownerHandle}`}
+                          className="person-inline-link"
+                        >
+                          <Text variant="body">{b.ownerDisplayName}</Text>
                           <Text variant="meta">@{b.ownerHandle}</Text>
-                        </Inline>
+                        </Link>
                         {b.supersededByBeanId ? (
                           <Badge tone="warning">Updated Mind</Badge>
                         ) : null}
@@ -356,23 +370,35 @@ export function SourceCompareClient({
                       </Stack>
                     </blockquote>
                   ) : matchingOrigin?.locator ? (
-                    <Text variant="meta">Section: {matchingOrigin.locator}</Text>
+                    <Text variant="meta">
+                      Section: {matchingOrigin.locator}
+                    </Text>
                   ) : null}
 
                   <Stack gap={12}>
                     <Heading level={3}>{b.title}</Heading>
-                    <p className="editorial-lead">{b.take}</p>
+                    <Text as="p" variant="body" className="editorial-lead">
+                      {b.take}
+                    </Text>
 
-                    <div className="bean-pull">
-                      <Stack gap={2}>
-                        <Text variant="meta">What mattered more</Text>
-                        <Text as="p" variant="body">
-                          {b.tradeoff}
+                    <Surface
+                      variant="surface"
+                      density="compact"
+                      className="bean-criteria-box"
+                    >
+                      <Stack gap={8}>
+                        <Stack gap={2}>
+                          <Text variant="meta">What mattered more</Text>
+                          <Text as="p" variant="body">
+                            {b.tradeoff}
+                          </Text>
+                        </Stack>
+                        <Divider />
+                        <Text as="p" variant="help">
+                          Except when: {b.boundary}
                         </Text>
                       </Stack>
-                    </div>
-
-                    <p className="bean-footnote">Except when: {b.boundary}</p>
+                    </Surface>
                   </Stack>
 
                   {b.tags.length > 0 ? (
@@ -391,7 +417,7 @@ export function SourceCompareClient({
               </Card>
             );
           })}
-        </div>
+        </Grid>
       </Stack>
 
       {signedIn ? (

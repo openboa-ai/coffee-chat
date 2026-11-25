@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { Divider } from "@openboa/yogurt/divider";
+import { Grid } from "@openboa/yogurt/grid";
+import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Notice } from "@openboa/yogurt/notice";
 import { ProjectMark } from "@openboa/yogurt/project-mark";
 import { Stack } from "@openboa/yogurt/stack";
+import { Surface } from "@openboa/yogurt/surface";
 import { Text } from "@openboa/yogurt/text";
 import { TextField } from "@openboa/yogurt/text-field";
-import { PageHeader } from "@openboa/yogurt/top";
 
 export interface SignInPanelProps {
   testAuthEnabled: boolean;
@@ -91,65 +94,65 @@ export function SignInPanel({
   };
 
   return (
-    <Stack gap={24}>
-      <PageHeader
-        title="Pull up a chair"
-        detail="Sign in to My Roastery — Roast private Beans, check Tasting Notes, and Brew your Taste in AI"
-        leading={<ProjectMark project="coffee" size={32} />}
-      />
+    <Grid className="auth-split-shell" gap={24}>
+      <Card variant="raised" density="spacious">
+        <Stack gap={24}>
+          <Stack gap={6}>
+            <Heading level={1}>Pull up a chair</Heading>
+            <Text variant="help">
+              Sign in to My Roastery — Roast private Beans, review Tasting
+              Notes, and Brew your Taste in your AI.
+            </Text>
+          </Stack>
 
-      <Card
-        title="Enter My Roastery"
-        description="Accounts stay separate unless you explicitly link them in Brew Bar & Account"
-        variant="raised"
-        density="regular"
-      >
-        <Stack gap={16}>
           {error ? (
             <Notice title="Sign-in error" tone="danger">
               {error}
             </Notice>
           ) : null}
 
-          <Inline gap={12}>
-            <Button
-              emphasis="filled"
-              tone="brand"
-              disabled={!hasGithub || loading}
-              onClick={() => handleSocial("github")}
-            >
-              Continue with GitHub
-            </Button>
-            <Button
-              emphasis="soft"
-              disabled={!hasGoogle || loading}
-              onClick={() => handleSocial("google")}
-            >
-              Continue with Google
-            </Button>
-          </Inline>
+          <Stack gap={12}>
+            <ButtonGroup label="Sign in with a provider">
+              <Button
+                emphasis="filled"
+                tone="brand"
+                disabled={!hasGithub || loading}
+                onClick={() => handleSocial("github")}
+              >
+                Continue with GitHub
+              </Button>
+              <Button
+                emphasis="soft"
+                disabled={!hasGoogle || loading}
+                onClick={() => handleSocial("google")}
+              >
+                Continue with Google
+              </Button>
+            </ButtonGroup>
 
-          {!hasGithub && !hasGoogle ? (
-            <Text variant="meta">
-              GitHub and Google sign-in activate automatically once OAuth client
-              credentials are configured in the environment.
-            </Text>
-          ) : null}
+            {!hasGithub && !hasGoogle ? (
+              <Text variant="meta">
+                GitHub and Google sign-in activate automatically once OAuth
+                credentials are configured. Accounts stay separate unless you
+                explicitly link them in Brew Bar &amp; Account.
+              </Text>
+            ) : null}
+          </Stack>
 
           {testAuthEnabled ? (
             <>
               <Divider />
-              <Stack gap={12}>
-                <Inline gap={8} align="center">
+              <Stack gap={16}>
+                <Inline gap={8} align="center" wrap>
                   <Badge tone="accent" dot={false}>
                     Local Test Auth
                   </Badge>
                   <Text variant="meta">
-                    Development and E2E only — disabled in production
+                    Development &amp; E2E only — disabled in production
                   </Text>
                 </Inline>
 
-                <Inline gap={8} wrap>
+                <ButtonGroup label="Quick demo accounts">
                   <Button
                     emphasis="soft"
                     size="compact"
@@ -174,7 +177,7 @@ export function SignInPanel({
                   >
                     Sign in as @hannah
                   </Button>
-                </Inline>
+                </ButtonGroup>
 
                 <Stack gap={12}>
                   <TextField
@@ -208,6 +211,18 @@ export function SignInPanel({
           ) : null}
         </Stack>
       </Card>
-    </Stack>
+
+      <Surface variant="raised" className="auth-brand-panel">
+        <ProjectMark project="coffee" label="" size={112} />
+        <Stack gap={8}>
+          <Heading level={2}>Your Taste, across every AI.</Heading>
+          <Text as="p" variant="help">
+            Everything you Roast starts private to you and your connected AI.
+            Nothing saves without your confirmation, and Coffee Chat runs zero
+            server models.
+          </Text>
+        </Stack>
+      </Surface>
+    </Grid>
   );
 }

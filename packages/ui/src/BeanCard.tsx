@@ -9,6 +9,7 @@ import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
 import { Stack } from "@openboa/yogurt/stack";
+import { Surface } from "@openboa/yogurt/surface";
 import { Text } from "@openboa/yogurt/text";
 import type { UiBeanDetail, UiRelationKind } from "./types.js";
 
@@ -52,12 +53,13 @@ export function BeanCard({
           {showOwner ? (
             <Inline gap={8} align="center">
               <Avatar label={bean.ownerDisplayName} size="compact" />
-              <Inline gap={6} align="baseline">
-                <Link href={`/@${bean.ownerHandle}`}>
-                  <Text variant="body">{bean.ownerDisplayName}</Text>
-                </Link>
+              <Link
+                href={`/@${bean.ownerHandle}`}
+                className="person-inline-link"
+              >
+                <Text variant="body">{bean.ownerDisplayName}</Text>
                 <Text variant="meta">@{bean.ownerHandle}</Text>
-              </Inline>
+              </Link>
             </Inline>
           ) : (
             <Inline gap={8} align="center">
@@ -91,7 +93,9 @@ export function BeanCard({
 
         <Stack gap={8}>
           <Heading level={3}>{bean.title}</Heading>
-          <p className="editorial-lead">{bean.take}</p>
+          <Text as="p" variant="body" className="editorial-lead">
+            {bean.take}
+          </Text>
         </Stack>
 
         {firstSource?.quotation ? (
@@ -108,25 +112,31 @@ export function BeanCard({
           </blockquote>
         ) : null}
 
-        <div className="bean-pull">
-          <Stack gap={2}>
-            <Text variant="meta">What mattered more</Text>
-            <Text as="p" variant="body">
-              {bean.tradeoff}
+        <Surface
+          variant="surface"
+          density="compact"
+          className="bean-criteria-box"
+        >
+          <Stack gap={8}>
+            <Stack gap={2}>
+              <Text variant="meta">What mattered more</Text>
+              <Text as="p" variant="body">
+                {bean.tradeoff}
+              </Text>
+            </Stack>
+            <Divider />
+            <Text as="p" variant="help">
+              Except when: {bean.boundary}
             </Text>
           </Stack>
-        </div>
-
-        <Text as="p" variant="help">
-          Except when: {bean.boundary}
-        </Text>
+        </Surface>
 
         {firstWork?.episodeSummary ? (
           <Text variant="meta">Sparked at work: {firstWork.episodeSummary}</Text>
         ) : null}
 
         {bean.relations.length > 0 || bean.tags.length > 0 ? (
-          <Inline gap={6} align="center">
+          <Inline gap={6} align="center" wrap>
             {bean.relations.map((rel, idx) => (
               <Badge
                 key={rel.id ?? idx}
@@ -148,7 +158,7 @@ export function BeanCard({
         {actions ? (
           <>
             <Divider />
-            <Inline gap={8} align="center">
+            <Inline gap={8} align="center" wrap>
               {actions}
             </Inline>
           </>

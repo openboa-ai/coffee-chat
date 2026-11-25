@@ -3,9 +3,11 @@
 import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
+import { Grid } from "@openboa/yogurt/grid";
 import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
@@ -37,7 +39,8 @@ export function PerspectiveDiffCard({
     <Card
       title={subject}
       description={
-        subtitle ?? "Table · Side-by-side Beans comparing trade-offs and boundaries"
+        subtitle ??
+        "Table · Side-by-side Beans comparing trade-offs and boundaries"
       }
       headerAction={
         <Badge tone="neutral" dot={false}>
@@ -51,28 +54,32 @@ export function PerspectiveDiffCard({
         {perspectives.length === 0 ? (
           <EmptyResult empty="No public Beans on this Table yet." />
         ) : (
-          <div className="split-grid">
+          <Grid className="split-grid" gap={16}>
             {perspectives.map((bean) => {
               const isSaved = savedIds.includes(bean.id);
               const firstSource = bean.origins.find(
                 (o) => o.kind === "source_excerpt",
               );
               return (
-                <Surface key={bean.id} variant="outlined" density="compact">
+                <Card key={bean.id} variant="outlined" density="compact">
                   <Stack gap={12}>
                     <Inline justify="between" align="center" gap={8}>
                       <Inline gap={8} align="center">
                         <Avatar label={bean.ownerDisplayName} size="compact" />
-                        <Stack gap={2}>
-                          {linkAuthors ? (
-                            <Link href={`/@${bean.ownerHandle}`}>
-                              <Text variant="body">{bean.ownerDisplayName}</Text>
-                            </Link>
-                          ) : (
+                        {linkAuthors ? (
+                          <Link
+                            href={`/@${bean.ownerHandle}`}
+                            className="person-inline-link"
+                          >
                             <Text variant="body">{bean.ownerDisplayName}</Text>
-                          )}
-                          <Text variant="meta">@{bean.ownerHandle}</Text>
-                        </Stack>
+                            <Text variant="meta">@{bean.ownerHandle}</Text>
+                          </Link>
+                        ) : (
+                          <Stack gap={2}>
+                            <Text variant="body">{bean.ownerDisplayName}</Text>
+                            <Text variant="meta">@{bean.ownerHandle}</Text>
+                          </Stack>
+                        )}
                       </Inline>
                       {bean.supersededByBeanId ? (
                         <Badge tone="warning">Updated Mind</Badge>
@@ -83,28 +90,38 @@ export function PerspectiveDiffCard({
 
                     {firstSource?.quotation ? (
                       <blockquote className="bean-quote">
-                        <Text variant="body">
+                        <Text variant="help">
                           &ldquo;{firstSource.quotation}&rdquo;
                         </Text>
                       </blockquote>
                     ) : null}
 
-                    <p className="editorial-lead">{bean.take}</p>
+                    <Text as="p" variant="body" className="editorial-lead">
+                      {bean.take}
+                    </Text>
 
-                    <div className="bean-pull">
-                      <Stack gap={2}>
-                        <Text variant="meta">What mattered more</Text>
-                        <Text as="p" variant="body">
-                          {bean.tradeoff}
+                    <Surface
+                      variant="surface"
+                      density="compact"
+                      className="bean-criteria-box"
+                    >
+                      <Stack gap={6}>
+                        <Stack gap={2}>
+                          <Text variant="meta">What mattered more</Text>
+                          <Text as="p" variant="body">
+                            {bean.tradeoff}
+                          </Text>
+                        </Stack>
+                        <Divider />
+                        <Text as="p" variant="help">
+                          Except when: {bean.boundary}
                         </Text>
                       </Stack>
-                    </div>
-
-                    <p className="bean-footnote">Except when: {bean.boundary}</p>
+                    </Surface>
 
                     <Divider />
 
-                    <Inline gap={8}>
+                    <ButtonGroup label={`Actions for ${bean.title}`}>
                       {onSaveToShelf && bean.visibility === "public" ? (
                         <Button
                           emphasis={isSaved ? "quiet" : "soft"}
@@ -124,12 +141,12 @@ export function PerspectiveDiffCard({
                           Read source
                         </Button>
                       ) : null}
-                    </Inline>
+                    </ButtonGroup>
                   </Stack>
-                </Surface>
+                </Card>
               );
             })}
-          </div>
+          </Grid>
         )}
       </Stack>
     </Card>

@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { FilterBar } from "@openboa/yogurt/filter-bar";
+import { Grid } from "@openboa/yogurt/grid";
 import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
@@ -82,32 +84,34 @@ export function SourcesDirectoryClient({
         }
       />
 
-      {/* Clean inline filter bar — no outer Card box wrapper */}
       <FilterBar
         label="Search Tables"
         placeholder="Search article title, URL, @handle, or domain…"
+        size="compact"
         query={query}
         onQueryChange={setQuery}
       >
-        <Button
-          emphasis="soft"
-          size="compact"
-          onClick={() => navigate(query, initialTag, 1)}
-        >
-          Search
-        </Button>
-        {initialQuery || initialTag ? (
+        <ButtonGroup label="Search Table controls">
           <Button
-            emphasis="quiet"
+            emphasis="soft"
             size="compact"
-            onClick={() => {
-              setQuery("");
-              navigate("", "", 1);
-            }}
+            onClick={() => navigate(query, initialTag, 1)}
           >
-            Clear
+            Search
           </Button>
-        ) : null}
+          {initialQuery || initialTag ? (
+            <Button
+              emphasis="quiet"
+              size="compact"
+              onClick={() => {
+                setQuery("");
+                navigate("", "", 1);
+              }}
+            >
+              Clear
+            </Button>
+          ) : null}
+        </ButtonGroup>
       </FilterBar>
 
       {sources.length === 0 ? (
@@ -124,7 +128,7 @@ export function SourcesDirectoryClient({
           empty="No public Tables yet. Roast a Reading Origin Bean and put it On the Table to start the first one."
         />
       ) : (
-        <div className="split-grid">
+        <Grid className="split-grid" gap={16}>
           {sources.map((src) => (
             <Card key={src.originId} variant="raised" density="regular">
               <Stack gap={12}>
@@ -162,14 +166,18 @@ export function SourcesDirectoryClient({
                     {src.authorHandles.length}{" "}
                     {src.authorHandles.length === 1 ? "person" : "people"}
                   </Text>
-                  <Link href={`/sources/${src.originId}`}>
-                    Pull up a chair →
+                  <Link
+                    href={`/sources/${src.originId}`}
+                    emphasis="soft"
+                    size="compact"
+                  >
+                    Pull up a chair
                   </Link>
                 </Inline>
               </Stack>
             </Card>
           ))}
-        </div>
+        </Grid>
       )}
 
       {totalPages > 1 ? (

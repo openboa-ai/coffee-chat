@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
+import { CodeBlock } from "@openboa/yogurt/code-block";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
-import { CopyButton } from "@openboa/yogurt/motion-copy-button";
 import { Stack } from "@openboa/yogurt/stack";
 import { Text } from "@openboa/yogurt/text";
 import { Toast } from "@openboa/yogurt/toast";
@@ -152,7 +153,7 @@ export function PersonClient({
         detail={`@${profile.handle} · Confirmed public Taste ready for a Coffee Chat in your AI`}
         leading={<Avatar label={profile.displayName} size="large" />}
         action={
-          <Inline gap={8}>
+          <ButtonGroup label={`Actions for @${profile.handle}`}>
             <Button
               emphasis={personShelfId ? "quiet" : "soft"}
               size="compact"
@@ -170,7 +171,7 @@ export function PersonClient({
             >
               Coffee Chat with @{profile.handle}
             </Button>
-          </Inline>
+          </ButtonGroup>
         }
       />
 
@@ -178,18 +179,21 @@ export function PersonClient({
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      {/* Direct Coffee Chat Prompt Strip */}
       <Card
-        title={`Ask your AI to Coffee Chat with @${profile.handle}’s Taste`}
-        description="Copy straight into ChatGPT, Claude, Codex, Cursor, or Antigravity — attributed to confirmed Beans, never impersonated"
-        variant="outlined"
-        density="compact"
-        action={<CopyButton value={coffeeChatPrompt} onCopy={copyText} />}
+        title={`Coffee Chat with @${profile.handle} in your AI`}
+        description="Paste into ChatGPT, Claude, Codex, Cursor, or Antigravity — attributed to confirmed Beans, never impersonated"
+        variant="raised"
+        density="regular"
       >
-        <Text variant="body">&ldquo;{coffeeChatPrompt}&rdquo;</Text>
+        <div className="prompt-code-wrap">
+          <CodeBlock
+            code={coffeeChatPrompt}
+            language="text"
+            onCopy={copyText}
+          />
+        </div>
       </Card>
 
-      {/* Clean hairline public Tasting Notes strip (public counts & public tags only) */}
       <Card variant="raised" density="regular">
         <Stack gap={12}>
           <div className="taste-strip">
@@ -213,7 +217,7 @@ export function PersonClient({
 
           {publicInsights.topPublicTags.length > 0 ? (
             <Inline gap={6} align="center" wrap>
-              <Text variant="meta">Public Domains:</Text>
+              <Text variant="meta">Public Domains</Text>
               {publicInsights.topPublicTags.map((tag) => (
                 <Badge key={tag} tone="neutral" dot={false}>
                   {tag}
@@ -241,7 +245,7 @@ export function PersonClient({
                 bean={bean}
                 showOwner={false}
                 actions={
-                  <Inline gap={8} align="center">
+                  <ButtonGroup label={`Actions for ${bean.title}`}>
                     <Button
                       emphasis={isSaved ? "quiet" : "soft"}
                       size="compact"
@@ -250,11 +254,15 @@ export function PersonClient({
                       {isSaved ? "On Shelf" : "Save to Shelf"}
                     </Button>
                     {firstSourceOriginId ? (
-                      <Link href={`/sources/${firstSourceOriginId}`}>
-                        Open Table →
+                      <Link
+                        href={`/sources/${firstSourceOriginId}`}
+                        emphasis="quiet"
+                        size="compact"
+                      >
+                        Open Table
                       </Link>
                     ) : null}
-                  </Inline>
+                  </ButtonGroup>
                 }
               />
             );

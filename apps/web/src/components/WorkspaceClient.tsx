@@ -2,10 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ActionMenu } from "@openboa/yogurt/action-menu";
+import { Avatar } from "@openboa/yogurt/avatar";
 import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
+import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { Checkbox } from "@openboa/yogurt/checkbox";
+import { Composer } from "@openboa/yogurt/composer";
 import { ConfirmDialog } from "@openboa/yogurt/confirm-dialog";
 import { Dialog } from "@openboa/yogurt/dialog";
 import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
@@ -618,19 +622,28 @@ export function WorkspaceClient({
         navigation={
           <>
             <SidebarHeader>
-              <Stack gap={6}>
-                <Stack gap={2}>
-                  <Text variant="body">{user.name}</Text>
-                  <Inline gap={8} align="center">
+              <Stack gap={8}>
+                <Inline gap={8} align="center">
+                  <Avatar label={user.name} size="compact" />
+                  <Stack gap={2}>
+                    <Text variant="body">{user.name}</Text>
                     <Text variant="meta">@{user.handle}</Text>
-                    <Link href={`/@${user.handle}`}>Profile →</Link>
-                  </Inline>
-                </Stack>
-                <Status tone={activeGrants.length > 0 ? "success" : "neutral"}>
-                  {activeGrants.length > 0
-                    ? `Brew Ready (${activeGrants.length})`
-                    : "Brew Bar unlinked"}
-                </Status>
+                  </Stack>
+                </Inline>
+                <Inline justify="between" align="center" gap={6}>
+                  <Status tone={activeGrants.length > 0 ? "success" : "neutral"}>
+                    {activeGrants.length > 0
+                      ? `Brew Ready (${activeGrants.length})`
+                      : "Brew Bar unlinked"}
+                  </Status>
+                  <Link
+                    href={`/@${user.handle}`}
+                    emphasis="quiet"
+                    size="compact"
+                  >
+                    Profile
+                  </Link>
+                </Inline>
               </Stack>
             </SidebarHeader>
 
@@ -678,7 +691,7 @@ export function WorkspaceClient({
             </SidebarContent>
 
             <SidebarFooter>
-              <Stack gap={8}>
+              <Stack gap={6}>
                 <Button
                   emphasis="soft"
                   size="compact"
@@ -688,9 +701,11 @@ export function WorkspaceClient({
                     setRoastOpen(true);
                   }}
                 >
-                  + Roast a Bean
+                  Roast a Bean
                 </Button>
-                <Link href="/connect">Open Brew Bar →</Link>
+                <Link href="/connect" emphasis="quiet" size="compact">
+                  Open Brew Bar
+                </Link>
               </Stack>
             </SidebarFooter>
           </>
@@ -708,7 +723,7 @@ export function WorkspaceClient({
                 detail="My Beans · Private by default, confirmed by you, ready to Brew in your AI"
                 leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
                 action={
-                  <Inline gap={8}>
+                  <ButtonGroup label="Roastery actions">
                     <Button
                       emphasis="soft"
                       size="compact"
@@ -737,49 +752,34 @@ export function WorkspaceClient({
                     >
                       Roast a Bean
                     </Button>
-                  </Inline>
+                  </ButtonGroup>
                 }
               />
 
-              {/* 1-Line Quick-Roast Spark Bar */}
-              <div className="quick-spark-row">
-                <div className="quick-spark-input">
-                  <TextField
-                    label="Quick Roast"
-                    placeholder="Paste an article link or jot a real call you just made…"
-                    value={quickSpark}
-                    onChange={(e) => setQuickSpark(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && quickSpark.trim()) {
-                        e.preventDefault();
-                        setEditingBean(null);
-                        setPrefillRelations([]);
-                        setRoastSparkSeed(quickSpark.trim());
-                        setQuickSpark("");
-                        setRoastOpen(true);
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  emphasis="soft"
-                  size="compact"
-                  onClick={() => {
+              {/* Native Yogurt Composer for Quick Roast */}
+              <div className="roastery-composer">
+                <Composer
+                  label="Quick Roast"
+                  placeholder="Paste an article link or jot a real call you just made…"
+                  value={quickSpark}
+                  onValueChange={setQuickSpark}
+                  sendTone="brand"
+                  shortcutHint="Enter to start Roasting"
+                  onSend={({ text }) => {
                     setEditingBean(null);
                     setPrefillRelations([]);
-                    setRoastSparkSeed(quickSpark.trim());
+                    setRoastSparkSeed(text.trim());
                     setQuickSpark("");
                     setRoastOpen(true);
                   }}
-                >
-                  Start Roasting →
-                </Button>
+                />
               </div>
 
-              {/* Single clean filter toolbar — no outer Card wrapper, no duplicate SegmentedControl row */}
+              {/* Single clean filter toolbar — height-matched compact controls */}
               <FilterBar
                 label="Search My Beans"
                 placeholder="Search headline, trade-off, domain, or source…"
+                size="compact"
                 query={query}
                 onQueryChange={(val) => {
                   setQuery(val);
@@ -789,6 +789,7 @@ export function WorkspaceClient({
               >
                 <Select
                   label="Status"
+                  controlSize="compact"
                   value={lifecycleFilter}
                   onChange={(e) => {
                     const next = e.target.value as
@@ -825,6 +826,7 @@ export function WorkspaceClient({
                 />
                 <Select
                   label="Domain"
+                  controlSize="compact"
                   value={selectedTag}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -846,6 +848,7 @@ export function WorkspaceClient({
                 />
                 <Select
                   label="Origin"
+                  controlSize="compact"
                   value={originFilter}
                   onChange={(e) => {
                     const v = e.target.value as "all" | OriginKind;
@@ -969,43 +972,38 @@ export function WorkspaceClient({
                         {beans.map((b) => {
                           const isSelected = inspectedBean?.id === b.id;
                           return (
-                            <div
+                            <ListRow
                               key={b.id}
-                              className={
-                                isSelected ? "bean-row-active" : undefined
+                              current={isSelected}
+                              title={b.title}
+                              description={b.tradeoffPreview}
+                              inlineMeta={
+                                <Inline gap={4} align="center">
+                                  <Badge
+                                    tone={
+                                      b.visibility === "public"
+                                        ? "brand"
+                                        : "neutral"
+                                    }
+                                    dot={false}
+                                  >
+                                    {b.visibility === "public"
+                                      ? "On the Table"
+                                      : "Private"}
+                                  </Badge>
+                                  {b.hasTension ? (
+                                    <Badge tone="warning">In Tension</Badge>
+                                  ) : null}
+                                  {b.supersededByBeanId ? (
+                                    <Badge tone="warning">Updated Mind</Badge>
+                                  ) : null}
+                                </Inline>
                               }
-                            >
-                              <ListRow
-                                title={b.title}
-                                description={b.tradeoffPreview}
-                                inlineMeta={
-                                  <Inline gap={4} align="center">
-                                    <Badge
-                                      tone={
-                                        b.visibility === "public"
-                                          ? "brand"
-                                          : "neutral"
-                                      }
-                                      dot={false}
-                                    >
-                                      {b.visibility === "public"
-                                        ? "On the Table"
-                                        : "Private"}
-                                    </Badge>
-                                    {b.hasTension ? (
-                                      <Badge tone="warning">In Tension</Badge>
-                                    ) : null}
-                                    {b.supersededByBeanId ? (
-                                      <Badge tone="warning">Updated Mind</Badge>
-                                    ) : null}
-                                  </Inline>
-                                }
-                                trailing={
-                                  <Text variant="meta">v{b.revisionNumber}</Text>
-                                }
-                                onActivate={() => void openInspector(b.id)}
-                              />
-                            </div>
+                              trailing={
+                                <Text variant="meta">v{b.revisionNumber}</Text>
+                              }
+                              onActivate={() => void openInspector(b.id)}
+                            />
                           );
                         })}
                       </List>
@@ -1152,77 +1150,95 @@ export function WorkspaceClient({
 
                           <Stack gap={12}>
                             <Heading level={2}>{inspectedBean.title}</Heading>
-                            <p className="editorial-lead">
+                            <Text as="p" variant="body" className="editorial-lead">
                               {inspectedBean.take}
-                            </p>
+                            </Text>
 
-                            <div className="bean-pull">
-                              <Stack gap={2}>
-                                <Text variant="meta">What mattered more</Text>
-                                <Text as="p" variant="body">
-                                  {inspectedBean.tradeoff}
+                            <Surface
+                              variant="surface"
+                              density="compact"
+                              className="bean-criteria-box"
+                            >
+                              <Stack gap={8}>
+                                <Stack gap={2}>
+                                  <Text variant="meta">What mattered more</Text>
+                                  <Text as="p" variant="body">
+                                    {inspectedBean.tradeoff}
+                                  </Text>
+                                </Stack>
+                                <Divider />
+                                <Text as="p" variant="help">
+                                  Except when: {inspectedBean.boundary}
                                 </Text>
+                                {inspectedBean.uncertainty ? (
+                                  <Text as="p" variant="meta">
+                                    Open question: {inspectedBean.uncertainty}
+                                  </Text>
+                                ) : null}
                               </Stack>
-                            </div>
-
-                            <p className="bean-footnote">
-                              Except when: {inspectedBean.boundary}
-                            </p>
-
-                            {inspectedBean.uncertainty ? (
-                              <p className="bean-footnote">
-                                Open question: {inspectedBean.uncertainty}
-                              </p>
-                            ) : null}
+                            </Surface>
                           </Stack>
 
-                          <Inline gap={8} wrap>
-                            <Button
-                              emphasis="soft"
-                              size="compact"
-                              onClick={() => {
-                                setEditingBean(inspectedBean);
-                                setPrefillRelations([]);
-                                setRoastOpen(true);
+                          <Inline justify="between" align="center" gap={8} wrap>
+                            <ButtonGroup label="Bean actions">
+                              <Button
+                                emphasis="soft"
+                                size="compact"
+                                onClick={() => {
+                                  setEditingBean(inspectedBean);
+                                  setPrefillRelations([]);
+                                  setRoastOpen(true);
+                                }}
+                              >
+                                Re-roast
+                              </Button>
+                              <Button
+                                emphasis="soft"
+                                size="compact"
+                                disabled={mutating}
+                                onClick={() =>
+                                  handleToggleVisibilityClick(inspectedBean)
+                                }
+                              >
+                                {inspectedBean.visibility === "public"
+                                  ? "Keep Private"
+                                  : "Put on the Table"}
+                              </Button>
+                              <Button
+                                emphasis="soft"
+                                size="compact"
+                                onClick={() =>
+                                  setBrewDialog({
+                                    title: `Brew · Apply "${inspectedBean.title}"`,
+                                    description:
+                                      "Use this confirmed Bean in your connected AI host",
+                                    prompt: `Apply my Coffee Chat Bean "${inspectedBean.title}" to this decision: prioritize "${inspectedBean.tradeoff}", and respect its boundary ("${inspectedBean.boundary}").`,
+                                  })
+                                }
+                              >
+                                Brew this Bean
+                              </Button>
+                            </ButtonGroup>
+
+                            <ActionMenu
+                              label="More Bean actions"
+                              triggerVariant="more"
+                              triggerSize="compact"
+                              align="end"
+                              items={[
+                                {
+                                  id: "delete",
+                                  label: "Delete Bean",
+                                  tone: "danger",
+                                  disabled: mutating,
+                                },
+                              ]}
+                              onSelect={(id) => {
+                                if (id === "delete") {
+                                  setDeleteTarget(inspectedBean);
+                                }
                               }}
-                            >
-                              Re-roast
-                            </Button>
-                            <Button
-                              emphasis="soft"
-                              size="compact"
-                              disabled={mutating}
-                              onClick={() =>
-                                handleToggleVisibilityClick(inspectedBean)
-                              }
-                            >
-                              {inspectedBean.visibility === "public"
-                                ? "Keep Private"
-                                : "Put on the Table"}
-                            </Button>
-                            <Button
-                              emphasis="soft"
-                              size="compact"
-                              onClick={() =>
-                                setBrewDialog({
-                                  title: `Brew · Apply "${inspectedBean.title}"`,
-                                  description:
-                                    "Use this confirmed Bean in your connected AI host",
-                                  prompt: `Apply my Coffee Chat Bean "${inspectedBean.title}" to this decision: prioritize "${inspectedBean.tradeoff}", and respect its boundary ("${inspectedBean.boundary}").`,
-                                })
-                              }
-                            >
-                              Brew this Bean
-                            </Button>
-                            <Button
-                              emphasis="quiet"
-                              tone="danger"
-                              size="compact"
-                              disabled={mutating}
-                              onClick={() => setDeleteTarget(inspectedBean)}
-                            >
-                              Delete
-                            </Button>
+                            />
                           </Inline>
 
                           <Divider />
@@ -1245,8 +1261,12 @@ export function WorkspaceClient({
                                   ) : null}
                                   {o.originId &&
                                   inspectedBean.visibility === "public" ? (
-                                    <Link href={`/sources/${o.originId}`}>
-                                      Open Table →
+                                    <Link
+                                      href={`/sources/${o.originId}`}
+                                      emphasis="quiet"
+                                      size="compact"
+                                    >
+                                      Open Table
                                     </Link>
                                   ) : null}
                                 </Inline>
@@ -1465,15 +1485,21 @@ export function WorkspaceClient({
                         title={entry.bean!.title}
                         description={`@${entry.bean!.ownerHandle} · What mattered more: ${entry.bean!.tradeoff}`}
                         actions={
-                          <Inline gap={8} align="center">
+                          <ButtonGroup label={`Actions for ${entry.bean!.title}`}>
                             {entry.bean!.firstSourceOriginId ? (
                               <Link
                                 href={`/sources/${entry.bean!.firstSourceOriginId}`}
+                                emphasis="soft"
+                                size="compact"
                               >
                                 Open Table →
                               </Link>
                             ) : null}
-                            <Link href={`/@${entry.bean!.ownerHandle}`}>
+                            <Link
+                              href={`/@${entry.bean!.ownerHandle}`}
+                              emphasis="quiet"
+                              size="compact"
+                            >
                               Profile
                             </Link>
                             <Button
@@ -1483,7 +1509,7 @@ export function WorkspaceClient({
                             >
                               Remove
                             </Button>
-                          </Inline>
+                          </ButtonGroup>
                         }
                       />
                     ))}
@@ -1660,12 +1686,22 @@ export function WorkspaceClient({
                 variant="raised"
                 density="regular"
               >
-                <Inline gap={12}>
-                  <Link href="/api/export?format=json">Download JSON</Link>
-                  <Link href="/api/export?format=markdown">
+                <ButtonGroup label="Export My Roastery formats">
+                  <Link
+                    href="/api/export?format=json"
+                    emphasis="soft"
+                    size="compact"
+                  >
+                    Download JSON
+                  </Link>
+                  <Link
+                    href="/api/export?format=markdown"
+                    emphasis="soft"
+                    size="compact"
+                  >
                     Download Markdown
                   </Link>
-                </Inline>
+                </ButtonGroup>
               </Card>
             </Stack>
           ) : null}

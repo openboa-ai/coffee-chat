@@ -6,8 +6,9 @@ import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
 import { CodeBlock } from "@openboa/yogurt/code-block";
-import { Heading } from "@openboa/yogurt/heading";
+import { Grid } from "@openboa/yogurt/grid";
 import { Inline } from "@openboa/yogurt/inline";
+import { ListHeader } from "@openboa/yogurt/list-header";
 import { CopyButton } from "@openboa/yogurt/motion-copy-button";
 import { Notice } from "@openboa/yogurt/notice";
 import { Stack } from "@openboa/yogurt/stack";
@@ -30,11 +31,24 @@ export function ConnectClient({
 }: ConnectClientProps) {
   const router = useRouter();
   const [hostTab, setHostTab] = useState("chatgpt");
+  const [copiedQuickStart, setCopiedQuickStart] = useState(false);
+
+  const universalStartPrompt = `Connect to Coffee Chat at ${mcpUrl} (sign in when prompted). Once connected, help me Roast my first private Bean from a real decision or article I share with you—ask what mattered more and when the rule stops applying, and wait for my confirmation before saving.`;
 
   const copyText = async (text: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(text);
     }
+  };
+
+  const handleCopyQuickStart = async () => {
+    try {
+      await copyText(universalStartPrompt);
+    } catch {
+      // Clipboard may be unavailable in restricted contexts.
+    }
+    setCopiedQuickStart(true);
+    window.setTimeout(() => setCopiedQuickStart(false), 3000);
   };
 
   const hostConfigs = [
@@ -106,14 +120,16 @@ export function ConnectClient({
     {
       id: "roast-work",
       title: "Roast · Save a correction as a private Bean",
-      description: "Turn one real pushback into a lasting rule after your confirmation",
+      description:
+        "Turn one real pushback into a lasting rule after your confirmation",
       prompt:
         "Turn the correction I just gave you into a private Coffee Chat Bean draft with a crisp takeaway, what mattered more, and when the rule stops applying. Show it to me for confirmation before saving anything.",
     },
     {
       id: "coffee-chat-other",
       title: "Coffee Chat · Ask someone else’s Taste",
-      description: "Consult another person’s confirmed Beans without fake roleplay",
+      description:
+        "Consult another person’s confirmed Beans without fake roleplay",
       prompt:
         "Have a Coffee Chat with @claire using her confirmed public Coffee Chat Beans on this decision. Walk through what she puts first, note where her boundary stops, and attribute every point explicitly without impersonating her.",
     },
@@ -172,8 +188,8 @@ export function ConnectClient({
           </Notice>
         ) : (
           <Notice title="No AI app connected yet" tone="neutral">
-            Pick your AI app below, copy the setup snippet, and approve access
-            once. You can revoke any connection instantly from Brew Bar &amp;
+            Copy the universal start prompt below or pick your AI app for manual
+            setup. You can revoke any connection instantly from Brew Bar &amp;
             Account.
           </Notice>
         )
@@ -185,8 +201,33 @@ export function ConnectClient({
       )}
 
       <Card
-        title="Step 1 · Plug into your AI app"
-        description="Choose the AI you already use — automatic discovery handles sign-in and permissions"
+        title="Fastest start · Paste into any AI"
+        description="Works regardless of which AI app you use — no config file needed to begin"
+        headerAction={
+          <Button
+            emphasis="filled"
+            tone="brand"
+            size="compact"
+            onClick={() => void handleCopyQuickStart()}
+          >
+            {copiedQuickStart ? "Copied prompt" : "Copy start prompt"}
+          </Button>
+        }
+        variant="raised"
+        density="regular"
+      >
+        <div className="prompt-code-wrap">
+          <CodeBlock
+            code={universalStartPrompt}
+            language="text"
+            onCopy={copyText}
+          />
+        </div>
+      </Card>
+
+      <Card
+        title="Manual setup by AI app"
+        description="Prefer configuring your connector directly? Pick your AI app below"
         headerAction={
           <Badge tone="neutral" dot={false}>
             5 AI apps supported
@@ -197,6 +238,7 @@ export function ConnectClient({
       >
         <Tabs
           label="AI host setup"
+          presentation="pill"
           value={hostTab}
           onValueChange={setHostTab}
           items={hostConfigs.map((cfg) => ({
@@ -216,12 +258,12 @@ export function ConnectClient({
         />
       </Card>
 
-      <Stack gap={12}>
-        <Stack gap={2}>
-          <Text variant="meta">Step 2 · First pours</Text>
-          <Heading level={2}>Plain-language prompts to try right away</Heading>
-        </Stack>
-        <div className="split-grid">
+      <Stack gap={16}>
+        <ListHeader
+          title="Plain-language prompts to try right away"
+          detail="Step 2 · First pours"
+        />
+        <Grid className="split-grid" gap={16}>
           {starterPrompts.map((item) => (
             <Card
               key={item.id}
@@ -234,7 +276,7 @@ export function ConnectClient({
               <Text variant="help">{item.prompt}</Text>
             </Card>
           ))}
-        </div>
+        </Grid>
       </Stack>
     </Stack>
   );
