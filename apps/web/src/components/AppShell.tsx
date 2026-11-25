@@ -64,7 +64,7 @@ export function AppShell({ user, children }: AppShellProps) {
         {children}
       </main>
       <footer className="app-footer" aria-label="Coffee Chat footer">
-        <Text variant="meta">Coffee Chat · Personal Taste for your AI</Text>
+        <Text variant="meta">Coffee Chat · Personal Taste for your Agents</Text>
         <nav className="app-footer-links" aria-label="Footer navigation">
           <Link href="/sources">Tables</Link>
           <Link href="/me">My Roastery</Link>

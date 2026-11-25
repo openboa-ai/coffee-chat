@@ -46,29 +46,37 @@ const HERO_MODES: Array<{
   id: HeroRoastMode;
   label: string;
   aiTag: string;
+  chip: string;
   verdict: string;
+  guardLabel: string;
   guard: string;
 }> = [
   {
     id: "decaf",
     label: "No Bean",
-    aiTag: "Default Agent · 50 / 50",
+    aiTag: "Default Agent",
+    chip: "50 / 50 hedge",
     verdict: "“It depends…”",
-    guard: "Generic pros & cons — no priority applied",
+    guardLabel: "No Taste plugged in",
+    guard: "Generic pros & cons with no priority applied",
   },
   {
     id: "growth",
     label: "Growth Roast",
-    aiTag: "Your Agent · Growth Roast applied",
+    aiTag: "Your Agent",
+    chip: "Bean applied",
     verdict: "Hire the fast learner.",
-    guard: "Speed > Playbooks · Flips if day-1 cert needed",
+    guardLabel: "Speed > Playbooks",
+    guard: "Flips if day-1 certification is required",
   },
   {
     id: "craft",
     label: "Specialist Roast",
-    aiTag: "Your Agent · Specialist Roast applied",
+    aiTag: "Your Agent",
+    chip: "Bean applied",
     verdict: "Hire the proven specialist.",
-    guard: "Craft > Speed · Flips if scope keeps shifting",
+    guardLabel: "Craft > Speed",
+    guard: "Flips if role scope keeps shifting",
   },
 ];
 
@@ -218,17 +226,17 @@ export function HomeClient({
         <div className="cc-wrap cc-hero-split">
           {/* LEFT: PURE MONUMENTAL VALUE HOOK + ONE PRIMARY ACTION */}
           <div className="cc-hero-left">
-            <div className="cc-cafe-mark-row">
-              <ProjectMark project="coffee" label="" size={26} />
-              <span className="cc-cafe-eyebrow">Coffee Chat</span>
+            <div className="cc-cafe-kicker-pill">
+              <span className="cc-kicker-dot" aria-hidden="true" />
+              <span>Personal Taste Protocol · MCP</span>
             </div>
 
             <h1 className="cc-cafe-h1">
-              Your Agents know
-              <br />
-              everything.
-              <br />
-              Give them <em className="cc-roast-em">your Taste.</em>
+              <span>Your Agents</span>
+              <span>know everything.</span>
+              <span>
+                Give them <em className="cc-roast-em">your Taste.</em>
+              </span>
             </h1>
 
             <p className="cc-cafe-lead">
@@ -290,17 +298,27 @@ export function HomeClient({
               </div>
             ) : null}
 
-            {/* Crisp 3-step whisper flow directly under CTA */}
-            <div className="cc-micro-flow" aria-label="How Coffee Chat works in three steps">
-              <span>1. Roast a priority</span>
-              <i aria-hidden="true">→</i>
-              <span>2. Plug into your Agents</span>
-              <i aria-hidden="true">→</i>
-              <span>3. Get decisive calls</span>
-            </div>
+            {/* Architectural 3-step ledger anchored flush with photo baseline */}
+            <ol
+              className="cc-hero-ledger"
+              aria-label="How Coffee Chat works in three steps"
+            >
+              <li>
+                <span className="cc-ledger-num">01</span>
+                <strong>Roast a priority</strong>
+              </li>
+              <li>
+                <span className="cc-ledger-num">02</span>
+                <strong>Plug into Agents</strong>
+              </li>
+              <li>
+                <span className="cc-ledger-num">03</span>
+                <strong>Get decisive calls</strong>
+              </li>
+            </ol>
           </div>
 
-          {/* RIGHT: REALISTIC COFFEE PHOTO ALIVE WITH INTERACTIVE AI OVERLAYS */}
+          {/* RIGHT: REALISTIC COFFEE PHOTO ALIVE WITH INTERACTIVE AGENT OVERLAYS */}
           <figure className="cc-hero-art-frame" data-mode={heroMode}>
             <img
               src="/art/hero-pour.jpg"
@@ -308,35 +326,35 @@ export function HomeClient({
               className="cc-hero-art-img"
             />
 
-            {/* Animated saucer aura + rising steam wisps right over the realistic espresso cup */}
+            {/* Animated saucer aura + soft billowing steam above the upper rim */}
             <span className="cc-hero-art-aura" aria-hidden="true" />
             <svg
-              viewBox="0 0 120 80"
+              viewBox="0 0 140 72"
               className="cc-hero-steam-svg"
               aria-hidden="true"
             >
               <path
                 className="cc-hero-steam-line cc-hero-steam-1"
-                d="M 40 68 C 32 48, 48 34, 40 14"
+                d="M 46 64 C 38 48, 52 34, 42 14"
                 fill="none"
                 stroke="var(--cc-crema)"
-                strokeWidth="2.2"
+                strokeWidth="2.5"
                 strokeLinecap="round"
               />
               <path
                 className="cc-hero-steam-line cc-hero-steam-2"
-                d="M 62 72 C 54 50, 72 34, 62 10"
+                d="M 70 66 C 60 46, 80 30, 68 8"
                 fill="none"
                 stroke="var(--boa-color-neutral-50)"
-                strokeWidth="2.4"
+                strokeWidth="3"
                 strokeLinecap="round"
               />
               <path
                 className="cc-hero-steam-line cc-hero-steam-3"
-                d="M 84 66 C 76 48, 92 36, 84 18"
+                d="M 94 62 C 86 46, 100 34, 90 16"
                 fill="none"
                 stroke="var(--cc-crema)"
-                strokeWidth="2"
+                strokeWidth="2.2"
                 strokeLinecap="round"
               />
             </svg>
@@ -368,28 +386,44 @@ export function HomeClient({
               </div>
 
               <div className="cc-photo-user-pill">
-                <span>You: “Fast learner or proven specialist?”</span>
+                <span className="cc-user-pill-kicker">Prompt</span>
+                <span>“Fast learner or proven specialist?”</span>
               </div>
             </div>
 
-            {/* BOTTOM OVERLAY: FROSTED LIVE AI ANSWER REACTING DIRECTLY OVER THE COFFEE */}
+            {/* BOTTOM OVERLAY: FROSTED LIVE AGENT ANSWER REACTING OVER THE COFFEE */}
             <figcaption
               key={heroMode}
               className="cc-hero-live-card"
               data-mode={heroMode}
             >
-              <div className="cc-live-card-head">
-                <span className="cc-live-card-dot" aria-hidden="true" />
-                <span>{activeHero.aiTag}</span>
+              {!heroLocked ? (
+                <span className="cc-live-cycle-track" aria-hidden="true">
+                  <i key={`bar-${heroMode}`} className="cc-live-cycle-fill" />
+                </span>
+              ) : null}
+
+              <div className="cc-live-card-top">
+                <div className="cc-live-card-head">
+                  <span className="cc-live-card-dot" aria-hidden="true" />
+                  <span>{activeHero.aiTag}</span>
+                </div>
+                <span className="cc-live-card-chip">{activeHero.chip}</span>
               </div>
+
               <p className="cc-live-card-verdict">{activeHero.verdict}</p>
+
               {heroMode === "decaf" ? (
                 <div className="cc-decaf-lines" aria-hidden="true">
-                  <span style={{ inlineSize: "84%" }} />
-                  <span style={{ inlineSize: "62%" }} />
+                  <span style={{ inlineSize: "86%" }} />
+                  <span style={{ inlineSize: "60%" }} />
                 </div>
               ) : null}
-              <span className="cc-live-card-guard">{activeHero.guard}</span>
+
+              <div className="cc-live-card-foot">
+                <strong>{activeHero.guardLabel}</strong>
+                <span>{activeHero.guard}</span>
+              </div>
             </figcaption>
           </figure>
         </div>
@@ -477,6 +511,13 @@ export function HomeClient({
                   const lean = idx === 1 ? "right" : "left";
                   return (
                     <article key={b.id} className="cc-open-spread-col">
+                      <span
+                        className="cc-spread-index"
+                        data-tone={lean === "right" ? "ink" : "coffee"}
+                      >
+                        {idx === 0 ? "01 · Light Roast" : "02 · Dark Roast"}
+                      </span>
+
                       <div className="cc-spread-author">
                         <Link
                           href={`/@${b.ownerHandle}`}
@@ -558,17 +599,44 @@ export function HomeClient({
             </h2>
           </div>
 
-          <Button
-            emphasis="filled"
-            tone="brand"
-            shape="pill"
-            size="comfortable"
-            onClick={() => void handleCopyFooterPrompt()}
-          >
-            {copiedFooterPrompt
-              ? "Copied — paste into any Agent"
-              : "Copy prompt & start now"}
-          </Button>
+          <div className="cc-closer-actions">
+            <Button
+              emphasis="filled"
+              tone="brand"
+              shape="pill"
+              size="comfortable"
+              onClick={() => void handleCopyFooterPrompt()}
+            >
+              {copiedFooterPrompt
+                ? "Copied — paste into any Agent"
+                : "Copy prompt & start now"}
+            </Button>
+
+            <div className="cc-warm-links">
+              <Link
+                href={
+                  signedIn
+                    ? "/me?compose=1"
+                    : "/signin?returnTo=%2Fme%3Fcompose%3D1"
+                }
+                className="cc-warm-link"
+              >
+                {signedIn ? "Open My Roastery" : "Try in browser"}
+              </Link>
+              <span className="cc-warm-dot" aria-hidden="true">
+                ·
+              </span>
+              <Link href="/sources" className="cc-warm-link">
+                Browse Tables
+              </Link>
+              <span className="cc-warm-dot" aria-hidden="true">
+                ·
+              </span>
+              <Link href="/connect" className="cc-warm-link">
+                Manual setup
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

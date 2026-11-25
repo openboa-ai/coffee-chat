@@ -5,11 +5,57 @@ import { ProjectMark } from "@openboa/yogurt/project-mark";
 
 type ChatScenario = "decide" | "roast" | "chat";
 
-const SCENARIO_TABS: Array<{ id: ChatScenario; label: string; hint: string }> = [
-  { id: "decide", label: "Ask a hard call", hint: "Your Taste applied" },
-  { id: "roast", label: "Correct once & Roast", hint: "Inline Confirm Gate" },
-  { id: "chat", label: "Coffee Chat with @claire", hint: "Attributed Beans" },
+const SCENARIO_TABS: Array<{
+  id: ChatScenario;
+  label: string;
+  threadTitle: string;
+  threadMeta: string;
+}> = [
+  {
+    id: "decide",
+    label: "Ask a hard call",
+    threadTitle: "Ops Lead finalist decision",
+    threadMeta: "Your Taste applied",
+  },
+  {
+    id: "roast",
+    label: "Correct once & Roast",
+    threadTitle: "Q3 board deck rewrite",
+    threadMeta: "Inline Confirm Gate",
+  },
+  {
+    id: "chat",
+    label: "Coffee Chat with @claire",
+    threadTitle: "Launch timing · @claire",
+    threadMeta: "Attributed Beans",
+  },
 ];
+
+function AgentSparkIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 1.2L9.7 6.3L14.8 8L9.7 9.7L8 14.8L6.3 9.7L1.2 8L6.3 6.3Z" />
+    </svg>
+  );
+}
+
+function CopyGlyph() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+      <path d="M10.5 5.5V3.5A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9A1.5 1.5 0 0 0 3.5 10.5H5.5" />
+    </svg>
+  );
+}
 
 export interface RealAiChatSessionProps {
   onCopyStarter?: () => void;
@@ -27,6 +73,9 @@ export function RealAiChatSession({
   const [scenario, setScenario] = useState<ChatScenario>("decide");
   const [tastePlugged, setTastePlugged] = useState(true);
   const [beanSaved, setBeanSaved] = useState(false);
+  const [showDavidContrast, setShowDavidContrast] = useState(false);
+
+  const privateBeanCount = beanSaved ? 5 : 4;
 
   const userPrompt =
     scenario === "decide"
@@ -40,17 +89,30 @@ export function RealAiChatSession({
       ? "Ask a follow-up or test another trade-off…"
       : scenario === "roast"
         ? "Push back on anything to Roast another private Bean…"
-        : "Try “Now contrast @claire with @david on this launch”…";
+        : showDavidContrast
+          ? "Ask how your own Taste balances @claire and @david…"
+          : "Try “Now contrast @claire with @david on this launch”…";
+
+  const footerCitation =
+    scenario === "decide"
+      ? tastePlugged
+        ? "1 private Bean cited · Growth Roast"
+        : "Default Agent · No Beans applied"
+      : scenario === "roast"
+        ? beanSaved
+          ? "Saved privately · My Roastery"
+          : "Pending your confirmation"
+        : showDavidContrast
+          ? "2 public Beans contrasted · @claire & @david"
+          : "Attributed to @claire · Public Beans";
 
   return (
     <div className="cc-gpt-section">
-      {/* Header + Scenario Switcher */}
+      {/* Header + Unified Pill Scenario Segmented Bar */}
       <div className="cc-gpt-head">
         <div className="cc-gpt-head-copy">
           <span className="cc-kicker-ink">Inside your Agents</span>
-          <h2 className="cc-editorial-h2">
-            Exactly how it feels inside your Agents.
-          </h2>
+          <h2 className="cc-editorial-h2">How it feels inside your Agents.</h2>
           <p className="cc-gpt-sub">
             No new app to switch to. Connect once, then talk to your Agents the
             exact way you already do.
@@ -58,7 +120,7 @@ export function RealAiChatSession({
         </div>
 
         <div
-          className="cc-gpt-scenarios"
+          className="cc-gpt-pill-bar"
           role="tablist"
           aria-label="Real Agent chat examples"
         >
@@ -68,23 +130,22 @@ export function RealAiChatSession({
               type="button"
               role="tab"
               aria-selected={scenario === tab.id}
-              className="cc-gpt-tab"
+              className="cc-gpt-pill-tab"
               data-active={scenario === tab.id}
               onClick={() => setScenario(tab.id)}
             >
-              <strong>{tab.label}</strong>
-              <span>{tab.hint}</span>
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Authentic AI Chat Window Frame */}
+      {/* Authentic Agent Chat Window Frame */}
       <div className="cc-gpt-shell">
-        {/* Realistic Minimal Left History Rail (Desktop) */}
-        <aside className="cc-gpt-sidebar" aria-hidden="true">
+        {/* Clickable Left Thread History Rail (Desktop) */}
+        <aside className="cc-gpt-sidebar" aria-label="Example Agent threads">
           <div className="cc-gpt-sidebar-top">
-            <span className="cc-gpt-win-dots">
+            <span className="cc-gpt-win-dots" aria-hidden="true">
               <i />
               <i />
               <i />
@@ -94,34 +155,32 @@ export function RealAiChatSession({
 
           <div className="cc-gpt-sidebar-group">
             <span className="cc-gpt-sidebar-label">Today</span>
-            <span
-              className="cc-gpt-thread-item"
-              data-active={scenario === "decide"}
-            >
-              Ops Lead finalist decision
-            </span>
-            <span
-              className="cc-gpt-thread-item"
-              data-active={scenario === "roast"}
-            >
-              Q3 board deck rewrite
-            </span>
-            <span
-              className="cc-gpt-thread-item"
-              data-active={scenario === "chat"}
-            >
-              Launch timing · @claire
-            </span>
+            {SCENARIO_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className="cc-gpt-thread-item"
+                data-active={scenario === tab.id}
+                aria-current={scenario === tab.id ? "true" : undefined}
+                onClick={() => setScenario(tab.id)}
+              >
+                <span className="cc-gpt-thread-title">{tab.threadTitle}</span>
+                <span className="cc-gpt-thread-meta">{tab.threadMeta}</span>
+              </button>
+            ))}
           </div>
 
-          <div className="cc-gpt-connector-pill">
-            <ProjectMark project="coffee" label="" size={16} />
+          <div
+            className="cc-gpt-connector-pill"
+            data-on={scenario !== "decide" || tastePlugged}
+          >
+            <ProjectMark project="coffee" label="" size={18} />
             <div>
               <strong>Coffee Chat</strong>
               <span>
                 {scenario === "decide" && !tastePlugged
                   ? "Paused · Default Agent"
-                  : "Connected · 4 private Beans"}
+                  : `Connected · ${privateBeanCount} private Beans`}
               </span>
             </div>
           </div>
@@ -133,7 +192,10 @@ export function RealAiChatSession({
           <div className="cc-gpt-topbar">
             <div className="cc-gpt-model-label">
               <span>Your Agent</span>
-              <span className="cc-gpt-connector-dot" data-on={scenario !== "decide" || tastePlugged}>
+              <span
+                className="cc-gpt-connector-dot"
+                data-on={scenario !== "decide" || tastePlugged}
+              >
                 <i aria-hidden="true" />
                 {scenario === "decide" && !tastePlugged
                   ? "Coffee Chat off"
@@ -184,17 +246,10 @@ export function RealAiChatSession({
               <p>{userPrompt}</p>
             </div>
 
-            {/* Agent Turn (Left-aligned clean prose + inline MCP trace) */}
+            {/* Agent Turn (Left-aligned clean prose + inline MCP trace + realistic action bar) */}
             <div className="cc-gpt-msg-ai">
               <div className="cc-gpt-ai-avatar" aria-hidden="true">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                >
-                  <path d="M8 1.2L9.7 6.3L14.8 8L9.7 9.7L8 14.8L6.3 9.7L1.2 8L6.3 6.3Z" />
-                </svg>
+                <AgentSparkIcon />
               </div>
 
               <div className="cc-gpt-ai-body">
@@ -317,7 +372,7 @@ export function RealAiChatSession({
                   </div>
                 ) : null}
 
-                {/* Scenario 3: Coffee Chat with @claire */}
+                {/* Scenario 3: Coffee Chat with @claire + live clickable @david contrast */}
                 {scenario === "chat" ? (
                   <div className="cc-gpt-prose">
                     <p className="cc-gpt-prose-lead">
@@ -336,14 +391,82 @@ export function RealAiChatSession({
                         early test invite-only and reversible.
                       </li>
                     </ul>
-                    <p className="cc-gpt-followup">
-                      Want me to contrast this with <strong>@david’s</strong>{" "}
-                      Beans on day-1 trust?
-                    </p>
+
+                    {!showDavidContrast ? (
+                      <div className="cc-gpt-followup-row">
+                        <button
+                          type="button"
+                          className="cc-gpt-followup-chip"
+                          onClick={() => setShowDavidContrast(true)}
+                        >
+                          Now contrast with @david’s Beans →
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
+
+                {/* Realistic Agent Turn Action Bar */}
+                <div className="cc-gpt-turn-actions">
+                  <span className="cc-gpt-turn-cite">
+                    <ProjectMark project="coffee" label="" size={13} />
+                    <span>{footerCitation}</span>
+                  </span>
+                  {onCopyStarter ? (
+                    <button
+                      type="button"
+                      className="cc-gpt-turn-icon-btn"
+                      onClick={onCopyStarter}
+                      aria-label="Copy starter prompt"
+                      title="Copy starter prompt"
+                    >
+                      <CopyGlyph />
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
+
+            {/* Live Expanded Follow-Up Contrast Turn inside Scenario 3 */}
+            {scenario === "chat" && showDavidContrast ? (
+              <div className="cc-gpt-contrast-turn">
+                <div className="cc-gpt-msg-user">
+                  <p>Contrast this with @david’s Beans on day-1 trust.</p>
+                </div>
+
+                <div className="cc-gpt-msg-ai">
+                  <div className="cc-gpt-ai-avatar" aria-hidden="true">
+                    <AgentSparkIcon />
+                  </div>
+                  <div className="cc-gpt-ai-body">
+                    <div className="cc-gpt-trace">
+                      <ProjectMark project="coffee" label="" size={15} />
+                      <span>
+                        Coffee Chat · Contrasted @claire vs @david on launch
+                        trust
+                      </span>
+                    </div>
+                    <div className="cc-gpt-prose">
+                      <p className="cc-gpt-prose-lead">
+                        <strong>Based on @david’s Beans,</strong> run that
+                        10-customer preview on sample data first—never expose
+                        live customer billing or account state to an unpolished
+                        flow.
+                      </p>
+                      <div className="cc-gpt-followup-row">
+                        <button
+                          type="button"
+                          className="cc-gpt-followup-chip"
+                          onClick={() => setShowDavidContrast(false)}
+                        >
+                          Reset contrast
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Authentic Bottom Chat Composer Bar */}
