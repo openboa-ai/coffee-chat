@@ -101,7 +101,7 @@ export function SignInPanel({
             <Heading level={1}>Pull up a chair</Heading>
             <Text variant="help">
               Sign in to My Roastery — Roast private Beans, review Tasting
-              Notes, and Brew your Taste in your AI.
+              Notes, and Brew your Taste in your Agents.
             </Text>
           </Stack>
 

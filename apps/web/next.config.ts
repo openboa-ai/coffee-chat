@@ -1,4 +1,7 @@
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
+
+const MONOREPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
 
 const PRIVATE_NO_STORE = [
   {
@@ -17,6 +20,18 @@ const nextConfig: NextConfig = {
     "@ui-sdk/react",
   ],
   serverExternalPackages: ["@electric-sql/pglite"],
+  outputFileTracingRoot: MONOREPO_ROOT,
+  outputFileTracingIncludes: {
+    "/*": [
+      "../../node_modules/@electric-sql/pglite/dist/pglite.wasm",
+      "../../node_modules/@electric-sql/pglite/dist/pglite.data",
+      "../../node_modules/@electric-sql/pglite/dist/pglite.js",
+      "../../node_modules/@electric-sql/pglite/dist/pglite.cjs",
+      "../../node_modules/@electric-sql/pglite/dist/index.js",
+      "../../node_modules/@electric-sql/pglite/dist/index.cjs",
+      "../../node_modules/@electric-sql/pglite/dist/chunk-*.js",
+    ],
+  },
   webpack: (config) => {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js"],
