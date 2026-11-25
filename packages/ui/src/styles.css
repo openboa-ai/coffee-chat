@@ -10,6 +10,99 @@
     color: var(--yg-text);
   }
 
+  /* =========================================================================
+     COFFEE CHAT WARM ROASTERY PALETTE (Official Coffee Mark Earth + Ochre +
+     OpenBoa Primary Ink Blue — zero literal hex values)
+     ========================================================================= */
+
+  .app-shell-home {
+    --cc-linen: var(--boa-color-earth-50);
+    --cc-linen-deep: var(--boa-color-earth-100);
+    --cc-linen-line: var(--boa-color-earth-200);
+    --cc-espresso: var(--boa-color-earth-950);
+    --cc-roast: var(--boa-color-earth-700);
+    --cc-roast-muted: var(--boa-color-earth-600);
+    --cc-crema: var(--boa-color-ochre-200);
+    --cc-crema-deep: var(--boa-color-ochre-600);
+    --cc-terracotta: var(--boa-color-terracotta-600);
+    --cc-dark-band-bg: var(--boa-color-earth-950);
+    --cc-dark-band-ink: var(--boa-color-earth-50);
+    --cc-dark-band-muted: var(--boa-color-earth-300);
+    --cc-dark-band-line: var(--boa-color-earth-800);
+    --cc-cup-ceramic: var(--boa-color-neutral-50);
+    --cc-cup-saucer: var(--boa-color-earth-100);
+    --cc-cup-rim: var(--boa-color-earth-300);
+    --cc-cup-decaf: var(--boa-color-earth-200);
+    --cc-cup-light: var(--boa-color-earth-700);
+    --cc-cup-dark: var(--boa-color-earth-950);
+    --cc-cup-bean-fill: var(--boa-color-earth-900);
+    --cc-slip-bg: var(--boa-color-neutral-50);
+    background: var(--cc-linen);
+    color: var(--cc-espresso);
+  }
+
+  .app-shell-home[data-appearance="dark"] {
+    --cc-linen: var(--boa-color-earth-950);
+    --cc-linen-deep: var(--boa-color-earth-900);
+    --cc-linen-line: var(--boa-color-earth-800);
+    --cc-espresso: var(--boa-color-earth-50);
+    --cc-roast: var(--boa-color-ochre-300);
+    --cc-roast-muted: var(--boa-color-earth-300);
+    --cc-crema: var(--boa-color-ochre-300);
+    --cc-crema-deep: var(--boa-color-ochre-200);
+    --cc-terracotta: var(--boa-color-terracotta-300);
+    --cc-dark-band-bg: var(--boa-color-neutral-950);
+    --cc-dark-band-ink: var(--boa-color-earth-50);
+    --cc-dark-band-muted: var(--boa-color-earth-300);
+    --cc-dark-band-line: var(--boa-color-earth-800);
+    --cc-cup-ceramic: var(--boa-color-earth-800);
+    --cc-cup-saucer: var(--boa-color-earth-900);
+    --cc-cup-rim: var(--boa-color-earth-700);
+    --cc-cup-decaf: var(--boa-color-earth-700);
+    --cc-cup-light: var(--boa-color-ochre-700);
+    --cc-cup-dark: var(--boa-color-neutral-950);
+    --cc-cup-bean-fill: var(--boa-color-earth-800);
+    --cc-slip-bg: var(--boa-color-earth-900);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .app-shell-home[data-appearance="auto"] {
+      --cc-linen: var(--boa-color-earth-950);
+      --cc-linen-deep: var(--boa-color-earth-900);
+      --cc-linen-line: var(--boa-color-earth-800);
+      --cc-espresso: var(--boa-color-earth-50);
+      --cc-roast: var(--boa-color-ochre-300);
+      --cc-roast-muted: var(--boa-color-earth-300);
+      --cc-crema: var(--boa-color-ochre-300);
+      --cc-crema-deep: var(--boa-color-ochre-200);
+      --cc-terracotta: var(--boa-color-terracotta-300);
+      --cc-dark-band-bg: var(--boa-color-neutral-950);
+      --cc-dark-band-ink: var(--boa-color-earth-50);
+      --cc-dark-band-muted: var(--boa-color-earth-300);
+      --cc-dark-band-line: var(--boa-color-earth-800);
+      --cc-cup-ceramic: var(--boa-color-earth-800);
+      --cc-cup-saucer: var(--boa-color-earth-900);
+      --cc-cup-rim: var(--boa-color-earth-700);
+      --cc-cup-decaf: var(--boa-color-earth-700);
+      --cc-cup-light: var(--boa-color-ochre-700);
+      --cc-cup-dark: var(--boa-color-neutral-950);
+      --cc-cup-bean-fill: var(--boa-color-earth-800);
+      --cc-slip-bg: var(--boa-color-earth-900);
+    }
+  }
+
+  /* Harmonize top masthead and footer into warm café linen on Home */
+  .app-shell-home .app-masthead-wrap {
+    background: var(--cc-linen);
+    border-block-end-color: var(--cc-linen-line);
+  }
+
+  .app-shell-home .app-footer {
+    background: var(--cc-linen);
+    border-block-start-color: var(--cc-linen-line);
+    color: var(--cc-roast-muted);
+  }
+
   /* Quiet architectural top bar — sits flush on canvas with hairline boundary */
   .app-masthead-wrap {
     position: sticky;
@@ -225,7 +318,7 @@
   }
 
   /* =========================================================================
-     HOME — FRAMELESS CREATIVE MINIMALISM (ZERO DASHBOARD BOXES)
+     HOME — WARM SPECIALTY ROASTERY × OPENBOA INK BLUE
      ========================================================================= */
 
   .cc-landing {
@@ -233,171 +326,78 @@
     flex-direction: column;
   }
 
-  /* Full-bleed opening stage with live priority gravity field */
-  .cc-stage-hero {
-    position: relative;
-    min-block-size: calc(100dvh - 64px);
-    display: flex;
-    align-items: center;
-    overflow: clip;
-  }
-
-  .cc-field-canvas {
-    position: absolute;
-    inset: 0;
-    inline-size: 100%;
-    block-size: 100%;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .cc-canvas-probe {
-    position: absolute;
-    inline-size: 0;
-    block-size: 0;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .cc-canvas-probe-brand {
-    color: var(--yg-brand-ink);
-  }
-
-  .cc-canvas-probe-muted {
-    color: var(--yg-muted);
-  }
-
-  .cc-canvas-probe-border {
-    color: var(--yg-border-chrome);
-  }
-
-  /* Whisper-quiet architectural corner reticles */
-  .cc-stage-reticles {
-    position: absolute;
-    inset: var(--boa-space-16);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .cc-reticle {
-    position: absolute;
-    inline-size: 10px;
-    block-size: 10px;
-    opacity: 0.65;
-  }
-
-  .cc-reticle-tl {
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    border-block-start: 1px solid var(--yg-brand-border);
-    border-inline-start: 1px solid var(--yg-brand-border);
-  }
-
-  .cc-reticle-tr {
-    inset-block-start: 0;
-    inset-inline-end: 0;
-    border-block-start: 1px solid var(--yg-brand-border);
-    border-inline-end: 1px solid var(--yg-brand-border);
-  }
-
-  .cc-reticle-bl {
-    inset-block-end: 0;
-    inset-inline-start: 0;
-    border-block-end: 1px solid var(--yg-brand-border);
-    border-inline-start: 1px solid var(--yg-brand-border);
-  }
-
-  .cc-reticle-br {
-    inset-block-end: 0;
-    inset-inline-end: 0;
-    border-block-end: 1px solid var(--yg-brand-border);
-    border-inline-end: 1px solid var(--yg-brand-border);
-  }
-
-  .cc-stage-inner {
-    position: relative;
-    z-index: 2;
+  .cc-wrap {
     inline-size: 100%;
     max-inline-size: var(--app-max-width);
     margin-inline: auto;
-    padding: clamp(var(--boa-space-32), 6vh, var(--boa-space-64)) var(--app-gutter);
+    padding-inline: var(--app-gutter);
     box-sizing: border-box;
   }
 
-  .cc-stage-grid {
+  /* ACT 01 — WARM CAFÉ TABLE OPENING */
+  .cc-cafe-hero {
+    background: var(--cc-linen);
+    padding-block: clamp(var(--boa-space-32), 6vh, var(--boa-space-64));
+    min-block-size: calc(100dvh - 64px);
+    display: flex;
+    align-items: center;
+  }
+
+  .cc-cafe-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
     gap: clamp(var(--boa-space-32), 6vw, 5.5rem);
     align-items: center;
   }
 
-  .cc-stage-copy {
+  .cc-cafe-copy {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--boa-space-24);
   }
 
-  .cc-mono-eyebrow {
+  .cc-cafe-mark-row {
     display: inline-flex;
     align-items: center;
-    gap: var(--boa-space-8);
-    font-size: 0.6875rem;
-    font-weight: 580;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-variant-numeric: tabular-nums;
-    color: var(--yg-brand-ink);
+    gap: var(--boa-space-10);
   }
 
-  .cc-display-h1 {
+  .cc-cafe-eyebrow {
+    font-size: 0.875rem;
+    font-weight: 540;
+    letter-spacing: -0.01em;
+    color: var(--cc-roast);
+  }
+
+  .cc-cafe-h1 {
     margin: 0;
-    font-size: clamp(2.65rem, 5.1vw, 4.45rem);
-    font-weight: 520;
+    font-size: clamp(2.75rem, 5.2vw, 4.55rem);
+    font-weight: 540;
     line-height: 0.98;
-    letter-spacing: -0.044em;
-    color: var(--yg-text);
+    letter-spacing: -0.042em;
+    color: var(--cc-espresso);
   }
 
-  .cc-display-h2 {
-    margin: 0;
-    font-size: clamp(2rem, 3.6vw, 3.05rem);
-    font-weight: 520;
-    line-height: 1.04;
-    letter-spacing: -0.04em;
-    color: var(--yg-text);
-  }
-
-  .cc-moment-h2 {
-    margin: 0;
-    font-size: clamp(1.65rem, 3vw, 2.35rem);
-    font-weight: 530;
-    line-height: 1.08;
-    letter-spacing: -0.035em;
-    color: var(--yg-text);
-  }
-
-  .cc-ink-em {
-    color: var(--yg-brand-ink);
+  .cc-roast-em {
+    color: var(--cc-roast);
     font-style: normal;
     white-space: nowrap;
   }
 
-  .cc-editorial-p {
-    margin: 0;
-    font-size: clamp(1.0625rem, 1.45vw, 1.25rem);
-    line-height: 1.54;
-    letter-spacing: -0.012em;
-    color: var(--yg-muted);
-    max-inline-size: 40ch;
+  .cc-crema-em {
+    color: var(--cc-crema);
+    font-style: normal;
+    white-space: nowrap;
   }
 
-  .cc-editorial-p-sm {
+  .cc-cafe-lead {
     margin: 0;
-    font-size: 1rem;
-    line-height: 1.58;
-    color: var(--yg-muted);
-    max-inline-size: 38ch;
+    font-size: clamp(1.0625rem, 1.4vw, 1.25rem);
+    line-height: 1.54;
+    letter-spacing: -0.01em;
+    color: var(--cc-roast-muted);
+    max-inline-size: 40ch;
   }
 
   .cc-cta-cluster {
@@ -407,50 +407,48 @@
     gap: var(--boa-space-16) var(--boa-space-24);
   }
 
-  .cc-ghost-links {
+  .cc-warm-links {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--boa-space-10);
   }
 
-  .cc-ghost-link {
+  .cc-warm-link {
     background: transparent;
     border: 0;
     padding: 0;
     font: inherit;
     font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--yg-muted);
+    font-weight: 520;
+    color: var(--cc-roast-muted);
     text-decoration: none;
     cursor: pointer;
     transition: color 0.18s ease;
   }
 
-  .cc-ghost-link:hover {
-    color: var(--yg-text);
+  .cc-warm-link:hover {
+    color: var(--cc-espresso);
   }
 
-  .cc-ghost-link-strong {
+  .cc-warm-link-ink {
     color: var(--yg-brand-ink);
     font-weight: 580;
   }
 
-  .cc-ghost-link-strong:hover {
-    color: var(--yg-text);
+  .cc-warm-link-ink:hover {
+    color: var(--cc-espresso);
   }
 
-  .cc-ghost-dot {
-    color: var(--yg-border-chrome);
+  .cc-warm-dot {
+    color: var(--cc-linen-line);
     user-select: none;
   }
 
-  .cc-mono-caption {
+  .cc-agents-note {
     margin: 0;
-    font-size: 0.6875rem;
-    letter-spacing: 0.1em;
-    color: var(--yg-muted);
-    opacity: 0.8;
+    font-size: 0.8125rem;
+    color: var(--cc-roast-muted);
   }
 
   .cc-prompt-drawer {
@@ -459,36 +457,184 @@
   }
 
   /* =========================================================================
-     RIGHT HERO ZONE — FRAMELESS TACTILE PRIORITY BEAM (ZERO CARD BORDER!)
+     BESPOKE OVERHEAD PORCELAIN CUP & ROAST EXTRACTION VISUAL
      ========================================================================= */
 
-  .cc-dial-zone {
+  .cc-tasting-bar {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-32);
+    gap: var(--boa-space-20);
     padding-inline-start: clamp(var(--boa-space-20), 3vw, var(--boa-space-40));
-    border-inline-start: 1px solid var(--yg-border-subtle);
+    border-inline-start: 1px solid var(--cc-linen-line);
   }
 
-  .cc-dial-question {
+  .cc-cup-stage {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-8);
+    align-items: center;
+    gap: var(--boa-space-6);
   }
 
-  .cc-dial-prompt {
+  .cc-cup-svg {
+    inline-size: 204px;
+    block-size: 204px;
+    display: block;
+    overflow: visible;
+  }
+
+  .cc-cup-dial-dot {
+    fill: var(--yg-brand-ink);
+    transition:
+      cx 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      cy 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      fill 0.25s ease;
+  }
+
+  .cc-cup-stage[data-mode="decaf"] .cc-cup-dial-dot {
+    fill: var(--cc-roast-muted);
+  }
+
+  .cc-cup-brew {
+    fill: var(--cc-cup-light);
+    transition: fill 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-cup-stage[data-mode="decaf"] .cc-cup-brew {
+    fill: var(--cc-cup-decaf);
+  }
+
+  .cc-cup-stage[data-mode="craft"] .cc-cup-brew {
+    fill: var(--cc-cup-dark);
+  }
+
+  .cc-cup-crema-group {
+    opacity: 0.94;
+    transition:
+      opacity 0.4s ease,
+      transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-cup-stage[data-mode="decaf"] .cc-cup-crema-group {
+    opacity: 0;
+  }
+
+  .cc-cup-crema {
+    fill: var(--cc-crema);
+    opacity: 0.85;
+  }
+
+  .cc-cup-stage[data-mode="craft"] .cc-cup-crema {
+    opacity: 0.5;
+  }
+
+  .cc-cup-crema-ring {
+    stroke: var(--cc-crema);
+    opacity: 0.82;
+  }
+
+  .cc-cup-bean {
+    opacity: 0.88;
+  }
+
+  .cc-cup-steam {
+    opacity: 0.78;
+    transition: opacity 0.4s ease;
+  }
+
+  .cc-cup-stage[data-mode="decaf"] .cc-cup-steam {
+    opacity: 0;
+  }
+
+  .cc-steam-line {
+    animation: cc-steam-float 3.2s ease-in-out infinite;
+  }
+
+  .cc-steam-2 {
+    animation-delay: 0.65s;
+  }
+
+  .cc-steam-3 {
+    animation-delay: 1.3s;
+  }
+
+  @keyframes cc-steam-float {
+    0%,
+    100% {
+      transform: translateY(3px);
+      opacity: 0.35;
+    }
+    50% {
+      transform: translateY(-5px);
+      opacity: 0.9;
+    }
+  }
+
+  .cc-cup-caption {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--boa-space-8);
+    font-size: 0.8125rem;
+    font-weight: 540;
+    color: var(--cc-roast);
+  }
+
+  .cc-cup-roast-dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-cup-light);
+    transition: background-color 0.3s ease;
+  }
+
+  .cc-cup-stage[data-mode="decaf"] .cc-cup-roast-dot {
+    background: var(--cc-roast-muted);
+  }
+
+  .cc-cup-stage[data-mode="craft"] .cc-cup-roast-dot {
+    background: var(--cc-cup-dark);
+  }
+
+  /* Question & Tactile Roast Dial */
+  .cc-tasting-question {
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-6);
+  }
+
+  .cc-kicker-warm {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--cc-roast);
+  }
+
+  .cc-kicker-ink {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--yg-brand-ink);
+  }
+
+  .cc-kicker-crema {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--cc-crema);
+  }
+
+  .cc-question-text {
     margin: 0;
-    font-size: clamp(1.125rem, 1.65vw, 1.375rem);
-    font-weight: 470;
+    font-size: 1.125rem;
+    font-weight: 500;
     line-height: 1.38;
-    letter-spacing: -0.02em;
-    color: var(--yg-text);
+    letter-spacing: -0.018em;
+    color: var(--cc-espresso);
   }
 
   .cc-dial-control {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-12);
+    gap: var(--boa-space-8);
   }
 
   .cc-dial-stops {
@@ -498,17 +644,16 @@
   }
 
   .cc-dial-stop {
-    position: relative;
     background: transparent;
     border: 0;
-    padding: 0 0 var(--boa-space-8);
+    padding: 0 0 var(--boa-space-6);
     text-align: start;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    color: var(--yg-muted);
-    transition: color 0.2s ease;
+    color: var(--cc-roast-muted);
+    transition: color 0.18s ease;
   }
 
   .cc-dial-stop-center {
@@ -521,17 +666,14 @@
     align-items: flex-end;
   }
 
-  .cc-dial-stop:hover {
-    color: var(--yg-text);
-  }
-
+  .cc-dial-stop:hover,
   .cc-dial-stop[data-active="true"] {
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
   .cc-dial-stop-name {
     font-size: 0.875rem;
-    font-weight: 560;
+    font-weight: 580;
     letter-spacing: -0.015em;
   }
 
@@ -540,18 +682,17 @@
   }
 
   .cc-dial-stop-center[data-active="true"] .cc-dial-stop-name {
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
   .cc-dial-stop-pole {
     font-size: 0.75rem;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
   }
 
-  /* Tactile Draggable Hairline Slider */
   .cc-slider-shell {
     position: relative;
-    block-size: 32px;
+    block-size: 28px;
     display: flex;
     align-items: center;
   }
@@ -559,8 +700,8 @@
   .cc-slider-rail {
     position: relative;
     inline-size: 100%;
-    block-size: 2px;
-    background: var(--yg-border-chrome);
+    block-size: 3px;
+    background: var(--cc-linen-line);
     border-radius: var(--yg-radius-pill);
   }
 
@@ -569,22 +710,26 @@
     inset-inline-start: 50%;
     inset-block: -5px;
     inline-size: 1px;
-    background: var(--yg-border-strong);
+    background: var(--cc-roast-muted);
   }
 
   .cc-slider-fill {
     position: absolute;
     inset-block: 0;
-    background: var(--yg-brand-ink);
+    background: var(--cc-roast);
     border-radius: var(--yg-radius-pill);
     transition:
       inset-inline-start 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       inline-size 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 0.2s ease;
+      background-color 0.22s ease;
   }
 
-  .cc-slider-fill[data-muted="true"] {
-    background: var(--yg-muted);
+  .cc-slider-fill[data-mode="craft"] {
+    background: var(--yg-brand-ink);
+  }
+
+  .cc-slider-fill[data-mode="decaf"] {
+    background: var(--cc-roast-muted);
   }
 
   .cc-slider-thumb {
@@ -593,17 +738,21 @@
     inline-size: 16px;
     block-size: 16px;
     border-radius: var(--yg-radius-pill);
-    background: var(--yg-brand);
-    border: 3px solid var(--yg-surface);
+    background: var(--cc-roast);
+    border: 3px solid var(--cc-linen);
     transform: translate(-50%, -50%);
     transition:
       inset-inline-start 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       transform 0.18s ease,
-      background-color 0.2s ease;
+      background-color 0.22s ease;
   }
 
-  .cc-slider-thumb[data-muted="true"] {
-    background: var(--yg-muted);
+  .cc-slider-thumb[data-mode="craft"] {
+    background: var(--yg-brand);
+  }
+
+  .cc-slider-thumb[data-mode="decaf"] {
+    background: var(--cc-roast-muted);
   }
 
   .cc-slider-shell:hover .cc-slider-thumb {
@@ -625,55 +774,66 @@
     outline-offset: 6px;
   }
 
-  .cc-slider-hint {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--yg-muted);
-    opacity: 0.78;
-  }
-
-  .cc-slider-hint span[data-wins="true"] {
-    color: var(--yg-brand-ink);
-    opacity: 1;
-  }
-
-  /* Frameless Verdict Output */
-  .cc-verdict-stage {
-    padding-block-start: var(--boa-space-24);
-    border-block-start: 1px solid var(--yg-border-subtle);
+  /* Live Verdict Slip (warm hairline accent, never heavy box) */
+  .cc-verdict-slip {
+    padding-block-start: var(--boa-space-20);
+    border-block-start: 1px solid var(--cc-linen-line);
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-10);
+    gap: var(--boa-space-8);
     animation: cc-reveal-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  .cc-verdict-stage[data-decaf="true"] .cc-verdict-headline {
-    color: var(--yg-muted);
-    font-weight: 450;
+  .cc-verdict-stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--boa-space-8);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--yg-brand-ink);
+  }
+
+  .cc-stamp-dot {
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--yg-brand-ink);
+  }
+
+  .cc-verdict-slip[data-mode="decaf"] .cc-verdict-stamp {
+    color: var(--cc-roast-muted);
+  }
+
+  .cc-verdict-slip[data-mode="decaf"] .cc-stamp-dot {
+    background: var(--cc-roast-muted);
   }
 
   .cc-verdict-headline {
     margin: 0;
-    font-size: clamp(1.375rem, 2.2vw, 1.85rem);
-    font-weight: 560;
+    font-size: clamp(1.3125rem, 2.1vw, 1.75rem);
+    font-weight: 570;
     line-height: 1.18;
-    letter-spacing: -0.03em;
-    color: var(--yg-text);
+    letter-spacing: -0.028em;
+    color: var(--cc-espresso);
+  }
+
+  .cc-verdict-slip[data-mode="decaf"] .cc-verdict-headline {
+    color: var(--cc-roast-muted);
+    font-weight: 460;
   }
 
   .cc-verdict-note {
     margin: 0;
     font-size: 0.96875rem;
     line-height: 1.52;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
   }
 
   .cc-verdict-boundary {
     font-size: 0.8125rem;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
     padding-inline-start: var(--boa-space-12);
-    border-inline-start: 2px solid var(--yg-brand-border);
+    border-inline-start: 2px solid var(--cc-crema-deep);
   }
 
   @keyframes cc-reveal-up {
@@ -688,20 +848,13 @@
   }
 
   /* =========================================================================
-     EDITORIAL BANDS — OPEN SPACE, HAIRLINES, ZERO BOX CLUTTER
+     ACT 02 — DEEP ESPRESSO ROAST BAND (THE THESIS + CREMA TASTING BARS)
      ========================================================================= */
 
-  .cc-band {
-    border-block-start: 1px solid var(--yg-border-subtle);
+  .cc-espresso-band {
+    background: var(--cc-dark-band-bg);
+    color: var(--cc-dark-band-ink);
     padding-block: clamp(4.5rem, 10vh, 7.25rem);
-  }
-
-  .cc-band-inner {
-    inline-size: 100%;
-    max-inline-size: var(--app-max-width);
-    margin-inline: auto;
-    padding-inline: var(--app-gutter);
-    box-sizing: border-box;
   }
 
   .cc-split-editorial {
@@ -714,7 +867,31 @@
   .cc-band-lead {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-20);
+    gap: var(--boa-space-16);
+  }
+
+  .cc-espresso-h2 {
+    margin: 0;
+    font-size: clamp(1.85rem, 3.1vw, 2.65rem);
+    font-weight: 540;
+    line-height: 1.08;
+    letter-spacing: -0.036em;
+    color: var(--cc-dark-band-ink);
+  }
+
+  .cc-espresso-p {
+    margin: 0;
+    font-size: clamp(1.0625rem, 1.35vw, 1.1875rem);
+    line-height: 1.56;
+    color: var(--cc-dark-band-muted);
+    max-inline-size: 40ch;
+  }
+
+  .cc-espresso-caption {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--cc-dark-band-muted);
   }
 
   /* Frameless underline text selector */
@@ -722,7 +899,11 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--boa-space-24);
-    border-block-end: 1px solid var(--yg-border-subtle);
+    border-block-end: 1px solid var(--cc-linen-line);
+  }
+
+  .cc-underline-tabs-dark {
+    border-block-end-color: var(--cc-dark-band-line);
   }
 
   .cc-underline-tab {
@@ -733,18 +914,18 @@
     font: inherit;
     font-size: 0.9375rem;
     font-weight: 500;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
     cursor: pointer;
     transition: color 0.18s ease;
   }
 
   .cc-underline-tab:hover {
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
   .cc-underline-tab[data-active="true"] {
-    color: var(--yg-text);
-    font-weight: 580;
+    color: var(--cc-espresso);
+    font-weight: 590;
   }
 
   .cc-underline-tab[data-active="true"]::after {
@@ -756,7 +937,19 @@
     background: var(--yg-brand-ink);
   }
 
-  /* Frameless Hairline Priority Beam */
+  .cc-underline-tabs-dark .cc-underline-tab {
+    color: var(--cc-dark-band-muted);
+  }
+
+  .cc-underline-tabs-dark .cc-underline-tab:hover,
+  .cc-underline-tabs-dark .cc-underline-tab[data-active="true"] {
+    color: var(--cc-dark-band-ink);
+  }
+
+  .cc-underline-tabs-dark .cc-underline-tab[data-active="true"]::after {
+    background: var(--cc-crema);
+  }
+
   .cc-lens-panel {
     display: flex;
     flex-direction: column;
@@ -769,13 +962,7 @@
     gap: var(--boa-space-24);
   }
 
-  .cc-lens-caption {
-    margin: 0;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--yg-muted);
-  }
-
+  /* Tasting Balance Beams (Coffee Roast / OpenBoa Ink / Golden Crema) */
   .cc-beam {
     display: flex;
     flex-direction: column;
@@ -791,21 +978,39 @@
   }
 
   .cc-beam-pole {
-    color: var(--yg-muted);
-    font-weight: 460;
+    color: var(--cc-roast-muted);
+    font-weight: 470;
     transition: color 0.25s ease;
   }
 
-  .cc-beam-pole[data-wins="true"] {
+  .cc-beam[data-tone="coffee"] .cc-beam-pole[data-wins="true"] {
+    color: var(--cc-roast);
+    font-weight: 600;
+  }
+
+  .cc-beam[data-tone="ink"] .cc-beam-pole[data-wins="true"] {
     color: var(--yg-brand-ink);
+    font-weight: 600;
+  }
+
+  .cc-beam[data-tone="crema"] .cc-beam-pole {
+    color: var(--cc-dark-band-muted);
+  }
+
+  .cc-beam[data-tone="crema"] .cc-beam-pole[data-wins="true"] {
+    color: var(--cc-crema);
     font-weight: 600;
   }
 
   .cc-beam-rail {
     position: relative;
-    block-size: 2px;
-    background: var(--yg-border-subtle);
+    block-size: 3px;
+    background: var(--cc-linen-line);
     border-radius: var(--yg-radius-pill);
+  }
+
+  .cc-beam[data-tone="crema"] .cc-beam-rail {
+    background: var(--cc-dark-band-line);
   }
 
   .cc-beam-center {
@@ -813,13 +1018,14 @@
     inset-inline-start: 50%;
     inset-block: -4px;
     inline-size: 1px;
-    background: var(--yg-border-chrome);
+    background: var(--cc-roast-muted);
+    opacity: 0.6;
   }
 
   .cc-beam-active {
     position: absolute;
     inset-block: 0;
-    background: var(--yg-brand-ink);
+    background: var(--cc-roast);
     border-radius: var(--yg-radius-pill);
     transition:
       inset-inline-start 0.52s cubic-bezier(0.22, 1, 0.36, 1),
@@ -827,36 +1033,63 @@
       background-color 0.28s ease;
   }
 
+  .cc-beam[data-tone="ink"] .cc-beam-active {
+    background: var(--yg-brand-ink);
+  }
+
+  .cc-beam[data-tone="crema"] .cc-beam-active {
+    background: var(--cc-crema);
+  }
+
   .cc-beam-active[data-muted="true"] {
-    background: var(--yg-muted);
+    background: var(--cc-roast-muted);
   }
 
   .cc-beam-node {
     position: absolute;
     inset-block-start: 50%;
-    inline-size: 10px;
-    block-size: 10px;
+    inline-size: 11px;
+    block-size: 11px;
     border-radius: var(--yg-radius-pill);
-    background: var(--yg-brand);
-    border: 2px solid var(--yg-surface);
+    background: var(--cc-roast);
+    border: 2px solid var(--cc-linen);
     transform: translate(-50%, -50%);
     transition:
       inset-inline-start 0.52s cubic-bezier(0.22, 1, 0.36, 1),
       background-color 0.28s ease;
   }
 
+  .cc-beam[data-tone="ink"] .cc-beam-node {
+    background: var(--yg-brand);
+  }
+
+  .cc-beam[data-tone="crema"] .cc-beam-node {
+    background: var(--cc-crema);
+    border-color: var(--cc-dark-band-bg);
+  }
+
   .cc-beam-node[data-muted="true"] {
-    background: var(--yg-muted);
+    background: var(--cc-roast-muted);
   }
 
   /* =========================================================================
-     MOMENTS (ROAST + COFFEE CHAT + INVARIANTS) — FRAMELESS EDITORIAL ROWS
+     ACT 03 & 04 — WARM LINEN BANDS (ROAST, COFFEE CHAT, ON THE TABLE)
      ========================================================================= */
+
+  .cc-linen-band {
+    background: var(--cc-linen);
+    padding-block: clamp(4.5rem, 10vh, 7rem);
+  }
+
+  .cc-linen-band-alt {
+    background: var(--cc-linen-deep);
+    border-block-start: 1px solid var(--cc-linen-line);
+  }
 
   .cc-moments-stack {
     display: flex;
     flex-direction: column;
-    gap: clamp(3.5rem, 8vh, 5.5rem);
+    gap: clamp(3.5rem, 8vh, 5.25rem);
   }
 
   .cc-moment-row {
@@ -867,102 +1100,108 @@
   }
 
   .cc-moment-divider {
-    padding-block-start: clamp(3.5rem, 8vh, 5.5rem);
-    border-block-start: 1px solid var(--yg-border-subtle);
+    padding-block-start: clamp(3.5rem, 8vh, 5.25rem);
+    border-block-start: 1px solid var(--cc-linen-line);
   }
 
   .cc-moment-copy {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-16);
+    gap: var(--boa-space-12);
   }
 
-  .cc-moment-artifact {
+  .cc-moment-h2 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
+    font-weight: 540;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    color: var(--cc-espresso);
+  }
+
+  .cc-warm-p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.58;
+    color: var(--cc-roast-muted);
+    max-inline-size: 38ch;
+  }
+
+  .cc-tasting-slip {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-24);
+    gap: var(--boa-space-20);
   }
 
   .cc-roast-diff {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-12);
+    gap: var(--boa-space-10);
   }
 
   .cc-roast-struck {
     font-size: 0.9375rem;
     text-decoration: line-through;
-    color: var(--yg-danger);
-    opacity: 0.85;
+    color: var(--cc-terracotta);
   }
 
   .cc-roast-quote {
     margin: 0;
     padding-inline-start: var(--boa-space-16);
-    border-inline-start: 2px solid var(--yg-brand-ink);
+    border-inline-start: 2.5px solid var(--cc-roast);
     font-size: clamp(1.125rem, 1.5vw, 1.3125rem);
-    font-weight: 500;
+    font-weight: 520;
     line-height: 1.4;
     letter-spacing: -0.02em;
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
-  /* Whisper tactile circular confirmation ring */
-  .cc-confirm-cue {
+  .cc-confirm-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--boa-space-16);
+  }
+
+  .cc-roast-stamp-btn {
     display: inline-flex;
     align-items: center;
-    gap: var(--boa-space-12);
-    background: transparent;
-    border: 0;
-    padding: var(--boa-space-4) 0;
-    text-align: start;
-    cursor: pointer;
-    align-self: flex-start;
-    color: var(--yg-brand-ink);
-    transition: opacity 0.2s ease;
-  }
-
-  .cc-confirm-cue:hover {
-    opacity: 0.85;
-  }
-
-  .cc-confirm-ring {
-    inline-size: 20px;
-    block-size: 20px;
+    gap: var(--boa-space-10);
+    padding: var(--boa-space-8) var(--boa-space-16);
     border-radius: var(--yg-radius-pill);
     border: 1.5px solid var(--yg-brand-ink);
-    display: inline-grid;
-    place-items: center;
-    transition: background-color 0.25s ease;
+    background: transparent;
+    color: var(--yg-brand-ink);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 580;
+    cursor: pointer;
+    transition:
+      background-color 0.22s ease,
+      color 0.22s ease,
+      border-color 0.22s ease;
   }
 
-  .cc-confirm-dot {
-    inline-size: 6px;
-    block-size: 6px;
+  .cc-roast-stamp-btn:hover {
+    background: var(--yg-brand-soft);
+  }
+
+  .cc-roast-stamp-btn[data-confirmed="true"] {
+    background: var(--yg-brand);
+    border-color: var(--yg-brand);
+    color: var(--yg-on-brand);
+  }
+
+  .cc-roast-stamp-dot {
+    inline-size: 7px;
+    block-size: 7px;
     border-radius: var(--yg-radius-pill);
-    background: var(--yg-brand-ink);
-    transition: transform 0.25s ease, background-color 0.25s ease;
-  }
-
-  .cc-confirm-cue[data-confirmed="true"] .cc-confirm-ring {
-    background: var(--yg-brand-ink);
-  }
-
-  .cc-confirm-cue[data-confirmed="true"] .cc-confirm-dot {
-    background: var(--yg-on-brand);
-    transform: scale(1.25);
-  }
-
-  .cc-confirm-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    background: currentColor;
   }
 
   .cc-roast-result {
     padding-block-start: var(--boa-space-20);
-    border-block-start: 1px solid var(--yg-border-subtle);
+    border-block-start: 1px solid var(--cc-linen-line);
     display: flex;
     flex-direction: column;
     gap: var(--boa-space-12);
@@ -979,49 +1218,45 @@
     font-size: 1.125rem;
     font-weight: 560;
     letter-spacing: -0.02em;
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
   .cc-chat-question {
     margin: 0;
     font-size: 1.0625rem;
     line-height: 1.45;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
   }
 
   .cc-chat-verdict {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-16);
+    gap: var(--boa-space-12);
     animation: cc-reveal-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  /* Quiet 3-column architectural invariants */
   .cc-invariants-strip {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--boa-space-32);
     padding-block-start: var(--boa-space-32);
-    border-block-start: 1px solid var(--yg-border-subtle);
+    border-block-start: 1px solid var(--cc-linen-line);
   }
 
   .cc-invariant {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-8);
+    gap: var(--boa-space-6);
   }
 
   .cc-invariant-text {
     margin: 0;
     font-size: 0.9375rem;
     line-height: 1.54;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
   }
 
-  /* =========================================================================
-     STAGE 04 — OPEN 2-COLUMN EDITORIAL SPREAD (ON THE TABLE RIGHT NOW)
-     ========================================================================= */
-
+  /* Open 2-Column Table Spread */
   .cc-table-head {
     display: flex;
     flex-wrap: wrap;
@@ -1029,19 +1264,18 @@
     justify-content: space-between;
     gap: var(--boa-space-16);
     padding-block-end: var(--boa-space-32);
-    border-block-end: 1px solid var(--yg-border-subtle);
+    border-block-end: 1px solid var(--cc-linen-line);
   }
 
   .cc-table-source {
     margin: var(--boa-space-6) 0 0;
     font-size: 0.9375rem;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
   }
 
   .cc-open-spread {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0;
   }
 
   .cc-open-spread-col {
@@ -1053,7 +1287,7 @@
 
   .cc-open-spread-col + .cc-open-spread-col {
     padding: var(--boa-space-32) 0 var(--boa-space-16) var(--boa-space-32);
-    border-inline-start: 1px solid var(--yg-border-subtle);
+    border-inline-start: 1px solid var(--cc-linen-line);
   }
 
   .cc-spread-author {
@@ -1068,7 +1302,7 @@
     align-items: baseline;
     gap: var(--boa-space-8);
     text-decoration: none;
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
   .cc-author-link:hover .cc-author-name {
@@ -1077,13 +1311,13 @@
 
   .cc-author-name {
     font-size: 0.9375rem;
-    font-weight: 580;
+    font-weight: 590;
     transition: color 0.18s ease;
   }
 
   .cc-author-handle {
     font-size: 0.875rem;
-    color: var(--yg-muted);
+    color: var(--cc-roast-muted);
   }
 
   .cc-spread-title {
@@ -1092,7 +1326,7 @@
     font-weight: 550;
     line-height: 1.24;
     letter-spacing: -0.025em;
-    color: var(--yg-text);
+    color: var(--cc-espresso);
   }
 
   .cc-empty-closing {
@@ -1102,9 +1336,11 @@
     gap: var(--boa-space-16);
   }
 
-  /* Final Minimal Desire Closer */
-  .cc-band-closer {
-    padding-block: clamp(4.5rem, 10vh, 7.5rem);
+  /* ACT 05 — WARM CLOSING INVITATION */
+  .cc-closer-band {
+    background: var(--cc-linen);
+    border-block-start: 1px solid var(--cc-linen-line);
+    padding-block: clamp(4.5rem, 9vh, 6.5rem);
   }
 
   .cc-closer-inner {
@@ -1115,12 +1351,32 @@
     gap: var(--boa-space-32);
   }
 
+  .cc-closer-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--boa-space-16);
+  }
+
+  .cc-closer-h2 {
+    margin: 0;
+    font-size: clamp(1.9rem, 3.4vw, 2.85rem);
+    font-weight: 540;
+    line-height: 1.06;
+    letter-spacing: -0.038em;
+    color: var(--cc-espresso);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .cc-verdict-stage,
+    .cc-steam-line,
+    .cc-verdict-slip,
     .cc-chat-verdict {
       animation: none !important;
     }
 
+    .cc-cup-dial-dot,
+    .cc-cup-brew,
+    .cc-cup-crema-group,
     .cc-slider-fill,
     .cc-slider-thumb,
     .cc-beam-active,
@@ -1268,11 +1524,11 @@
   }
 
   @media (max-width: 960px) {
-    .cc-stage-hero {
+    .cc-cafe-hero {
       min-block-size: auto;
     }
 
-    .cc-stage-grid,
+    .cc-cafe-grid,
     .cc-split-editorial,
     .cc-moment-row,
     .cc-invariants-strip,
@@ -1280,11 +1536,11 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .cc-dial-zone {
+    .cc-tasting-bar {
       padding-inline-start: 0;
       padding-block-start: var(--boa-space-32);
       border-inline-start: 0;
-      border-block-start: 1px solid var(--yg-border-subtle);
+      border-block-start: 1px solid var(--cc-linen-line);
     }
 
     .cc-open-spread-col,
@@ -1294,7 +1550,7 @@
     }
 
     .cc-open-spread-col + .cc-open-spread-col {
-      border-block-start: 1px solid var(--yg-border-subtle);
+      border-block-start: 1px solid var(--cc-linen-line);
     }
 
     .table-dialogue-grid,
@@ -1316,8 +1572,9 @@
   }
 
   @media (max-width: 640px) {
-    .cc-stage-reticles {
-      display: none;
+    .cc-cup-svg {
+      inline-size: 176px;
+      block-size: 176px;
     }
 
     .cc-underline-tabs {

@@ -42,7 +42,11 @@ export function AppShell({ user, children }: AppShellProps) {
   const isWideWorkspace = pathname === "/me" || pathname.startsWith("/me/");
 
   return (
-    <Yogurt appearance={appearance} material="neutral" className="app-shell">
+    <Yogurt
+      appearance={appearance}
+      material="neutral"
+      className={isHome ? "app-shell app-shell-home" : "app-shell"}
+    >
       <NavHeader
         user={user}
         appearance={appearance}
