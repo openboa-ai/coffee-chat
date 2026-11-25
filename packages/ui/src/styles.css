@@ -11,7 +11,7 @@
   }
 
   /* =========================================================================
-     COFFEE CHAT WARM ROASTERY PALETTE (Official Coffee Mark Earth + Ochre +
+     COFFEE CHAT EDITORIAL PALETTE (Official Coffee Mark Earth + Ochre +
      OpenBoa Primary Ink Blue — zero literal hex values)
      ========================================================================= */
 
@@ -29,12 +29,7 @@
     --cc-dark-band-ink: var(--boa-color-earth-50);
     --cc-dark-band-muted: var(--boa-color-earth-300);
     --cc-dark-band-line: var(--boa-color-earth-800);
-    --cc-cup-ceramic: var(--boa-color-neutral-50);
-    --cc-cup-saucer: var(--boa-color-earth-100);
-    --cc-cup-rim: var(--boa-color-earth-300);
-    --cc-cup-light: var(--boa-color-earth-700);
-    --cc-cup-dark: var(--boa-color-earth-950);
-    --cc-card-bg: var(--boa-color-neutral-50);
+    --cc-placard-bg: var(--boa-color-neutral-50);
     background: var(--cc-linen);
     color: var(--cc-espresso);
   }
@@ -53,12 +48,7 @@
     --cc-dark-band-ink: var(--boa-color-earth-50);
     --cc-dark-band-muted: var(--boa-color-earth-300);
     --cc-dark-band-line: var(--boa-color-earth-800);
-    --cc-cup-ceramic: var(--boa-color-earth-800);
-    --cc-cup-saucer: var(--boa-color-earth-900);
-    --cc-cup-rim: var(--boa-color-earth-700);
-    --cc-cup-light: var(--boa-color-ochre-700);
-    --cc-cup-dark: var(--boa-color-neutral-950);
-    --cc-card-bg: var(--boa-color-earth-900);
+    --cc-placard-bg: var(--boa-color-earth-950);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -76,12 +66,7 @@
       --cc-dark-band-ink: var(--boa-color-earth-50);
       --cc-dark-band-muted: var(--boa-color-earth-300);
       --cc-dark-band-line: var(--boa-color-earth-800);
-      --cc-cup-ceramic: var(--boa-color-earth-800);
-      --cc-cup-saucer: var(--boa-color-earth-900);
-      --cc-cup-rim: var(--boa-color-earth-700);
-      --cc-cup-light: var(--boa-color-ochre-700);
-      --cc-cup-dark: var(--boa-color-neutral-950);
-      --cc-card-bg: var(--boa-color-earth-900);
+      --cc-placard-bg: var(--boa-color-earth-950);
     }
   }
 
@@ -306,7 +291,7 @@
   }
 
   /* =========================================================================
-     HOME — VISUAL-FIRST ANIMATED STORYTELLING (COFFEE PALETTE × INK BLUE)
+     HOME — FREE-FORM EDITORIAL MAGAZINE ARCHITECTURE (ZERO PPT BOXES!)
      ========================================================================= */
 
   .cc-landing {
@@ -322,27 +307,27 @@
     box-sizing: border-box;
   }
 
-  /* SCENE 1 — HERO */
-  .cc-cafe-hero {
+  /* ACT 01 — EDITORIAL OPENING + LIVING PHOTOGRAPH */
+  .cc-editorial-hero {
     background: var(--cc-linen);
-    padding-block: clamp(var(--boa-space-32), 6vh, var(--boa-space-64));
+    padding-block: clamp(var(--boa-space-24), 5vh, var(--boa-space-48));
     min-block-size: calc(100dvh - 64px);
     display: flex;
     align-items: center;
   }
 
-  .cc-cafe-grid {
+  .cc-hero-split {
     display: grid;
-    grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
-    gap: clamp(var(--boa-space-32), 5vw, 4.75rem);
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: clamp(var(--boa-space-32), 6vw, 5.5rem);
     align-items: center;
   }
 
-  .cc-cafe-copy {
+  .cc-hero-left {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--boa-space-24);
+    gap: var(--boa-space-20);
   }
 
   .cc-cafe-mark-row {
@@ -360,10 +345,10 @@
 
   .cc-cafe-h1 {
     margin: 0;
-    font-size: clamp(2.5rem, 4.45vw, 3.95rem);
-    font-weight: 540;
-    line-height: 0.99;
-    letter-spacing: -0.042em;
+    font-size: clamp(2.65rem, 4.9vw, 4.35rem);
+    font-weight: 530;
+    line-height: 0.97;
+    letter-spacing: -0.044em;
     color: var(--cc-espresso);
   }
 
@@ -381,11 +366,11 @@
 
   .cc-cafe-lead {
     margin: 0;
-    font-size: clamp(1.125rem, 1.5vw, 1.3125rem);
-    line-height: 1.48;
+    font-size: clamp(1.0625rem, 1.45vw, 1.25rem);
+    line-height: 1.5;
     letter-spacing: -0.012em;
     color: var(--cc-roast-muted);
-    max-inline-size: 32ch;
+    max-inline-size: 34ch;
   }
 
   .cc-cta-cluster {
@@ -438,246 +423,216 @@
     max-inline-size: 34rem;
   }
 
-  /* =========================================================================
-     HERO ANIMATED BEAN-DROP INTO AI STAGE
-     ========================================================================= */
-
-  .cc-hero-visual {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding: var(--boa-space-24);
-    border-radius: var(--yg-radius-card);
-    background: var(--cc-linen-deep);
-    border: 1px solid var(--cc-linen-line);
-  }
-
-  .cc-bean-tray {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--boa-space-10);
-  }
-
-  .cc-bean-pill {
-    display: flex;
-    align-items: center;
-    gap: var(--boa-space-8);
-    padding: var(--boa-space-10) var(--boa-space-12);
-    border-radius: var(--yg-radius-panel);
-    border: 1.5px solid var(--cc-linen-line);
-    background: var(--cc-card-bg);
-    color: var(--cc-roast-muted);
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-    transition:
-      border-color 0.22s ease,
-      transform 0.22s ease,
-      opacity 0.22s ease;
-    opacity: 0.72;
-  }
-
-  .cc-bean-pill:hover {
-    opacity: 0.96;
-  }
-
-  .cc-bean-pill[data-active="true"] {
-    opacity: 1;
-    border-color: var(--cc-roast);
-    transform: translateY(-2px);
-  }
-
-  .cc-bean-pill[data-active="true"][data-variant="craft"] {
-    border-color: var(--yg-brand-ink);
-  }
-
-  .cc-bean-svg {
-    flex-shrink: 0;
-  }
-
-  .cc-bean-pill-text {
-    display: flex;
-    flex-direction: column;
-    min-inline-size: 0;
-    gap: 1px;
-  }
-
-  .cc-bean-pill-text strong {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--cc-espresso);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .cc-bean-pill-text span {
-    font-size: 0.6875rem;
-    color: var(--cc-roast-muted);
-    white-space: nowrap;
-  }
-
-  .cc-drop-conduit {
+  /* Frameless Live Taste Switch integrated into Hero open space */
+  .cc-hero-live-rail {
     inline-size: 100%;
-    block-size: 72px;
-  }
-
-  .cc-drop-svg {
-    inline-size: 100%;
-    block-size: 100%;
-    display: block;
-    overflow: visible;
-  }
-
-  .cc-ai-window {
-    border-radius: var(--yg-radius-panel);
-    background: var(--cc-card-bg);
-    border: 1.5px solid var(--cc-linen-line);
-    padding: var(--boa-space-20);
+    margin-block-start: var(--boa-space-12);
+    padding-block-start: var(--boa-space-24);
+    border-block-start: 1px solid var(--cc-linen-line);
     display: flex;
     flex-direction: column;
     gap: var(--boa-space-16);
-    transition: border-color 0.3s ease;
   }
 
-  .cc-ai-window[data-mode="growth"] {
-    border-color: var(--cc-roast);
-  }
-
-  .cc-ai-window[data-mode="craft"] {
-    border-color: var(--yg-brand-ink);
-  }
-
-  .cc-ai-window-bar {
+  .cc-bare-switches {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--boa-space-8);
-    padding-block-end: var(--boa-space-12);
-    border-block-end: 1px solid var(--cc-linen-line);
+    flex-wrap: wrap;
+    gap: var(--boa-space-24);
   }
 
-  .cc-ai-dots {
-    display: inline-flex;
-    gap: 5px;
-  }
-
-  .cc-ai-dots i {
-    inline-size: 7px;
-    block-size: 7px;
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-linen-line);
-  }
-
-  .cc-ai-hosts {
-    font-size: 0.75rem;
-    color: var(--cc-roast-muted);
-    font-weight: 500;
-  }
-
-  .cc-ai-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--cc-roast);
-  }
-
-  .cc-ai-status i {
-    inline-size: 7px;
-    block-size: 7px;
-    border-radius: var(--yg-radius-pill);
-    background: currentColor;
-  }
-
-  .cc-ai-status[data-mode="craft"] {
-    color: var(--yg-brand-ink);
-  }
-
-  .cc-ai-status[data-mode="decaf"] {
-    color: var(--cc-roast-muted);
-  }
-
-  .cc-ai-user-msg {
-    align-self: flex-end;
-    padding: var(--boa-space-8) var(--boa-space-16);
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-linen-deep);
-    color: var(--cc-espresso);
+  .cc-bare-switch {
+    position: relative;
+    background: transparent;
+    border: 0;
+    padding: 0 0 var(--boa-space-8);
+    font: inherit;
     font-size: 0.875rem;
     font-weight: 520;
+    color: var(--cc-roast-muted);
+    cursor: pointer;
+    transition: color 0.18s ease;
   }
 
-  .cc-ai-reply {
+  .cc-bare-switch:hover {
+    color: var(--cc-espresso);
+  }
+
+  .cc-bare-switch[data-active="true"] {
+    color: var(--cc-espresso);
+    font-weight: 600;
+  }
+
+  .cc-bare-switch[data-active="true"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: 2px;
+    background: var(--cc-roast);
+  }
+
+  .cc-bare-switch[data-active="true"][data-mode="craft"]::after {
+    background: var(--yg-brand-ink);
+  }
+
+  .cc-bare-switch[data-active="true"][data-mode="decaf"]::after {
+    background: var(--cc-roast-muted);
+  }
+
+  .cc-hero-verdict-open {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: var(--boa-space-12);
-    padding: var(--boa-space-12) var(--boa-space-8) var(--boa-space-6);
+    gap: var(--boa-space-8);
     animation: cc-reveal-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
-  .cc-mini-seesaw {
-    inline-size: 180px;
-    block-size: 30px;
-    overflow: visible;
+  .cc-hero-question-tag {
+    font-size: 0.8125rem;
+    color: var(--cc-roast-muted);
   }
 
-  .cc-mini-seesaw-beam {
-    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .cc-ai-verdict {
+  .cc-hero-verdict-text {
     margin: 0;
-    font-size: clamp(1.375rem, 2.2vw, 1.85rem);
-    font-weight: 600;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
+    font-size: clamp(1.45rem, 2.3vw, 2rem);
+    font-weight: 580;
+    line-height: 1.12;
+    letter-spacing: -0.032em;
     color: var(--cc-espresso);
   }
 
-  .cc-ai-reply[data-mode="decaf"] .cc-ai-verdict {
+  .cc-hero-verdict-open[data-mode="decaf"] .cc-hero-verdict-text {
     color: var(--cc-roast-muted);
-    font-weight: 480;
+    font-weight: 460;
   }
 
-  /* Visual skeleton fluff bars under Decaf "It depends..." */
-  .cc-decaf-fluff {
-    inline-size: 100%;
-    max-inline-size: 16rem;
+  .cc-hero-verdict-open[data-mode="craft"] .cc-hero-verdict-text {
+    color: var(--yg-brand-ink);
+  }
+
+  .cc-decaf-lines {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    gap: 5px;
+    max-inline-size: 16rem;
+    padding-block: var(--boa-space-4);
   }
 
-  .cc-decaf-fluff span {
+  .cc-decaf-lines span {
     display: block;
-    block-size: 6px;
+    block-size: 5px;
     border-radius: var(--yg-radius-pill);
     background: var(--cc-linen-line);
-    opacity: 0.7;
+    opacity: 0.8;
   }
 
-  .cc-ai-guard {
+  /* Bespoke Gallery Hero Photograph reacting live to Taste Mode */
+  .cc-hero-art-frame {
+    position: relative;
+    margin: 0;
+    inline-size: 100%;
+    max-inline-size: 31rem;
+    justify-self: end;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--yg-radius-feature);
+    overflow: hidden;
+    background: var(--cc-linen-deep);
+  }
+
+  .cc-hero-art-img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    display: block;
+    transition:
+      filter 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-hero-art-frame[data-mode="decaf"] .cc-hero-art-img {
+    filter: saturate(0.22) contrast(0.9) brightness(1.04);
+    transform: scale(1);
+  }
+
+  .cc-hero-art-frame[data-mode="growth"] .cc-hero-art-img {
+    filter: saturate(1.08) brightness(1.02);
+    transform: scale(1.015);
+  }
+
+  .cc-hero-art-frame[data-mode="craft"] .cc-hero-art-img {
+    filter: saturate(1.16) contrast(1.06);
+    transform: scale(1.03);
+  }
+
+  /* Subtle living aura ring breathing around the porcelain saucer when brewed */
+  .cc-hero-art-aura {
+    position: absolute;
+    inset-inline-start: 49.5%;
+    inset-block-start: 50%;
+    inline-size: 72%;
+    aspect-ratio: 1;
+    border-radius: var(--yg-radius-pill);
+    border: 1.5px solid var(--cc-crema);
+    transform: translate(-50%, -50%) scale(0.96);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.5s ease,
+      border-color 0.4s ease;
+  }
+
+  .cc-hero-art-frame[data-mode="growth"] .cc-hero-art-aura {
+    opacity: 0.72;
+    border-color: var(--cc-crema);
+    animation: cc-aura-breathe 3.8s ease-in-out infinite;
+  }
+
+  .cc-hero-art-frame[data-mode="craft"] .cc-hero-art-aura {
+    opacity: 0.85;
+    border-color: var(--yg-brand-ink);
+    animation: cc-aura-breathe 3.8s ease-in-out infinite;
+  }
+
+  @keyframes cc-aura-breathe {
+    0%,
+    100% {
+      transform: translate(-50%, -50%) scale(0.98);
+      opacity: 0.45;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.04);
+      opacity: 0.85;
+    }
+  }
+
+  .cc-hero-placard {
+    position: absolute;
+    inset-inline-start: var(--boa-space-20);
+    inset-block-end: var(--boa-space-20);
     display: inline-flex;
     align-items: center;
-    gap: var(--boa-space-6);
-    padding: var(--boa-space-4) var(--boa-space-12);
+    gap: var(--boa-space-8);
+    padding: var(--boa-space-8) var(--boa-space-16);
     border-radius: var(--yg-radius-pill);
-    background: var(--cc-linen-deep);
-    color: var(--cc-roast-muted);
-    font-size: 0.75rem;
-    font-weight: 520;
+    background: var(--cc-placard-bg);
+    color: var(--cc-espresso);
+    font-size: 0.8125rem;
+    font-weight: 560;
+    letter-spacing: -0.01em;
   }
 
-  .cc-ai-guard-dot {
-    inline-size: 6px;
-    block-size: 6px;
+  .cc-hero-placard i {
+    inline-size: 8px;
+    block-size: 8px;
     border-radius: var(--yg-radius-pill);
-    background: var(--cc-crema-deep);
+    background: var(--cc-roast);
+  }
+
+  .cc-hero-placard[data-mode="craft"] i {
+    background: var(--yg-brand);
+  }
+
+  .cc-hero-placard[data-mode="decaf"] i {
+    background: var(--cc-roast-muted);
   }
 
   @keyframes cc-reveal-up {
@@ -692,26 +647,21 @@
   }
 
   /* =========================================================================
-     SCENE 2 — VELVETY ESPRESSO BAND + ANIMATED BRASS BALANCE SCALE
+     ACT 02 — FULL-BLEED DARK ESPRESSO: MONUMENTAL TYPOGRAPHIC SEESAW
      ========================================================================= */
 
   .cc-espresso-band {
     background: var(--cc-dark-band-bg);
     color: var(--cc-dark-band-ink);
-    padding-block: clamp(4.25rem, 9vh, 6.75rem);
+    padding-block: clamp(5rem, 12vh, 8.5rem);
   }
 
-  .cc-scale-band-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-    gap: clamp(var(--boa-space-24), 5vw, 4.5rem);
-    align-items: center;
-  }
-
-  .cc-band-lead {
+  .cc-espresso-center {
     display: flex;
     flex-direction: column;
-    gap: var(--boa-space-16);
+    align-items: center;
+    text-align: center;
+    gap: var(--boa-space-24);
   }
 
   .cc-kicker-warm {
@@ -721,90 +671,144 @@
     color: var(--cc-roast);
   }
 
-  .cc-kicker-crema {
+  .cc-kicker-ink {
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.01em;
+    color: var(--yg-brand-ink);
+  }
+
+  .cc-kicker-crema {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: var(--cc-crema);
   }
 
-  .cc-espresso-h2 {
+  .cc-espresso-h2-giant {
     margin: 0;
-    font-size: clamp(1.9rem, 3.2vw, 2.75rem);
-    font-weight: 540;
-    line-height: 1.08;
-    letter-spacing: -0.036em;
+    font-size: clamp(2.15rem, 4.4vw, 3.65rem);
+    font-weight: 530;
+    line-height: 1.04;
+    letter-spacing: -0.04em;
     color: var(--cc-dark-band-ink);
   }
 
-  .cc-espresso-p {
-    margin: 0;
-    font-size: clamp(1.0625rem, 1.35vw, 1.1875rem);
-    line-height: 1.52;
-    color: var(--cc-dark-band-muted);
-    max-inline-size: 34ch;
-  }
-
-  .cc-scale-scene {
+  .cc-typo-seesaw {
+    inline-size: 100%;
+    max-inline-size: 54rem;
+    margin-block-start: var(--boa-space-24);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--boa-space-20);
+    gap: var(--boa-space-32);
   }
 
-  .cc-brass-scale-svg {
+  .cc-seesaw-stage {
     inline-size: 100%;
-    max-inline-size: 29rem;
-    block-size: auto;
-    display: block;
-    overflow: visible;
+    padding-block: var(--boa-space-32) var(--boa-space-8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
-  .cc-scale-beam-group,
-  .cc-scale-pan {
-    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  .cc-seesaw-beam {
+    inline-size: 100%;
+    display: grid;
+    grid-template-columns: auto minmax(48px, 1fr) auto;
+    align-items: center;
+    gap: var(--boa-space-20);
+    transform-origin: center center;
+    transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .cc-pan-orb {
+  .cc-seesaw-word {
+    font-size: clamp(1.1875rem, 2.5vw, 1.95rem);
+    font-weight: 520;
+    letter-spacing: -0.03em;
+    color: var(--cc-dark-band-muted);
     transition:
-      r 0.4s ease,
-      fill 0.35s ease;
+      color 0.35s ease,
+      transform 0.45s ease;
   }
 
-  .cc-scale-svg-label {
-    font-size: 14px;
+  .cc-seesaw-left[data-wins="true"] {
+    color: var(--cc-crema);
+    font-weight: 600;
+    transform: scale(1.06);
+  }
+
+  .cc-seesaw-right[data-wins="true"] {
+    color: var(--boa-color-slate-300);
+    font-weight: 600;
+    transform: scale(1.06);
+  }
+
+  .cc-seesaw-bar {
+    position: relative;
+    block-size: 2px;
+    background: var(--cc-dark-band-line);
+    display: block;
+  }
+
+  .cc-seesaw-dot-left,
+  .cc-seesaw-dot-right {
+    position: absolute;
+    inset-block-start: 50%;
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-dark-band-line);
+    transform: translateY(-50%);
+    transition: background-color 0.3s ease;
+  }
+
+  .cc-seesaw-dot-left {
+    inset-inline-start: 0;
+  }
+
+  .cc-seesaw-dot-right {
+    inset-inline-end: 0;
+  }
+
+  .cc-seesaw-dot-left[data-wins="true"] {
+    background: var(--cc-crema);
+  }
+
+  .cc-seesaw-dot-right[data-wins="true"] {
+    background: var(--boa-color-slate-300);
+  }
+
+  .cc-seesaw-fulcrum {
+    margin-block-start: var(--boa-space-8);
+    display: grid;
+    place-items: center;
+  }
+
+  .cc-seesaw-readout {
+    margin: var(--boa-space-16) 0 0;
+    font-size: 0.9375rem;
     font-weight: 560;
-    fill: var(--cc-dark-band-muted);
+    color: var(--cc-crema);
   }
 
-  .cc-scale-svg-label[data-wins="true"] {
-    fill: var(--cc-dark-band-ink);
-    font-weight: 650;
+  .cc-typo-seesaw[data-accent="ink"] .cc-seesaw-readout {
+    color: var(--boa-color-slate-300);
   }
 
-  .cc-scale-svg-status {
-    font-size: 13px;
-    font-weight: 560;
-    fill: var(--cc-crema);
-  }
-
-  .cc-scale-scene[data-accent="ink"] .cc-scale-svg-status {
-    fill: var(--boa-color-slate-300);
-  }
-
-  .cc-scale-scene[data-accent="muted"] .cc-scale-svg-status {
-    fill: var(--cc-dark-band-muted);
+  .cc-typo-seesaw[data-accent="muted"] .cc-seesaw-readout {
+    color: var(--cc-dark-band-muted);
   }
 
   .cc-scale-toggles {
     display: inline-flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: var(--boa-space-8);
+    gap: var(--boa-space-10);
   }
 
   .cc-scale-toggle {
-    padding: var(--boa-space-8) var(--boa-space-16);
+    padding: var(--boa-space-8) var(--boa-space-20);
     border-radius: var(--yg-radius-pill);
     border: 1px solid var(--cc-dark-band-line);
     background: transparent;
@@ -832,12 +836,16 @@
   }
 
   /* =========================================================================
-     SCENE 3 — 3-PANEL VISUAL STORYBOARD TRIO
+     ACT 03 — INTERACTIVE CAFÉ TABLE GALLERY (CLICK DIRECTLY ON EITHER CUP!)
      ========================================================================= */
 
   .cc-linen-band {
     background: var(--cc-linen);
-    padding-block: clamp(4.25rem, 9vh, 6.5rem);
+    padding-block: clamp(4.5rem, 10vh, 7.5rem);
+  }
+
+  .cc-linen-band-hairline {
+    border-block-start: 1px solid var(--cc-linen-line);
   }
 
   .cc-linen-band-alt {
@@ -845,304 +853,306 @@
     border-block-start: 1px solid var(--cc-linen-line);
   }
 
-  .cc-story-section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-32);
+  .cc-table-editorial {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+    gap: clamp(var(--boa-space-32), 5.5vw, 5rem);
+    align-items: center;
   }
 
-  .cc-story-head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-6);
+  .cc-table-photo-wrap {
+    position: relative;
+    border-radius: var(--yg-radius-feature);
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background: var(--cc-linen-deep);
   }
 
-  .cc-moment-h2 {
+  .cc-table-photo {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .cc-table-hotspots {
+    position: absolute;
+    inset: 0;
+  }
+
+  .cc-cup-hotspot {
+    position: absolute;
+    inset-block-start: 50%;
+    transform: translate(-50%, -50%);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+
+  .cc-cup-hotspot-left {
+    inset-inline-start: 20%;
+  }
+
+  .cc-cup-hotspot-right {
+    inset-inline-start: 80.5%;
+  }
+
+  .cc-hotspot-ring {
+    display: block;
+    inline-size: clamp(6rem, 13.2vw, 9.6rem);
+    aspect-ratio: 1;
+    border-radius: var(--yg-radius-pill);
+    border: 2px solid transparent;
+    transition:
+      border-color 0.3s ease,
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-cup-hotspot:hover .cc-hotspot-ring {
+    border-color: var(--cc-crema);
+    transform: scale(1.04);
+  }
+
+  .cc-cup-hotspot-left[data-active="true"] .cc-hotspot-ring {
+    border-color: var(--cc-roast);
+    transform: scale(1.06);
+  }
+
+  .cc-cup-hotspot-right[data-active="true"] .cc-hotspot-ring {
+    border-color: var(--yg-brand-ink);
+    transform: scale(1.06);
+  }
+
+  .cc-hotspot-tag {
+    position: absolute;
+    inset-block-start: calc(100% + var(--boa-space-12));
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    padding: var(--boa-space-6) var(--boa-space-12);
+    border-radius: var(--yg-radius-pill);
+    background: var(--cc-placard-bg);
+    color: var(--cc-roast-muted);
+    font-size: 0.75rem;
+    font-weight: 580;
+    white-space: nowrap;
+    transition:
+      background-color 0.22s ease,
+      color 0.22s ease,
+      transform 0.22s ease;
+  }
+
+  .cc-cup-hotspot[data-active="true"] .cc-hotspot-tag {
+    background: var(--boa-color-earth-950);
+    color: var(--boa-color-earth-50);
+    transform: translate(-50%, 2px);
+  }
+
+  .cc-cup-hotspot-right[data-active="true"] .cc-hotspot-tag {
+    background: var(--yg-brand);
+    color: var(--yg-on-brand);
+  }
+
+  .cc-table-editorial-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--boa-space-20);
+  }
+
+  .cc-editorial-h2 {
     margin: 0;
-    font-size: clamp(1.7rem, 3vw, 2.35rem);
+    font-size: clamp(1.8rem, 3.1vw, 2.55rem);
     font-weight: 540;
-    line-height: 1.08;
-    letter-spacing: -0.035em;
+    line-height: 1.07;
+    letter-spacing: -0.036em;
     color: var(--cc-espresso);
   }
 
-  .cc-story-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--boa-space-20);
-    align-items: stretch;
-  }
-
-  .cc-story-card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--boa-space-20);
-    padding: var(--boa-space-24);
-    border-radius: var(--yg-radius-card);
-    background: var(--cc-card-bg);
-    border: 1px solid var(--cc-linen-line);
-  }
-
-  .cc-story-num {
-    font-size: 0.75rem;
-    font-weight: 640;
-    letter-spacing: 0.08em;
-    color: var(--cc-roast);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .cc-story-canvas {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--boa-space-16);
-    min-block-size: 15.5rem;
-    padding: var(--boa-space-16);
-    border-radius: var(--yg-radius-panel);
-    background: var(--cc-linen);
-  }
-
-  .cc-story-title {
+  .cc-table-prompt {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 560;
-    line-height: 1.22;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--cc-roast-muted);
+  }
+
+  .cc-table-verdict-open {
+    padding-block-start: var(--boa-space-20);
+    border-block-start: 1px solid var(--cc-linen-line);
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-12);
+    animation: cc-reveal-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .cc-table-roast-pill {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cc-roast);
+  }
+
+  .cc-table-verdict-open[data-guest="david"] .cc-table-roast-pill {
+    color: var(--yg-brand-ink);
+  }
+
+  .cc-table-verdict-quote {
+    margin: 0;
+    font-size: clamp(1.375rem, 2.1vw, 1.8rem);
+    font-weight: 570;
+    line-height: 1.18;
+    letter-spacing: -0.028em;
+    color: var(--cc-espresso);
+  }
+
+  /* =========================================================================
+     ACT 04 — OPEN FREE-FORM EDITORIAL DUO (ZERO PPT BOXES!)
+     ========================================================================= */
+
+  .cc-free-duo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .cc-free-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--boa-space-20);
+    padding-inline-end: clamp(var(--boa-space-24), 4vw, var(--boa-space-48));
+  }
+
+  .cc-free-col-right {
+    padding-inline-end: 0;
+    padding-inline-start: clamp(var(--boa-space-24), 4vw, var(--boa-space-48));
+    border-inline-start: 1px solid var(--cc-linen-line);
+  }
+
+  .cc-typo-edit {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--boa-space-6);
+    padding-block: var(--boa-space-8);
+  }
+
+  .cc-edit-old {
+    font-size: 1.0625rem;
+    text-decoration: line-through;
+    color: var(--cc-terracotta);
+    transition: opacity 0.3s ease;
+  }
+
+  .cc-edit-old[data-saved="true"] {
+    opacity: 0.45;
+  }
+
+  .cc-edit-curve {
+    inline-size: 112px;
+    block-size: 32px;
+    display: block;
+  }
+
+  .cc-edit-new {
+    margin: 0;
+    font-size: clamp(1.25rem, 1.85vw, 1.55rem);
+    font-weight: 580;
     letter-spacing: -0.025em;
     color: var(--cc-espresso);
+    transition: color 0.3s ease;
   }
 
-  /* Story Panel 01: Slide Correction -> Roasted Bean */
-  .cc-mini-slide {
-    inline-size: 100%;
-    padding: var(--boa-space-12);
-    border-radius: var(--yg-radius-small);
-    background: var(--cc-card-bg);
-    border: 1px solid var(--cc-linen-line);
+  .cc-edit-new[data-saved="true"] {
+    color: var(--yg-brand-ink);
+  }
+
+  .cc-edit-actions {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: var(--boa-space-8);
-    font-size: 0.8125rem;
   }
 
-  .cc-mini-slide-row {
-    display: flex;
-    align-items: center;
-    gap: var(--boa-space-8);
-    color: var(--cc-espresso);
-    font-weight: 520;
-  }
-
-  .cc-mini-slide-row[data-struck="true"] {
-    color: var(--cc-terracotta);
-    text-decoration: line-through;
-  }
-
-  .cc-mini-dot-ink {
-    inline-size: 7px;
-    block-size: 7px;
-    border-radius: var(--yg-radius-pill);
-    background: var(--yg-brand-ink);
-    flex-shrink: 0;
-  }
-
-  .cc-mini-dot-muted {
-    inline-size: 7px;
-    block-size: 7px;
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-linen-line);
-    flex-shrink: 0;
-  }
-
-  .cc-story-action-pill {
+  .cc-roast-stamp-btn {
     display: inline-flex;
     align-items: center;
-    gap: var(--boa-space-8);
-    padding: var(--boa-space-8) var(--boa-space-16);
+    gap: var(--boa-space-10);
+    padding: var(--boa-space-10) var(--boa-space-20);
     border-radius: var(--yg-radius-pill);
     border: 1.5px solid var(--yg-brand-ink);
-    background: var(--cc-card-bg);
+    background: transparent;
     color: var(--yg-brand-ink);
     font: inherit;
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 590;
     cursor: pointer;
     transition:
       background-color 0.22s ease,
       color 0.22s ease;
   }
 
-  .cc-story-action-pill[data-confirmed="true"] {
+  .cc-roast-stamp-btn:hover {
+    background: var(--yg-brand-soft);
+  }
+
+  .cc-roast-stamp-btn[data-confirmed="true"] {
     background: var(--yg-brand);
     border-color: var(--yg-brand);
     color: var(--yg-on-brand);
   }
 
-  .cc-mini-bean-card {
-    inline-size: 100%;
-    padding: var(--boa-space-10) var(--boa-space-12);
-    border-radius: var(--yg-radius-small);
-    border: 1px dashed var(--cc-linen-line);
-    background: var(--cc-card-bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 2px;
-    opacity: 0.68;
-    transition:
-      opacity 0.25s ease,
-      border-color 0.25s ease;
+  .cc-roast-stamp-btn i {
+    inline-size: 7px;
+    block-size: 7px;
+    border-radius: var(--yg-radius-pill);
+    background: currentColor;
   }
 
-  .cc-mini-bean-card[data-saved="true"] {
-    opacity: 1;
-    border-style: solid;
-    border-color: var(--yg-brand-ink);
-  }
-
-  .cc-mini-bean-card strong {
-    font-size: 0.875rem;
-    color: var(--cc-espresso);
-  }
-
-  .cc-mini-bean-card span {
-    font-size: 0.75rem;
+  .cc-quiet-meta {
+    font-size: 0.8125rem;
     color: var(--cc-roast-muted);
   }
 
-  /* Story Panel 02: Interactive 2-Cup Café Table */
-  .cc-cafe-table-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--boa-space-12);
+  /* Open Pour Ribbon (No nested cards) */
+  .cc-pour-ribbon {
     inline-size: 100%;
-  }
-
-  .cc-cup-seat {
-    flex: 1;
+    padding-block: var(--boa-space-12);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--boa-space-6);
-    padding: var(--boa-space-10) var(--boa-space-6);
-    border-radius: var(--yg-radius-panel);
-    border: 1.5px solid transparent;
-    background: transparent;
-    cursor: pointer;
-    opacity: 0.58;
-    transition:
-      opacity 0.22s ease,
-      border-color 0.22s ease,
-      background-color 0.22s ease,
-      transform 0.22s ease;
+    align-items: flex-start;
+    gap: var(--boa-space-16);
   }
 
-  .cc-cup-seat:hover {
-    opacity: 0.9;
-  }
-
-  .cc-cup-seat[data-active="true"] {
-    opacity: 1;
-    background: var(--cc-card-bg);
-    border-color: var(--cc-roast);
-    transform: translateY(-2px);
-  }
-
-  .cc-seat-cup-svg {
-    inline-size: 56px;
-    block-size: 56px;
-    display: block;
-  }
-
-  .cc-seat-label {
-    font-size: 0.75rem;
+  .cc-ribbon-source {
+    font-size: 0.875rem;
     font-weight: 600;
     color: var(--cc-espresso);
-    text-align: center;
-    line-height: 1.25;
+    padding-block-end: var(--boa-space-4);
+    border-block-end: 2px solid var(--cc-roast);
   }
 
-  .cc-table-vs {
-    color: var(--cc-roast-muted);
-    font-size: 0.875rem;
-  }
-
-  .cc-table-reply {
+  .cc-ribbon-svg {
     inline-size: 100%;
-    padding: var(--boa-space-12);
-    border-radius: var(--yg-radius-small);
-    background: var(--cc-card-bg);
-    border: 1px solid var(--cc-linen-line);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: center;
-    animation: cc-reveal-up 0.28s ease both;
-  }
-
-  .cc-table-reply[data-guest="david"] {
-    border-color: var(--yg-brand-ink);
-  }
-
-  .cc-table-reply strong {
-    font-size: 0.875rem;
-    line-height: 1.35;
-    color: var(--cc-espresso);
-  }
-
-  .cc-table-reply span {
-    font-size: 0.75rem;
-    color: var(--cc-roast-muted);
-  }
-
-  /* Story Panel 03: One Roastery Pouring into 5 AI Tools */
-  .cc-hub-jar {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--boa-space-8);
-    padding: var(--boa-space-8) var(--boa-space-16);
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-card-bg);
-    border: 1.5px solid var(--cc-roast);
-    color: var(--cc-espresso);
-    font-size: 0.8125rem;
-  }
-
-  .cc-fan-svg {
-    inline-size: 100%;
-    max-inline-size: 15rem;
-    block-size: 46px;
+    max-inline-size: 26rem;
+    block-size: 42px;
     display: block;
     overflow: visible;
   }
 
-  .cc-host-chips {
+  .cc-ribbon-hosts {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--boa-space-6);
-  }
-
-  .cc-host-chips span {
-    padding: var(--boa-space-4) var(--boa-space-10);
-    border-radius: var(--yg-radius-pill);
-    background: var(--cc-card-bg);
-    border: 1px solid var(--cc-linen-line);
-    font-size: 0.75rem;
+    gap: var(--boa-space-10) var(--boa-space-20);
+    font-size: 1.0625rem;
     font-weight: 560;
+    letter-spacing: -0.02em;
     color: var(--cc-espresso);
   }
 
-  .cc-hub-note {
-    font-size: 0.75rem;
-    color: var(--cc-roast-muted);
-  }
-
   /* =========================================================================
-     SCENE 4 & 5 — LIVE ON THE TABLE SPREAD + WARM CLOSER
+     ACT 05 & 06 — LIVE ON THE TABLE SPREAD + SERENE CLOSER
      ========================================================================= */
 
   .cc-table-head {
@@ -1305,7 +1315,7 @@
   .cc-closer-band {
     background: var(--cc-linen);
     border-block-start: 1px solid var(--cc-linen-line);
-    padding-block: clamp(4rem, 8vh, 6rem);
+    padding-block: clamp(4.5rem, 9vh, 6.5rem);
   }
 
   .cc-closer-inner {
@@ -1333,14 +1343,14 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .cc-ai-reply,
-    .cc-table-reply {
+    .cc-hero-verdict-open,
+    .cc-table-verdict-open,
+    .cc-hero-art-aura {
       animation: none !important;
     }
 
-    .cc-scale-beam-group,
-    .cc-scale-pan,
-    .cc-mini-seesaw-beam {
+    .cc-seesaw-beam,
+    .cc-hero-art-img {
       transition: none !important;
     }
   }
@@ -1477,15 +1487,33 @@
   }
 
   @media (max-width: 1024px) {
-    .cc-cafe-hero {
+    .cc-editorial-hero {
       min-block-size: auto;
     }
 
-    .cc-cafe-grid,
-    .cc-scale-band-grid,
-    .cc-story-grid,
+    .cc-hero-split,
+    .cc-table-editorial,
+    .cc-free-duo,
     .cc-open-spread {
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cc-hero-art-frame {
+      justify-self: stretch;
+      max-inline-size: 100%;
+      aspect-ratio: 4 / 5;
+    }
+
+    .cc-free-col,
+    .cc-free-col-right {
+      padding-inline: 0;
+      border-inline-start: 0;
+    }
+
+    .cc-free-col-right {
+      padding-block-start: var(--boa-space-32);
+      margin-block-start: var(--boa-space-32);
+      border-block-start: 1px solid var(--cc-linen-line);
     }
 
     .cc-open-spread-col,
@@ -1511,16 +1539,40 @@
   }
 
   @media (max-width: 640px) {
-    .cc-hero-visual {
-      padding: var(--boa-space-16);
+    .cc-bare-switches {
+      gap: var(--boa-space-16);
     }
 
-    .cc-bean-tray {
-      grid-template-columns: minmax(0, 1fr);
+    .cc-seesaw-beam {
+      gap: var(--boa-space-10);
     }
 
-    .cc-drop-conduit {
-      block-size: 46px;
+    .cc-seesaw-word {
+      font-size: 1.0625rem;
+    }
+
+    .cc-cup-hotspot-left .cc-hotspot-tag {
+      inset-inline-start: 0;
+      transform: none;
+    }
+
+    .cc-cup-hotspot-left[data-active="true"] .cc-hotspot-tag {
+      transform: translateY(2px);
+    }
+
+    .cc-cup-hotspot-right .cc-hotspot-tag {
+      inset-inline-start: auto;
+      inset-inline-end: 0;
+      transform: none;
+    }
+
+    .cc-cup-hotspot-right[data-active="true"] .cc-hotspot-tag {
+      transform: translateY(2px);
+    }
+
+    .cc-hotspot-tag {
+      font-size: 0.6875rem;
+      padding: 4px 8px;
     }
 
     .cc-criteria-grid {

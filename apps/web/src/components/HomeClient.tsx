@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@openboa/yogurt/button";
@@ -12,10 +12,10 @@ import type {
   PublicPersonCard,
 } from "@coffee-chat/core";
 import {
-  BalanceScaleScene,
-  HeroBeanDropStage,
-  StoryboardTrio,
-} from "./CoffeeStoryVisuals";
+  InteractiveCafeTable,
+  KineticTypoSeesaw,
+  OpenRoastAndPour,
+} from "./EditorialScenes";
 
 export interface FeaturedTableData {
   originId: string;
@@ -39,6 +39,38 @@ export interface HomeClientProps {
   initialShelfRefs: HydratedShelfRef[];
   activeGrantCount?: number;
 }
+
+type HeroRoastMode = "decaf" | "growth" | "craft";
+
+const HERO_MODES: Array<{
+  id: HeroRoastMode;
+  label: string;
+  placard: string;
+  verdict: string;
+  guard: string;
+}> = [
+  {
+    id: "decaf",
+    label: "No Bean (Decaf)",
+    placard: "Decaf · Default AI (50 / 50)",
+    verdict: "“It depends…”",
+    guard: "Generic pros & cons — no priority applied",
+  },
+  {
+    id: "growth",
+    label: "Growth Roast",
+    placard: "Growth Roast · Learning speed > Craft",
+    verdict: "Hire the fast learner.",
+    guard: "Flips if day-1 certification is required",
+  },
+  {
+    id: "craft",
+    label: "Specialist Roast",
+    placard: "Specialist Roast · Proven craft > Speed",
+    verdict: "Hire the proven specialist.",
+    guard: "Flips if role scope keeps shifting",
+  },
+];
 
 function capitalizePole(raw: string): string {
   const cleaned = raw.trim().replace(/\.+$/, "");
@@ -100,9 +132,34 @@ export function HomeClient({
   featuredTable,
 }: HomeClientProps) {
   const router = useRouter();
+  const [heroMode, setHeroMode] = useState<HeroRoastMode>("growth");
+  const [heroLocked, setHeroLocked] = useState(false);
+
   const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
   const [copiedFooterPrompt, setCopiedFooterPrompt] = useState(false);
   const [showPromptPreview, setShowPromptPreview] = useState(false);
+
+  // Gently cycle Growth -> Specialist -> Decaf so visitors see the photo & call react live
+  useEffect(() => {
+    if (heroLocked) return;
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+
+    const order: HeroRoastMode[] = ["growth", "craft", "decaf"];
+    const timer = window.setInterval(() => {
+      setHeroMode((cur) => {
+        const nextIdx = (order.indexOf(cur) + 1) % order.length;
+        return order[nextIdx] ?? "growth";
+      });
+    }, 4600);
+
+    return () => window.clearInterval(timer);
+  }, [heroLocked]);
+
+  const activeHero =
+    HERO_MODES.find((m) => m.id === heroMode) ?? HERO_MODES[1]!;
 
   const universalStartPrompt = `Connect to Coffee Chat at ${mcpUrl} (sign in when prompted). Once connected, help me Roast my first private Bean from a real decision or article I share with you—ask what mattered more and when the rule stops applying, and wait for my confirmation before saving.`;
 
@@ -148,11 +205,12 @@ export function HomeClient({
   return (
     <div className="cc-landing">
       {/* ================================================================
-          SCENE 1 — HERO: SHORT HOOK + LIVE ANIMATED BEAN-DROP INTO AI
+          ACT 01 — SUNLIT EDITORIAL OPENING + LIVING COFFEE PHOTOGRAPH
          ================================================================ */}
-      <section className="cc-cafe-hero" aria-label="Introduction">
-        <div className="cc-wrap cc-cafe-grid">
-          <div className="cc-cafe-copy">
+      <section className="cc-editorial-hero" aria-label="Introduction">
+        <div className="cc-wrap cc-hero-split">
+          {/* LEFT: OPEN-AIR MONUMENTAL TYPE + PRIMARY CTA + LIVE TASTE SWITCH */}
+          <div className="cc-hero-left">
             <div className="cc-cafe-mark-row">
               <ProjectMark project="coffee" label="" size={26} />
               <span className="cc-cafe-eyebrow">Coffee Chat</span>
@@ -222,50 +280,108 @@ export function HomeClient({
                 />
               </div>
             ) : null}
+
+            {/* FRAMELESS LIVE TASTE SWITCH — DIRECTLY DRIVES THE PHOTO & VERDICT */}
+            <div className="cc-hero-live-rail">
+              <div
+                className="cc-bare-switches"
+                role="radiogroup"
+                aria-label="Choose a Taste roast to change the AI call"
+              >
+                {HERO_MODES.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={heroMode === m.id}
+                    className="cc-bare-switch"
+                    data-active={heroMode === m.id}
+                    data-mode={m.id}
+                    onClick={() => {
+                      setHeroLocked(true);
+                      setHeroMode(m.id);
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                key={heroMode}
+                className="cc-hero-verdict-open"
+                data-mode={heroMode}
+              >
+                <span className="cc-hero-question-tag">
+                  Ask your AI: “Fast learner or proven specialist?”
+                </span>
+                <p className="cc-hero-verdict-text">{activeHero.verdict}</p>
+                {heroMode === "decaf" ? (
+                  <div className="cc-decaf-lines" aria-hidden="true">
+                    <span style={{ inlineSize: "78%" }} />
+                    <span style={{ inlineSize: "56%" }} />
+                  </div>
+                ) : null}
+                <span className="cc-verdict-boundary">{activeHero.guard}</span>
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT: SELF-PLAYING ANIMATED VISUAL — WATCH THE BEAN DROP INTO AI */}
-          <HeroBeanDropStage />
+          {/* RIGHT: BESPOKE EDITORIAL STUDIO PHOTOGRAPH (NO PPT BOX!) */}
+          <figure className="cc-hero-art-frame" data-mode={heroMode}>
+            <img
+              src="/art/hero-pour.jpg"
+              alt="Overhead studio still life of a porcelain espresso cup with golden crema on a deep ink-blue saucer beside roasted coffee beans on warm linen"
+              className="cc-hero-art-img"
+            />
+            <span className="cc-hero-art-aura" aria-hidden="true" />
+            <figcaption className="cc-hero-placard" data-mode={heroMode}>
+              <i aria-hidden="true" />
+              <span>{activeHero.placard}</span>
+            </figcaption>
+          </figure>
         </div>
       </section>
 
       {/* ================================================================
-          SCENE 2 — VELVETY ESPRESSO BAND: ANIMATED BALANCE SCALE
+          ACT 02 — FULL-BLEED DARK ESPRESSO: MONUMENTAL TYPOGRAPHIC SEESAW
          ================================================================ */}
       <section className="cc-espresso-band" aria-label="Why Coffee Chat">
-        <div className="cc-wrap cc-scale-band-grid">
-          <div className="cc-band-lead">
-            <span className="cc-kicker-crema">Why Taste matters</span>
-            <h2 className="cc-espresso-h2">
-              Nothing is unimportant.
-              <br />
-              Taste is <em className="cc-crema-em">what you put first.</em>
-            </h2>
-            <p className="cc-espresso-p">
-              Both sides matter. Your Taste decides which pan drops.
-            </p>
-          </div>
+        <div className="cc-wrap cc-espresso-center">
+          <span className="cc-kicker-crema">Why Taste matters</span>
+          <h2 className="cc-espresso-h2-giant">
+            Nothing is unimportant.
+            <br />
+            Taste is <em className="cc-crema-em">what you put first.</em>
+          </h2>
 
-          <BalanceScaleScene />
+          <KineticTypoSeesaw />
         </div>
       </section>
 
       {/* ================================================================
-          SCENE 3 — 3-PANEL VISUAL STORYBOARD (ROAST · COFFEE CHAT · ANY AI)
+          ACT 03 — INTERACTIVE CAFÉ TABLE GALLERY (CLICK EITHER REAL CUP!)
          ================================================================ */}
-      <section className="cc-linen-band" aria-label="How Coffee Chat works">
-        <div className="cc-wrap cc-story-section">
-          <div className="cc-story-head">
-            <span className="cc-kicker-warm">How it works</span>
-            <h2 className="cc-moment-h2">Three moves. Zero friction.</h2>
-          </div>
-
-          <StoryboardTrio />
+      <section className="cc-linen-band" aria-label="Coffee Chat across the table">
+        <div className="cc-wrap">
+          <InteractiveCafeTable />
         </div>
       </section>
 
       {/* ================================================================
-          SCENE 4 — LIVE ON THE TABLE (COMPACT VISUAL CONTRAST)
+          ACT 04 — OPEN TYPOGRAPHIC DUO (ROAST ONCE + EVERY AI POUR STREAM)
+         ================================================================ */}
+      <section
+        className="cc-linen-band cc-linen-band-hairline"
+        aria-label="Roast and portability"
+      >
+        <div className="cc-wrap">
+          <OpenRoastAndPour />
+        </div>
+      </section>
+
+      {/* ================================================================
+          ACT 05 — LIVE ON THE TABLE RIGHT NOW (OPEN MAGAZINE SPREAD)
          ================================================================ */}
       <section
         className="cc-linen-band cc-linen-band-alt"
@@ -277,7 +393,9 @@ export function HomeClient({
               <div className="cc-table-head">
                 <div>
                   <span className="cc-kicker-warm">On the Table right now</span>
-                  <h2 className="cc-moment-h2">Same essay. Opposite Roasts.</h2>
+                  <h2 className="cc-editorial-h2">
+                    Same essay. Opposite Roasts.
+                  </h2>
                   <p className="cc-table-source">
                     {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
                   </p>
@@ -345,7 +463,7 @@ export function HomeClient({
           ) : (
             <div className="cc-empty-closing">
               <span className="cc-kicker-warm">Your Roastery</span>
-              <h2 className="cc-moment-h2">Start the first Table.</h2>
+              <h2 className="cc-editorial-h2">Start the first Table.</h2>
               <div className="cc-cta-cluster">
                 <Button
                   emphasis="filled"
@@ -372,12 +490,12 @@ export function HomeClient({
       </section>
 
       {/* ================================================================
-          SCENE 5 — CLOSING INVITATION
+          ACT 06 — SERENE CLOSING INVITATION
          ================================================================ */}
       <section className="cc-closer-band" aria-label="Get started">
         <div className="cc-wrap cc-closer-inner">
           <div className="cc-closer-copy">
-            <ProjectMark project="coffee" label="" size={38} />
+            <ProjectMark project="coffee" label="" size={40} />
             <h2 className="cc-closer-h2">
               Stop drinking decaf answers.
               <br />
