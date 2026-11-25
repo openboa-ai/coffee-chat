@@ -115,7 +115,7 @@ export function NavHeader({
   };
 
   return (
-    <header className="app-header-bar">
+    <div className="app-header-bar">
       <div className="app-header-inner">
         <Navbar
           variant="sections"
@@ -176,6 +176,6 @@ export function NavHeader({
           }
         />
       </div>
-    </header>
+    </div>
   );
 }

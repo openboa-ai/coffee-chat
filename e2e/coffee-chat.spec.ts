@@ -1,153 +1,562 @@
+import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
-test.describe("Coffee Chat Service Web & MCP Apps E2E", () => {
-  test("verifies Landing, 30s Connect, 1-step Capture in My Table, Person Page counts/privacy, Source Compare A vs B, and Shelf", async ({
+const FORBIDDEN_MCP_SYNTAX = [
+  "list_beans(",
+  "compare_perspectives(",
+  "prepare_bean",
+  'scope="public"',
+];
+
+async function assertCleanSurface(
+  page: import("@playwright/test").Page,
+  label: string,
+) {
+  const nestedInteractiveCount = await page.locator("a button, button a").count();
+  expect(
+    nestedInteractiveCount,
+    `${label}: nested interactive <a><button> detected`,
+  ).toBe(0);
+
+  const bodyText = await page.locator("body").innerText();
+  for (const forbidden of FORBIDDEN_MCP_SYNTAX) {
+    expect(
+      bodyText,
+      `${label}: leaked raw MCP syntax ${forbidden}`,
+    ).not.toContain(forbidden);
+  }
+}
+
+test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
+  const sharedUrl = "https://example.com/shared-architecture-essay";
+  const privateOnlyUrl = "https://internal.example.com/private-only-rfc";
+  let sharedSourcePath = "";
+
+  test("1. Unseeded Home onboarding, Cache-Control headers, auth redirect & open-redirect protection", async ({
     page,
-    context,
   }) => {
-    // 1. Landing & 30-second Connect pages
-    await page.goto("/");
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // Fresh empty DB renders purposeful unseeded onboarding on /
+    const homeResp = await page.goto("/");
+    expect(homeResp?.status()).toBe(200);
+    const cacheControl = homeResp?.headers()["cache-control"] ?? "";
+    // next dev emits "no-store, must-revalidate"; production middleware/headers emit "private, no-store"
+    expect(cacheControl).toContain("no-store");
+
     await expect(
-      page.getByText("Knowledge is shared. What a person makes of it is personal."),
+      page.getByText("Start Coffee Chat · Roast your first Bean"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Roast a private Bean" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Open Brew Setup" }),
+    ).toBeVisible();
+    await assertCleanSurface(page, "unseeded /");
+
+    // Unauthenticated /me redirects to /signin?returnTo=%2Fme
+    await page.goto("/me");
+    await page.waitForURL(/\/signin\?returnTo=%2Fme/);
+    await expect(
+      page.getByRole("heading", { name: "Sign In", exact: true }),
     ).toBeVisible();
 
-    await page.goto("/connect");
-    await expect(
-      page.getByRole("heading", { name: "Use Coffee Chat Inside Your AI" }),
-    ).toBeVisible();
-    await page.getByText("Codex", { exact: true }).click();
-    await expect(page.getByText("Codex CLI & Codex App")).toBeVisible();
-
-    // 2. Sign in as @alice via test-only local auth adapter
-    await page.goto("/signin");
-    await page.getByRole("button", { name: "Quick sign in as @alice" }).click();
+    // Open-redirect payloads (//evil.com and /\evil) MUST sanitize safely to /me
+    await page.goto("/signin?returnTo=//evil.com");
+    await page.getByLabel("Handle").fill("alice");
+    await page.getByLabel("Display Name").fill("Alice Park");
+    await page.getByRole("button", { name: "Enter Roastery (Test Auth)" }).click();
     await page.waitForURL("**/me");
-    await expect(page.getByRole("heading", { name: "My Table" })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe("/me");
 
-    // 3. Capture a private work decision in ONE click (defaults to private!)
-    await page.getByRole("button", { name: "Capture a take" }).click();
-    await page.getByText("A call I made at work").click();
-    await page
-      .getByLabel("What situation sparked this? (keep it free of secrets or private code)")
-      .fill("Corrected silent fallback in auth helper.");
-    await page
-      .getByLabel("Headline — your take in one line")
-      .fill("Secret internal work judgment");
-    await page
-      .getByLabel("What it meant to you")
-      .fill("Keep auth errors loud during refactors.");
-    await page
-      .getByLabel("What mattered more (the trade-off)")
-      .fill("Explicit failure over silent convenience.");
-    await page
-      .getByLabel("When it doesn't apply (the exception)")
-      .fill("Security paths only.");
-    await expect(page.getByText("Private (default)")).toBeVisible();
-    await page.getByRole("button", { name: "Save Perspective" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Secret internal work judgment" }),
-    ).toBeVisible();
-
-    // 4. Capture a shared-URL take for Alice and publish it in ONE click
-    const sharedUrl = "https://example.com/shared-architecture-essay";
-    await page.getByRole("button", { name: "Capture a take" }).click();
-    await page.getByLabel("Article or link URL").fill(sharedUrl);
-    await page
-      .getByLabel("Line that stood out (optional quote)")
-      .fill("Network calls have tax.");
-    await page
-      .getByLabel("Headline — your take in one line")
-      .fill("Alice favors modular monoliths");
-    await page
-      .getByLabel("What it meant to you")
-      .fill("Deploy simplicity accelerates iteration.");
-    await page
-      .getByLabel("What mattered more (the trade-off)")
-      .fill("Single deployment over independent service deploys.");
-    await page
-      .getByLabel("When it doesn't apply (the exception)")
-      .fill("Teams under 30 engineers.");
-    await page
-      .getByRole("switch", { name: "Share publicly on my Coffee Chat page" })
-      .click();
-    await page.getByRole("button", { name: "Save Perspective" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Alice favors modular monoliths" }),
-    ).toBeVisible();
-
-    // Verify JSON & Markdown export endpoints return Alice's data cleanly
-    const jsonExport = await page.request.get("/api/export?format=json");
-    expect(jsonExport.status()).toBe(200);
-    const jsonBody = await jsonExport.json();
-    expect(jsonBody.count).toBeGreaterThanOrEqual(2);
-
-    const mdExport = await page.request.get("/api/export?format=markdown");
-    expect(mdExport.status()).toBe(200);
-    expect(await mdExport.text()).toContain("Alice favors modular monoliths");
-
-    // 5. Open Alice's public Person Page /@alice in a fresh unauthenticated context!
-    const anonPage = await context.browser()!.newPage();
-    await anonPage.goto(`${page.url().replace(/\/me.*$/, "")}/@alice`);
-    await expect(anonPage.getByText("1 public")).toBeVisible();
-    await expect(anonPage.getByText("1 private")).toBeVisible();
-    await expect(
-      anonPage.getByRole("heading", { name: "Alice favors modular monoliths" }),
-    ).toBeVisible();
-    // Private Bean content MUST NEVER appear publicly!
-    await expect(anonPage.getByText("Secret internal work judgment")).toHaveCount(0);
-    await anonPage.close();
-
-    // 6. Sign out Alice, sign in as Bob, save @alice to Shelf, and add contrasting take RIGHT ON the shared Source Compare table!
+    // Sign out clears session
     await page.getByRole("button", { name: "Sign out" }).click();
-    await page.waitForURL("**/");
-    await page.goto("/signin");
-    await page.getByRole("button", { name: "Quick sign in as @bob" }).click();
+    await page.waitForURL(/\/$/);
+
+    await page.goto("/signin?returnTo=/\\evil.com");
+    await page.getByRole("button", { name: "Enter Roastery (Test Auth)" }).click();
     await page.waitForURL("**/me");
+    expect(new URL(page.url()).pathname).toBe("/me");
 
-    await page.goto("/@alice");
-    await page.getByRole("button", { name: "Save @alice to Shelf" }).click();
-    await expect(page.getByText("Saved to Shelf")).toBeVisible();
-
-    await page.getByRole("link", { name: "Compare on Source Page" }).click();
-    await page.waitForURL("**/sources/**");
-
-    // Add Bob's contrasting take directly on the Source Compare page (URL pre-filled!)
-    await page.getByRole("button", { name: "Add your take to this table" }).click();
-    await page
-      .getByLabel("Line that stood out (optional quote)")
-      .fill("Blast radius dictates boundaries.");
-    await page
-      .getByLabel("Headline — your take in one line")
-      .fill("Bob favors early service isolation");
-    await page
-      .getByLabel("What it meant to you")
-      .fill("Blast radius matters early on sensitive systems.");
-    await page
-      .getByLabel("What mattered more (the trade-off)")
-      .fill("Security isolation over simpler local debugging.");
-    await page
-      .getByLabel("When it doesn't apply (the exception)")
-      .fill("Systems handling PII or billing.");
-    await page
-      .getByRole("switch", { name: "Share publicly on my Coffee Chat page" })
-      .click();
-    await page.getByRole("button", { name: "Save Perspective" }).click();
-
-    await expect(
-      page.getByRole("heading", { name: "Alice favors modular monoliths" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Bob favors early service isolation" }),
-    ).toBeVisible();
-    await expect(page.getByText("2 confirmed perspectives")).toBeVisible();
+    expect(pageErrors).toEqual([]);
   });
 
-  test("renders and interacts with all 3 compiled MCP App HTML bundles", async ({
+  test("2. Personal Workflow (/me My Roastery): 2-stage multi-origin Roast, redaction gate, Roast Log, 409 conflict recovery, tension resolution, Tasting Notes, account linking & export", async ({
     page,
   }) => {
-    // 1. Confirm Bean Card MCP App
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // Sign in as @alice
+    await page.goto("/signin");
+    await page.getByLabel("Handle").fill("alice");
+    await page.getByLabel("Display Name").fill("Alice Park");
+    await page.getByRole("button", { name: "Enter Roastery (Test Auth)" }).click();
+    await page.waitForURL("**/me");
+
+    // Verify dual-label My Roastery sidebar items
+    await expect(
+      page.getByRole("heading", { level: 1, name: "My Roastery" }),
+    ).toBeVisible();
+    await expect(page.getByText("Workspace & history")).toBeVisible();
+    await expect(page.getByText("Personal stats & insights")).toBeVisible();
+    await expect(page.getByText("Saved voices & takes")).toBeVisible();
+    await expect(page.getByText("Connected AI apps & sign-in")).toBeVisible();
+
+    // 2A. Progressive 2-stage multi-origin Roast (Reading Origin + Work Origin, private by default)
+    await page
+      .locator("main")
+      .getByRole("button", { name: "Roast a Bean", exact: true })
+      .first()
+      .click();
+    await expect(page.getByText(/Stage 1 of 2/)).toBeVisible();
+
+    await page.getByLabel("Source URL").fill(sharedUrl);
+    await page.getByLabel("Source Title (optional)").fill("Shared Architecture Essay");
+    await page.getByLabel("Quote (optional)").fill("Silent fallbacks hide failure modes.");
+
+    // Add 2nd origin (Work Origin)
+    await page.getByRole("button", { name: "+ Add another origin" }).click();
+    await expect(page.getByText("2/8 origins")).toBeVisible();
+    await page
+      .getByLabel("Work Moment")
+      .fill("Caught silent auth fallback during production review.");
+
+    await page.getByLabel("Headline").fill("Secret multi-origin work judgment");
+    await page
+      .getByLabel("My Take")
+      .fill("Auth paths must fail explicitly instead of silently falling back.");
+
+    await page.getByRole("button", { name: /Continue to Roast & Confirm/ }).click();
+    await expect(page.getByText(/Stage 2 of 2/)).toBeVisible();
+
+    await page
+      .getByLabel("Trade-off")
+      .fill("Explicit failure over silent convenience.");
+    await page.getByLabel("Boundary").fill("Security and persistence paths.");
+    await page.getByText("Domains, Open Question & Relations (optional)").click();
+    await page.getByLabel("Domains").fill("architecture, secret-domain");
+
+    await page.getByRole("button", { name: "Confirm & Save Bean" }).click();
+    await expect(
+      page.getByText("Secret multi-origin work judgment").first(),
+    ).toBeVisible();
+
+    // Verify work_episode direct API publish without redactionConfirmed returns 400 REDACTION_REQUIRED
+    const listMineResp = await page.request.get("/api/beans?scope=mine");
+    expect(listMineResp.headers()["cache-control"]).toBe("private, no-store");
+    const listMine = await listMineResp.json();
+    const insightsResp = await page.request.get("/api/insights");
+    expect(insightsResp.headers()["cache-control"]).toBe("private, no-store");
+    const workBean = listMine.beans.find(
+      (b: { title: string }) => b.title === "Secret multi-origin work judgment",
+    );
+    expect(workBean).toBeTruthy();
+
+    const redactFail = await page.request.post(
+      `/api/beans/${workBean.id}/visibility`,
+      {
+        data: {
+          visibility: "public",
+          expectedVersion: workBean.version,
+          operationKey: "e2e-redact-fail-1",
+        },
+      },
+    );
+    expect(redactFail.status()).toBe(400);
+    expect((await redactFail.json()).code).toBe("REDACTION_REQUIRED");
+
+    // Verify UI opens Work Origin Privacy Check modal when trying to put Work Origin Bean On the Table
+    await page
+      .getByRole("list", { name: "Your confirmed Beans" })
+      .getByRole("button", { name: /Secret multi-origin work judgment/ })
+      .click();
+    await expect(page.getByText("Roast Log · Revision timeline")).toBeVisible();
+    await page.getByRole("button", { name: "Put on the Table" }).click();
+    await expect(page.getByText("Work Origin Privacy Check")).toBeVisible();
+    await page
+      .getByRole("dialog", { name: "Work Origin Privacy Check" })
+      .getByRole("button", { name: "Cancel" })
+      .click();
+    // Close inspector sheet via Escape
+    await page.keyboard.press("Escape");
+
+    // Also create a private-only URL Bean to verify 404 isolation later
+    const privPrep = await (
+      await page.request.post("/api/beans", {
+        data: {
+          mode: "prepare",
+          input: {
+            title: "Private internal RFC stance",
+            take: "Keep internal RFC notes confidential.",
+            tradeoff: "Confidentiality over open sharing.",
+            boundary: "Internal only.",
+            tags: ["internal-only"],
+            origins: [
+              {
+                kind: "source_excerpt",
+                url: privateOnlyUrl,
+                sourceTitle: "Internal Secret RFC",
+              },
+            ],
+          },
+        },
+      })
+    ).json();
+    const privSave = await page.request.post("/api/beans", {
+      data: {
+        ...privPrep.prepared.canonicalPayload,
+        digest: privPrep.prepared.digest,
+        operationKey: privPrep.prepared.operationKey,
+        attestationKind: "ui_attested",
+      },
+    });
+    expect(privSave.status()).toBe(201);
+
+    // 2B. Create a public Reading Origin Bean on sharedUrl linked with tensions_with to workBean
+    const pubPrep = await (
+      await page.request.post("/api/beans", {
+        data: {
+          mode: "prepare",
+          input: {
+            title: "Alice favors modular monoliths",
+            take: "Deploy simplicity accelerates early iteration.",
+            tradeoff: "Single deployment over independent service deploys.",
+            boundary: "Teams under 30 engineers.",
+            visibility: "public",
+            tags: ["architecture"],
+            origins: [
+              {
+                kind: "source_excerpt",
+                url: sharedUrl,
+                sourceTitle: "Shared Architecture Essay",
+                quotation: "Network boundaries carry coordination tax.",
+                locator: "Section 2",
+              },
+            ],
+            relations: [
+              {
+                toBeanId: workBean.id,
+                kind: "tensions_with",
+                note: "Simplicity vs strict boundary isolation",
+              },
+            ],
+          },
+        },
+      })
+    ).json();
+    const pubSaveRes = await page.request.post("/api/beans", {
+      data: {
+        ...pubPrep.prepared.canonicalPayload,
+        digest: pubPrep.prepared.digest,
+        operationKey: pubPrep.prepared.operationKey,
+        attestationKind: "ui_attested",
+      },
+    });
+    expect(pubSaveRes.status()).toBe(201);
+    const pubBean = (await pubSaveRes.json()).bean;
+    const sharedOriginId = pubBean.origins[0].originId;
+    sharedSourcePath = `/sources/${sharedOriginId}`;
+
+    // Reload /me so Alice sees all 3 Beans and test 409 VERSION_CONFLICT + Tension Resolution + Roast Log
+    await page.reload();
+    await page
+      .getByRole("list", { name: "Your confirmed Beans" })
+      .getByRole("button", { name: /Alice favors modular monoliths/ })
+      .click();
+    await expect(
+      page.getByText("In Tension · Conflicting criteria detected"),
+    ).toBeVisible();
+
+    // Mutate pubBean version behind the scenes (v1 -> v2 -> v3) to trigger real 409 VERSION_CONFLICT in UI
+    await page.request.post(`/api/beans/${pubBean.id}/visibility`, {
+      data: {
+        visibility: "private",
+        expectedVersion: 1,
+        operationKey: "e2e-conflict-step-1",
+      },
+    });
+    await page.request.post(`/api/beans/${pubBean.id}/visibility`, {
+      data: {
+        visibility: "public",
+        expectedVersion: 2,
+        operationKey: "e2e-conflict-step-2",
+      },
+    });
+
+    // Clicking Keep Private with stale expectedVersion=1 triggers non-destructive 409 banner
+    await page.getByRole("button", { name: "Keep Private" }).click();
+    await expect(page.getByText("Version Conflict (409)")).toBeVisible();
+    await page.getByRole("button", { name: /Reload latest/ }).click();
+    await expect(page.getByText("Version Conflict (409)")).toHaveCount(0);
+
+    // Resolve tension via Remove tension link -> creates Rev 2 in Roast Log
+    await page.getByRole("button", { name: "Remove tension link" }).click();
+    await expect(page.getByText(/Rev 2 ·/)).toBeVisible();
+    await expect(page.getByText(/Rev 1 ·/)).toBeVisible();
+    await expect(
+      page.getByText("In Tension · Conflicting criteria detected"),
+    ).toHaveCount(0);
+    await page.keyboard.press("Escape");
+
+    // 2C. Tasting Notes deterministic insights accuracy
+    await page.getByRole("button", { name: /Tasting Notes/ }).first().click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Tasting Notes" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Confirmed takes · 2 private, 1 on the Table"),
+    ).toBeVisible();
+    await expect(page.getByText("#architecture")).toBeVisible();
+
+    // 2D. AI & Account: last-login-method guard + explicit test-auth linking + unlink
+    await page.getByRole("button", { name: /AI & Account/ }).first().click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "AI & Account" }),
+    ).toBeVisible();
+
+    // Unlink button disabled when only 1 account exists
+    const unlinkBtns = page.getByRole("button", { name: "Unlink" });
+    await expect(unlinkBtns.first()).toBeDisabled();
+
+    // Direct API unlink on last method returns 400 LAST_LOGIN_METHOD
+    const acctsRes = await (await page.request.get("/api/accounts")).json();
+    expect(acctsRes.accounts).toHaveLength(1);
+    const lastUnlink = await page.request.delete("/api/accounts", {
+      data: { accountId: acctsRes.accounts[0].id },
+    });
+    expect(lastUnlink.status()).toBe(400);
+    expect((await lastUnlink.json()).code).toBe("LAST_LOGIN_METHOD");
+
+    // Explicitly link a second provider in UI, then unlink it
+    await page.getByLabel("External Provider ID").fill("gh-alice-e2e-link");
+    await page.getByRole("button", { name: "Link Test Account" }).click();
+    await expect(page.getByText("Account ID: gh-alice-e2e-link")).toBeVisible();
+    await page.getByRole("button", { name: "Unlink" }).nth(1).click();
+    await expect(page.getByText("Account ID: gh-alice-e2e-link")).toHaveCount(0);
+
+    // 2E. JSON & Markdown export endpoints
+    const jsonExp = await page.request.get("/api/export?format=json");
+    expect(jsonExp.status()).toBe(200);
+    expect((await jsonExp.json()).count).toBe(3);
+
+    const mdExp = await page.request.get("/api/export?format=markdown");
+    expect(mdExp.status()).toBe(200);
+    expect(await mdExp.text()).toContain("Alice favors modular monoliths");
+
+    await assertCleanSurface(page, "/me");
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("3. Sharing Matrix (/sources/[id]), Your Stance Banner vs Incognito privacy/404, Live Shelf reload persistence, OAuth Consent & Revocation", async ({
+    page,
+    browser,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // Sign in as @alice and check /sources/[id] Your Stance Banner (public + private stance!)
+    await page.goto("/signin");
+    await page.getByLabel("Handle").fill("alice");
+    await page.getByLabel("Display Name").fill("Alice Park");
+    await page.getByRole("button", { name: "Enter Roastery (Test Auth)" }).click();
+    await page.waitForURL("**/me");
+
+    await page.goto(sharedSourcePath);
+    await expect(
+      page.getByText("Your Stance · Your Bean is on this Table"),
+    ).toBeVisible();
+    await expect(page.getByText("and 1 private Bean(s) visible only to you.")).toBeVisible();
+    await expect(
+      page.getByText("Axis-by-Axis Comparison Matrix"),
+    ).toBeVisible();
+    await assertCleanSurface(page, "/sources/[id] owner");
+
+    // Incognito visitor: verifies public/private counts on /@alice, zero private leak, and 404 on private-only URL
+    const anonCtx = await browser.newContext();
+    const anonPage = await anonCtx.newPage();
+
+    await anonPage.goto(
+      `${new URL(page.url()).origin}/@alice`,
+    );
+    await expect(anonPage.getByText("Alice Park").first()).toBeVisible();
+    await expect(anonPage.getByText("On the Table · Public Beans")).toBeVisible();
+    await expect(anonPage.getByText("Private Beans (count only)")).toBeVisible();
+    await expect(
+      anonPage.getByText("Alice favors modular monoliths"),
+    ).toBeVisible();
+    await expect(
+      anonPage.getByText("Secret multi-origin work judgment"),
+    ).toHaveCount(0);
+    await expect(anonPage.getByText("secret-domain")).toHaveCount(0);
+    await assertCleanSurface(anonPage, "/@alice anon");
+
+    await anonPage.goto(`${new URL(page.url()).origin}${sharedSourcePath}`);
+    await expect(
+      anonPage.getByText("Secret multi-origin work judgment"),
+    ).toHaveCount(0);
+    await expect(anonPage.getByText(/Your Stance/)).toHaveCount(0);
+
+    // Private-only source returns 404
+    const privSourceResp = await anonPage.request.get(
+      `${new URL(page.url()).origin}/sources/nonexistent-private-origin`,
+    );
+    expect(privSourceResp.status()).toBe(404);
+    await anonCtx.close();
+
+    // Sign out Alice, sign in as Bob
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.waitForURL(/\/$/);
+    await page.goto("/signin");
+    await page.getByLabel("Handle").fill("bob");
+    await page.getByLabel("Display Name").fill("Bob Kim");
+    await page.getByRole("button", { name: "Enter Roastery (Test Auth)" }).click();
+    await page.waitForURL("**/me");
+
+    // Live Shelf hydration across full reload: Voice on /@alice
+    await page.goto("/@alice");
+    await page.getByRole("button", { name: "Add Voice to Shelf" }).click();
+    await expect(
+      page.getByRole("button", { name: "Voice on Shelf" }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Voice on Shelf" }),
+    ).toBeVisible();
+
+    // Live Shelf hydration across full reload: Bean on /sources/[id]
+    await page.goto(sharedSourcePath);
+    await page.getByRole("button", { name: "Save to Shelf" }).first().click();
+    await expect(
+      page.getByRole("button", { name: "On Shelf" }).first(),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "On Shelf" }).first(),
+    ).toBeVisible();
+
+    // Check /me?tab=saved shows Trade-off preview + Open Table link, then Remove persists across reload
+    await page.goto("/me?tab=saved");
+    await expect(page.getByText("Alice Park")).toBeVisible();
+    await expect(
+      page.getByText(/Single deployment over independent service deploys/),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Table →" })).toBeVisible();
+
+    // Unsave Alice's Bean directly from /sources/[id] using hydrated shelfItemId -> DELETE /api/shelf
+    await page.goto(sharedSourcePath);
+    await page.getByRole("button", { name: "On Shelf" }).first().click();
+    await expect(
+      page.getByRole("button", { name: "Save to Shelf" }).first(),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: "Save to Shelf" }).first(),
+    ).toBeVisible();
+
+    // OAuth Consent flow (/oauth/consent) + Live Brew Readiness on /connect + Revocation on /me?tab=settings
+    const dcrRes = await page.request.post("/api/oauth/register", {
+      data: {
+        client_name: "E2E Codex Host",
+        redirect_uris: ["http://127.0.0.1:4321/callback"],
+      },
+    });
+    expect(dcrRes.status()).toBe(201);
+    const client = await dcrRes.json();
+    const challenge = createHash("sha256")
+      .update("e2e-verifier-".padEnd(48, "x"))
+      .digest("base64url");
+
+    const consentParams = new URLSearchParams({
+      client_id: client.client_id,
+      redirect_uri: "http://127.0.0.1:4321/callback",
+      scope: "beans:read beans:write offline_access",
+      code_challenge: challenge,
+      code_challenge_method: "S256",
+      state: "e2e-state",
+    });
+
+    await page.goto(`/oauth/consent?${consentParams.toString()}`);
+    await expect(
+      page.getByRole("heading", { name: "Brew Authorization" }),
+    ).toBeVisible();
+    // Intercept redirect to non-listening localhost:4321 callback
+    await page.route("http://127.0.0.1:4321/**", (route) =>
+      route.fulfill({ status: 200, body: "callback-ok" }),
+    );
+    await page.getByRole("button", { name: "Approve Brew Access" }).click();
+    await page.waitForURL(/127\.0\.0\.1:4321\/callback\?code=/);
+
+    // /connect reflects live active AI connection
+    await page.goto("/connect");
+    await expect(
+      page.getByText(/Brew Ready · 1 active AI connection/),
+    ).toBeVisible();
+    await expect(page.getByText("E2E Codex Host")).toBeVisible();
+    await assertCleanSurface(page, "/connect");
+
+    // Revoke on /me?tab=settings -> /connect updates immediately
+    await page.goto("/me?tab=settings");
+    await page.getByRole("button", { name: "Revoke" }).first().click();
+    await expect(page.getByText("Revoked").first()).toBeVisible();
+    await page.goto("/connect");
+    await expect(page.getByText("No AI app connected yet")).toBeVisible();
+
+    // Populated Home / and /sources server search work cleanly
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: "Explore", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Featured Table")).toBeVisible();
+    await assertCleanSurface(page, "populated /");
+
+    await page.goto("/sources?q=shared-architecture");
+    await expect(
+      page.getByRole("heading", { name: "Tables", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Shared Architecture Essay")).toBeVisible();
+    await assertCleanSurface(page, "/sources");
+
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("4. All 3 compiled MCP App bundles + Light/Dark appearance & Desktop/Mobile viewports", async ({
+    page,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // Appearance switching (Auto -> Light -> Dark) & desktop/mobile rendering on /
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const rootEl = page.locator(".yg-root").first();
+    await expect(rootEl).toHaveAttribute("data-material", "neutral");
+    await expect(rootEl).toHaveAttribute("data-appearance", "auto");
+
+    await page
+      .getByRole("button", { name: /Switch appearance/ })
+      .click();
+    await expect(rootEl).toHaveAttribute("data-appearance", "light");
+    await page
+      .getByRole("button", { name: /Switch appearance/ })
+      .click();
+    await expect(rootEl).toHaveAttribute("data-appearance", "dark");
+
+    // Mobile viewport check (390x844)
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/connect");
+    await expect(
+      page.getByRole("heading", { name: "Brew Setup", exact: true }),
+    ).toBeVisible();
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    // 4A. Confirm Bean MCP App
     await page.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_INITIAL_RESULT__ = {
+      (
+        window as unknown as Record<string, unknown>
+      ).__COFFEE_CHAT_INITIAL_RESULT__ = {
         structuredContent: {
           prepared: {
             canonicalPayload: {
@@ -180,40 +589,43 @@ test.describe("Coffee Chat Service Web & MCP Apps E2E", () => {
           },
         },
       };
-      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_MOCK_TOOL_CALL__ =
-        async (name: string) => {
-          if (name === "prepare_bean") {
-            return {
-              structuredContent: {
-                prepared: (
-                  window as unknown as {
-                    __COFFEE_CHAT_INITIAL_RESULT__: {
-                      structuredContent: { prepared: Record<string, unknown> };
-                    };
-                  }
-                ).__COFFEE_CHAT_INITIAL_RESULT__.structuredContent.prepared,
-              },
-            };
-          }
+      (
+        window as unknown as Record<string, unknown>
+      ).__COFFEE_CHAT_MOCK_TOOL_CALL__ = async (name: string) => {
+        if (name === "prepare_bean") {
           return {
             structuredContent: {
-              bean: { id: "bean-e2e-123", version: 1, visibility: "private" },
+              prepared: (
+                window as unknown as {
+                  __COFFEE_CHAT_INITIAL_RESULT__: {
+                    structuredContent: { prepared: Record<string, unknown> };
+                  };
+                }
+              ).__COFFEE_CHAT_INITIAL_RESULT__.structuredContent.prepared,
             },
           };
+        }
+        return {
+          structuredContent: {
+            bean: { id: "bean-e2e-123", version: 1, visibility: "private" },
+          },
         };
+      };
     });
     await page.goto("/api/mcp-apps/confirm-bean");
-    await expect(page.getByText("Review and confirm this perspective")).toBeVisible();
+    await expect(page.getByText("Roast a Bean")).toBeVisible();
     await page.getByRole("button", { name: "Confirm & Save Bean" }).click();
-    await expect(page.getByText("Confirmed & Saved")).toBeVisible();
-    await expect(page.getByText("bean-e2e-123")).toBeVisible();
+    await expect(page.getByText("Confirmed", { exact: true })).toBeVisible();
+    await expect(page.getByText(/bean-e2e-123/)).toBeVisible();
 
-    // 2. Bean Picker MCP App
+    // 4B. Bean Picker MCP App
     const pickerPage = await page.context().newPage();
     await pickerPage.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_INITIAL_RESULT__ = {
+      (
+        window as unknown as Record<string, unknown>
+      ).__COFFEE_CHAT_INITIAL_RESULT__ = {
         structuredContent: {
-          reason: "Two Beans are marked tensions_with each other.",
+          reason: "Two Beans pull in different directions.",
           beans: [
             {
               id: "b1",
@@ -248,19 +660,26 @@ test.describe("Coffee Chat Service Web & MCP Apps E2E", () => {
           ],
         },
       };
-      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_ON_PICK__ = () => {};
+      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_ON_PICK__ =
+        () => {};
     });
     await pickerPage.goto("/api/mcp-apps/bean-picker");
-    await expect(pickerPage.getByText("Choose perspectives for this task")).toBeVisible();
-    await expect(pickerPage.getByText("tension").first()).toBeVisible();
-    await pickerPage.getByRole("button", { name: /Apply Selected Perspectives/ }).click();
+    await expect(
+      pickerPage.getByText("Brew · Choose Beans for this task"),
+    ).toBeVisible();
+    await expect(pickerPage.getByText("In Tension").first()).toBeVisible();
+    await pickerPage
+      .getByRole("button", { name: /Brew Selected Beans/ })
+      .click();
     await expect(pickerPage.getByText("Perspectives attached")).toBeVisible();
     await pickerPage.close();
 
-    // 3. Perspective Diff Card MCP App
+    // 4C. Perspective Diff MCP App
     const diffPage = await page.context().newPage();
     await diffPage.addInitScript(() => {
-      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_INITIAL_RESULT__ = {
+      (
+        window as unknown as Record<string, unknown>
+      ).__COFFEE_CHAT_INITIAL_RESULT__ = {
         structuredContent: {
           subject: "https://example.com/shared-essay",
           perspectives: [
@@ -315,14 +734,19 @@ test.describe("Coffee Chat Service Web & MCP Apps E2E", () => {
           ],
         },
       };
-      (window as unknown as Record<string, unknown>).__COFFEE_CHAT_MOCK_TOOL_CALL__ =
-        async () => ({ structuredContent: { ok: true } });
+      (
+        window as unknown as Record<string, unknown>
+      ).__COFFEE_CHAT_MOCK_TOOL_CALL__ = async () => ({
+        structuredContent: { ok: true },
+      });
     });
     await diffPage.goto("/api/mcp-apps/perspective-diff");
     await expect(diffPage.getByText("Probe fast")).toBeVisible();
     await expect(diffPage.getByText("Ship complete contract")).toBeVisible();
     await diffPage.getByRole("button", { name: "Save to Shelf" }).first().click();
-    await expect(diffPage.getByText("Saved to Shelf")).toBeVisible();
+    await expect(diffPage.getByText("On Shelf")).toBeVisible();
     await diffPage.close();
+
+    expect(pageErrors).toEqual([]);
   });
 });

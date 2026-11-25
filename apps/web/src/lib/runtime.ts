@@ -87,6 +87,7 @@ export function handleApiError(err: unknown): NextResponse {
     return jsonNoStore(
       {
         error: err.code,
+        code: err.code,
         message: err.message,
         ...(err.details ? { details: err.details } : {}),
       },
@@ -94,5 +95,8 @@ export function handleApiError(err: unknown): NextResponse {
     );
   }
   const message = err instanceof Error ? err.message : "Internal server error";
-  return jsonNoStore({ error: "INTERNAL_ERROR", message }, { status: 500 });
+  return jsonNoStore(
+    { error: "INTERNAL_ERROR", code: "INTERNAL_ERROR", message },
+    { status: 500 },
+  );
 }
