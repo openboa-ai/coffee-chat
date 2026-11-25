@@ -1,29 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AgentAvatar } from "@openboa/yogurt/agent-avatar";
-import { Avatar } from "@openboa/yogurt/avatar";
-import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
-import { ButtonGroup } from "@openboa/yogurt/button-group";
-import { Card } from "@openboa/yogurt/card";
 import { CodeBlock } from "@openboa/yogurt/code-block";
-import { Heading } from "@openboa/yogurt/heading";
-import { Inline } from "@openboa/yogurt/inline";
-import { Link } from "@openboa/yogurt/link";
-import { Message } from "@openboa/yogurt/message";
 import { ProjectMark } from "@openboa/yogurt/project-mark";
-import { SegmentedControl } from "@openboa/yogurt/segmented-control";
-import { Stack } from "@openboa/yogurt/stack";
-import { Status } from "@openboa/yogurt/status";
-import { Tabs } from "@openboa/yogurt/tabs";
-import { Text } from "@openboa/yogurt/text";
 import type {
   BeanDetail,
   HydratedShelfRef,
   PublicPersonCard,
 } from "@coffee-chat/core";
+import { TasteFieldCanvas } from "./TasteFieldCanvas";
 
 export interface FeaturedTableData {
   originId: string;
@@ -48,106 +36,178 @@ export interface HomeClientProps {
   activeGrantCount?: number;
 }
 
-type StageAct = "brew" | "roast" | "chat";
 type BrewMode = "decaf" | "growth" | "craft";
 type ChatGuest = "claire" | "david";
+type LensPreset = "default" | "claire" | "david";
 
-interface StageBeanCardData {
-  id: string;
-  label: string;
-  title: string;
-  tradeoff: string;
-  boundary: string;
-  tag: string;
+function HairlineBeam({
+  leftLabel,
+  rightLabel,
+  position,
+  muted = false,
+}: {
+  leftLabel: string;
+  rightLabel: string;
+  position: number;
+  muted?: boolean;
+}) {
+  const clamped = Math.max(4, Math.min(96, position));
+  const fillStart = Math.min(50, clamped);
+  const fillWidth = Math.abs(clamped - 50);
+  const isNeutral = muted || fillWidth < 4;
+  const leftWins = !isNeutral && clamped < 44;
+  const rightWins = !isNeutral && clamped > 56;
+
+  return (
+    <div className="cc-beam" aria-label={`${leftLabel} versus ${rightLabel}`}>
+      <div className="cc-beam-labels">
+        <span className="cc-beam-pole" data-wins={leftWins}>
+          {leftLabel}
+        </span>
+        <span className="cc-beam-pole" data-wins={rightWins}>
+          {rightLabel}
+        </span>
+      </div>
+      <div className="cc-beam-rail">
+        <span className="cc-beam-center" aria-hidden="true" />
+        <span
+          className="cc-beam-active"
+          data-muted={isNeutral}
+          style={{
+            insetInlineStart: `${fillStart}%`,
+            inlineSize: `${fillWidth}%`,
+          }}
+          aria-hidden="true"
+        />
+        <span
+          className="cc-beam-node"
+          data-muted={isNeutral}
+          style={{ insetInlineStart: `${clamped}%` }}
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  );
 }
 
-const BREW_BEANS: [StageBeanCardData, StageBeanCardData] = [
+function capitalizePole(raw: string): string {
+  const cleaned = raw.trim().replace(/\.+$/, "");
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function splitTradeoffPoles(tradeoff: string): [string, string] | null {
+  const match = tradeoff.match(/^(.+?)\s+over\s+(.+?)\.?$/i);
+  if (!match || !match[1] || !match[2]) return null;
+  const first = capitalizePole(match[1]);
+  const second = capitalizePole(match[2]);
+  if (!first || !second) return null;
+  return [first, second];
+}
+
+function biasToMode(bias: number): BrewMode {
+  if (bias < 38) return "growth";
+  if (bias > 62) return "craft";
+  return "decaf";
+}
+
+const BREW_CALLS: Record<
+  BrewMode,
   {
-    id: "growth",
-    label: "Growth Roast · Private",
-    title: "Hire fast learners over ready-made playbooks",
-    tradeoff:
-      "Ownership and learning speed over exact prior industry background.",
-    boundary: "Roles requiring day-one certification.",
-    tag: "#hiring",
+    kicker: string;
+    verdict: string;
+    note: string;
+    boundary: string;
+  }
+> = {
+  decaf: {
+    kicker: "DEFAULT AI · 50 / 50",
+    verdict: "“It depends on your goals — both have strong pros and cons.”",
+    note: "Every AI today weighs both sides equally and hands the decision right back to you.",
+    boundary: "No Taste plugged in",
   },
+  growth: {
+    kicker: "GROWTH ROAST · YOUR BEAN",
+    verdict: "Hire the fast-learning generalist.",
+    note: "Ownership and learning speed outrank exact prior playbooks.",
+    boundary: "Flips if day-1 certification is required",
+  },
+  craft: {
+    kicker: "SPECIALIST ROAST · YOUR BEAN",
+    verdict: "Hire the proven specialist.",
+    note: "Immediate execution beats ramp-up time when the deadline won’t move.",
+    boundary: "Flips if role scope changes every month",
+  },
+};
+
+const LENS_PRESETS: Record<
+  LensPreset,
   {
-    id: "craft",
-    label: "Specialist Roast · Work",
-    title: "Pick proven craft when the deadline won’t move",
-    tradeoff: "Immediate execution quality over long-term versatility.",
-    boundary: "Roles where scope shifts every month.",
-    tag: "#hiring",
+    caption: string;
+    muted: boolean;
+    values: [number, number, number];
+  }
+> = {
+  default: {
+    caption:
+      "Default AI sits dead-center at 50/50 — treating every value as equally important.",
+    muted: true,
+    values: [50, 50, 50],
   },
+  claire: {
+    caption:
+      "@claire puts fast real-world feedback, learning speed, and upfront truth first.",
+    muted: false,
+    values: [16, 20, 18],
+  },
+  david: {
+    caption:
+      "@david puts day-1 customer trust, proven craft, and measured framing first.",
+    muted: false,
+    values: [84, 78, 72],
+  },
+};
+
+const LENS_AXES: Array<[string, string]> = [
+  ["Real feedback", "Upfront polish"],
+  ["Fast learner", "Proven craft"],
+  ["Hard truth first", "Gentle build-up"],
 ];
 
-const CHAT_GUEST_DATA: Record<
+const CHAT_GUESTS: Record<
   ChatGuest,
   {
     fullName: string;
     handle: string;
-    prompt: string;
-    headline: string;
-    body: string;
-    cite: string;
-    beans: [StageBeanCardData, StageBeanCardData];
+    leftPole: string;
+    rightPole: string;
+    position: number;
+    verdict: string;
+    reason: string;
+    boundary: string;
   }
 > = {
   claire: {
     fullName: "Claire Brooks",
     handle: "@claire",
-    prompt:
-      "Have a Coffee Chat with @claire—should we polish our release another month, or show a rough draft to 10 customers this week?",
-    headline:
-      "Based on @claire’s Beans, show an honest draft to 10 people this week.",
-    body: "@claire puts real customer signal ahead of upfront polish—polishing the wrong workflow wastes a month. Share a clearly labeled early version now, as long as nothing is irreversible.",
-    cite: "From @claire’s confirmed Bean · Reversible bets only · Never roleplayed",
-    beans: [
-      {
-        id: "claire-1",
-        label: "@claire · Public Bean",
-        title: "Show an honest draft to 5 real people first",
-        tradeoff: "Fast real-world feedback over upfront perfection.",
-        boundary: "Public brand launches or irreversible commitments.",
-        tag: "#product",
-      },
-      {
-        id: "claire-2",
-        label: "@claire · Public Bean",
-        title: "Keep small teams focused on one shared goal",
-        tradeoff: "Momentum together over separate tracks.",
-        boundary: "Regulated teams needing hard separation.",
-        tag: "#teams",
-      },
-    ],
+    leftPole: "Real feedback",
+    rightPole: "Upfront polish",
+    position: 18,
+    verdict: "Based on @claire’s Beans, show an honest draft this week.",
+    reason:
+      "Real customer signal beats a month of blind polish — as long as the bet stays reversible.",
+    boundary: "Except: irreversible public launch",
   },
   david: {
     fullName: "David Chen",
     handle: "@david",
-    prompt:
-      "Have a Coffee Chat with @david—should we polish our release another month, or show a rough draft to 10 customers this week?",
-    headline:
-      "Based on @david’s Beans, ship rough only if zero money or private data is touched.",
-    body: "@david puts durable customer trust ahead of demo speed. People forgive a rough screen, never a billing or privacy slip—only test early on sample data until trust paths are airtight.",
-    cite: "From @david’s confirmed Bean · Sample-data prototypes only · Never roleplayed",
-    beans: [
-      {
-        id: "david-1",
-        label: "@david · Public Bean",
-        title: "Never ship a shortcut that touches money or privacy",
-        tradeoff: "Durable customer trust on day one over faster early demos.",
-        boundary: "Visual prototypes with sample data only.",
-        tag: "#trust",
-      },
-      {
-        id: "david-2",
-        label: "@david · Public Bean",
-        title: "Name what you’re dropping before adding a new goal",
-        tradeoff: "Real focus over saying yes to every request.",
-        boundary: "Urgent incidents that pause normal work.",
-        tag: "#leadership",
-      },
-    ],
+    leftPole: "Early demos",
+    rightPole: "Day-1 trust",
+    position: 84,
+    verdict: "Based on @david’s Beans, test only on sample data first.",
+    reason:
+      "People forgive rough screens, never a billing or privacy slip — keep real data untouched.",
+    boundary: "Except: throwaway prototype on sample data",
   },
 };
 
@@ -158,32 +218,20 @@ export function HomeClient({
   featuredTable,
 }: HomeClientProps) {
   const router = useRouter();
-  const [act, setAct] = useState<StageAct>("brew");
-  const [brewMode, setBrewMode] = useState<BrewMode>("growth");
+  const [heroBias, setHeroBias] = useState<number>(18);
+  const [lensPreset, setLensPreset] = useState<LensPreset>("claire");
+  const [roastConfirmed, setRoastConfirmed] = useState<boolean>(false);
   const [guest, setGuest] = useState<ChatGuest>("claire");
-  const [playNonce, setPlayNonce] = useState(0);
 
   const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
+  const [copiedFooterPrompt, setCopiedFooterPrompt] = useState(false);
   const [showPromptPreview, setShowPromptPreview] = useState(false);
 
-  const [streamedText, setStreamedText] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [roastConfirmed, setRoastConfirmed] = useState(false);
-
-  const timersRef = useRef<number[]>([]);
-
-  const clearTimers = useCallback(() => {
-    for (const id of timersRef.current) {
-      window.clearTimeout(id);
-    }
-    timersRef.current = [];
-  }, []);
-
-  const schedule = useCallback((ms: number, fn: () => void) => {
-    const id = window.setTimeout(fn, ms);
-    timersRef.current.push(id);
-    return id;
-  }, []);
+  const brewMode = biasToMode(heroBias);
+  const isDecaf = brewMode === "decaf";
+  const activeCall = BREW_CALLS[brewMode];
+  const activeLens = LENS_PRESETS[lensPreset];
+  const activeGuest = CHAT_GUESTS[guest];
 
   const universalStartPrompt = `Connect to Coffee Chat at ${mcpUrl} (sign in when prompted). Once connected, help me Roast my first private Bean from a real decision or article I share with you—ask what mattered more and when the rule stops applying, and wait for my confirmation before saving.`;
 
@@ -197,77 +245,18 @@ export function HomeClient({
     }
   };
 
-  const handleCopyStartPrompt = async () => {
+  const handleCopyHeroPrompt = async () => {
     await copyPromptText(universalStartPrompt);
     setCopiedHeroPrompt(true);
     setShowPromptPreview(true);
     window.setTimeout(() => setCopiedHeroPrompt(false), 3500);
   };
 
-  const getActiveResponseText = useCallback((): string => {
-    if (act === "brew") {
-      if (brewMode === "decaf") {
-        return "Generalists offer flexibility and long-term growth, while specialists bring immediate domain knowledge. Consider your team’s current needs and timeline before deciding.";
-      }
-      if (brewMode === "growth") {
-        return "Based on your Bean, ownership and learning speed outrank prior playbooks. Hire the generalist with a clear 30-day ramp—and only flip to the specialist if certification is required on day one.";
-      }
-      return "Based on your Bean, immediate execution quality beats versatility when the deadline won’t move. Pick the specialist as long as the role’s scope is already well defined.";
-    }
-    if (act === "chat") {
-      return CHAT_GUEST_DATA[guest].body;
-    }
-    return "";
-  }, [act, brewMode, guest]);
-
-  useEffect(() => {
-    clearTimers();
-    const fullText = getActiveResponseText();
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduced) {
-      setStreamedText(fullText);
-      setIsStreaming(false);
-      setRoastConfirmed(act === "roast");
-      return clearTimers;
-    }
-
-    setStreamedText("");
-    setIsStreaming(act !== "roast");
-    setRoastConfirmed(false);
-
-    if (act === "roast") {
-      schedule(900, () => setRoastConfirmed(true));
-      return clearTimers;
-    }
-
-    schedule(180, () => {
-      const words = fullText.split(" ");
-      let idx = 0;
-      const step = () => {
-        if (idx < words.length) {
-          idx += 1;
-          setStreamedText(words.slice(0, idx).join(" "));
-          schedule(18, step);
-        } else {
-          setIsStreaming(false);
-        }
-      };
-      step();
-    });
-
-    return clearTimers;
-  }, [
-    act,
-    brewMode,
-    guest,
-    playNonce,
-    clearTimers,
-    schedule,
-    getActiveResponseText,
-  ]);
+  const handleCopyFooterPrompt = async () => {
+    await copyPromptText(universalStartPrompt);
+    setCopiedFooterPrompt(true);
+    window.setTimeout(() => setCopiedFooterPrompt(false), 3500);
+  };
 
   const contrastingPreview = (() => {
     if (!featuredTable) return [];
@@ -285,560 +274,538 @@ export function HomeClient({
     return distinct.length >= 2 ? distinct.slice(0, 2) : ordered.slice(0, 2);
   })();
 
-  const isDecaf = act === "brew" && brewMode === "decaf";
-  const activeGuest = CHAT_GUEST_DATA[guest];
-
-  const promptText =
-    act === "brew"
-      ? "Two finalists for a key role: a fast-learning generalist, or a proven specialist with our exact background. Who should we pick?"
-      : act === "roast"
-        ? "No—don’t bury the missed target on slide 4. Put the honest status and our fix in the very first sentence."
-        : activeGuest.prompt;
-
-  const traceLabel =
-    act === "brew"
-      ? brewMode === "growth"
-        ? "Applied your Bean · Hire fast learners over ready-made playbooks"
-        : "Applied your Bean · Pick proven craft when the deadline won’t move"
-      : act === "roast"
-        ? "Drafted a private Bean from your correction — waiting for confirmation"
-        : `Pulled ${activeGuest.handle}’s confirmed public Beans (attributed, never roleplayed)`;
-
-  const pluginChipLabel = isDecaf
-    ? "Unplugged"
-    : act === "brew"
-      ? "Coffee Chat · Active"
-      : act === "roast"
-        ? roastConfirmed
-          ? "Coffee Chat · Roasted"
-          : "Coffee Chat · Draft"
-        : `Coffee Chat · ${activeGuest.handle}`;
-
-  const drawerHeading =
-    act === "chat"
-      ? `${activeGuest.fullName} · ${activeGuest.handle}`
-      : "Your Roastery";
-
-  const drawerSub =
-    act === "roast"
-      ? roastConfirmed
-        ? "5 private Beans"
-        : "4 private Beans"
-      : act === "chat"
-        ? "Public Taste"
-        : "Private Beans";
-
-  const composerHint =
-    act === "brew"
-      ? isDecaf
-        ? "Select a Roast on the right or above to see the call flip"
-        : "Select any Bean on the right or switch Roasts above"
-      : act === "roast"
-        ? roastConfirmed
-          ? "Saved privately · ready across every connected AI"
-          : "Nothing saves without your confirmation"
-        : `Switch to ${guest === "claire" ? "@david" : "@claire"} above`;
-
-  const agentGaze = isStreaming
-    ? "working"
-    : act === "roast" && !roastConfirmed
-      ? "waiting"
-      : "done";
+  const leftWins = heroBias < 38;
+  const rightWins = heroBias > 62;
+  const fillStart = Math.min(50, heroBias);
+  const fillWidth = Math.abs(heroBias - 50);
 
   return (
-    <div className="cc-home-stack">
-      {/* 1. EDITORIAL OPENING + SCULPTED UNIVERSAL START BAR */}
-      <section className="cc-hero" aria-label="Introduction">
-        <span className="cc-hero-kicker">
-          <ProjectMark project="coffee" label="" size={18} />
-          <span>
-            Personal Taste for ChatGPT, Claude, Codex, Cursor &amp; Antigravity
-          </span>
-        </span>
+    <div className="cc-landing">
+      {/* ================================================================
+          STAGE 01 — FULL-BLEED LIVING CANVAS + TACTILE PRIORITY BEAM
+         ================================================================ */}
+      <section className="cc-stage-hero" aria-label="Introduction">
+        <TasteFieldCanvas bias={heroBias} />
 
-        <div className="cc-hero-grid">
-          <Heading level={1} className="cc-hero-title">
-            Your AI knows everything.
-            <br />
-            Give it <em className="cc-accent-ink">your Taste.</em>
-          </Heading>
-
-          <Text as="p" className="cc-hero-lead">
-            Save how you weigh real trade-offs—so your AI answers with your
-            priorities, or lets you Coffee Chat with anyone else’s.
-          </Text>
+        {/* Subtle architectural corner reticles */}
+        <div className="cc-stage-reticles" aria-hidden="true">
+          <span className="cc-reticle cc-reticle-tl" />
+          <span className="cc-reticle cc-reticle-tr" />
+          <span className="cc-reticle cc-reticle-bl" />
+          <span className="cc-reticle cc-reticle-br" />
         </div>
 
-        <div className="cc-start-shell">
-          <div className="cc-start-bar">
-            <span className="cc-start-preview">
-              <strong>Start in any AI:</strong> Connect to Coffee Chat and help
-              me Roast my first private Bean…
-            </span>
-            <Button
-              emphasis="filled"
-              tone="brand"
-              size="comfortable"
-              onClick={() => void handleCopyStartPrompt()}
-            >
-              {copiedHeroPrompt
-                ? "Copied — paste into any AI"
-                : "Copy prompt to start in your AI"}
-            </Button>
-          </div>
-
-          <div className="cc-start-subrow">
-            <Text variant="meta">
-              Paste into whatever AI you already use — no config file needed to
-              start.
-            </Text>
-            <ButtonGroup label="Alternative setup options">
-              <Button
-                emphasis="quiet"
-                size="compact"
-                onClick={() => setShowPromptPreview((v) => !v)}
-              >
-                {showPromptPreview ? "Hide prompt" : "Read full prompt"}
-              </Button>
-              <Link
-                href={
-                  signedIn
-                    ? "/me?compose=1"
-                    : "/signin?returnTo=%2Fme%3Fcompose%3D1"
-                }
-                emphasis="quiet"
-                size="compact"
-              >
-                {signedIn ? "Open My Roastery" : "Try in browser"}
-              </Link>
-              <Link href="/connect" emphasis="quiet" size="compact">
-                Manual setup
-              </Link>
-            </ButtonGroup>
-          </div>
-
-          {showPromptPreview ? (
-            <div className="prompt-code-wrap">
-              <CodeBlock
-                code={universalStartPrompt}
-                language="text"
-                onCopy={copyPromptText}
-              />
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      {/* 2. UNIFIED SPLIT STUDIO STAGE (01 Brew -> 02 Roast -> 03 Coffee Chat) */}
-      <section className="cc-studio-frame" aria-label="Interactive product preview">
-        <div className="cc-studio-topbar">
-          <div className="cc-studio-tabs">
-            <Tabs
-              label="Coffee Chat use cases"
-              presentation="underline"
-              value={act}
-              onValueChange={(next) => setAct(next as StageAct)}
-              items={[
-                { id: "brew", label: "01 · Brew in your AI", panel: null },
-                {
-                  id: "roast",
-                  label: "02 · Roast from a correction",
-                  panel: null,
-                },
-                {
-                  id: "chat",
-                  label: "03 · Coffee Chat with other Taste",
-                  panel: null,
-                },
-              ]}
-            />
-          </div>
-
-          {act === "brew" ? (
-            <div className="cc-studio-mode-wrap">
-              <SegmentedControl
-                label="Compare AI output by Taste"
-                value={brewMode}
-                onValueChange={(v) => setBrewMode(v as BrewMode)}
-                options={[
-                  { id: "decaf", label: "Unplugged (Decaf)" },
-                  { id: "growth", label: "Growth Roast" },
-                  { id: "craft", label: "Specialist Roast" },
-                ]}
-              />
-            </div>
-          ) : act === "chat" ? (
-            <div className="cc-studio-mode-wrap">
-              <SegmentedControl
-                label="Choose someone to Coffee Chat with"
-                value={guest}
-                onValueChange={(v) => setGuest(v as ChatGuest)}
-                options={[
-                  { id: "claire", label: "Coffee Chat with @claire" },
-                  { id: "david", label: "Coffee Chat with @david" },
-                ]}
-              />
-            </div>
-          ) : null}
-        </div>
-
-        <div className="cc-studio-body">
-          {/* LEFT PANE: Live AI Conversation */}
-          <div className="cc-studio-conversation">
-            <Stack gap={16}>
-              <div className="cc-studio-session-head">
-                <Inline gap={8} align="center">
-                  <AgentAvatar
-                    agent="Kai"
-                    size={22}
-                    label=""
-                    state={agentGaze}
-                  />
-                  <Text variant="body">Your AI</Text>
-                  <Text variant="meta">· Any connected chat</Text>
-                </Inline>
-                <Status tone={isDecaf ? "neutral" : "success"}>
-                  {pluginChipLabel}
-                </Status>
+        <div className="cc-stage-inner">
+          <div className="cc-stage-grid">
+            {/* LEFT: MONUMENTAL TYPOGRAPHY + ONE IRRESISTIBLE PILL CTA */}
+            <div className="cc-stage-copy">
+              <div className="cc-mono-eyebrow">
+                <ProjectMark project="coffee" label="" size={18} />
+                <span>00 // COFFEE CHAT</span>
               </div>
 
-              <Message
-                speaker="You"
-                variant="sent"
-                avatar={<Avatar label="You" size="compact" />}
-              >
-                <Text as="p" variant="body">
-                  {promptText}
-                </Text>
-              </Message>
+              <h1 className="cc-display-h1">
+                Your AI knows
+                <br />
+                everything.
+                <br />
+                Give it <em className="cc-ink-em">your Taste.</em>
+              </h1>
 
-              {!isDecaf ? (
-                <div className="cc-studio-trace" role="status">
-                  <ProjectMark project="coffee" label="" size={16} />
-                  <span>{traceLabel}</span>
+              <p className="cc-editorial-p">
+                Stop getting “it depends.” Save what you put first—so your AI
+                decides like you, or lets you Coffee Chat with anyone else’s
+                judgment.
+              </p>
+
+              <div className="cc-cta-cluster">
+                <Button
+                  emphasis="filled"
+                  tone="brand"
+                  shape="pill"
+                  size="comfortable"
+                  onClick={() => void handleCopyHeroPrompt()}
+                >
+                  {copiedHeroPrompt
+                    ? "Copied — paste into any AI"
+                    : "Copy prompt to start in your AI"}
+                </Button>
+
+                <div className="cc-ghost-links">
+                  <button
+                    type="button"
+                    className="cc-ghost-link"
+                    onClick={() => setShowPromptPreview((v) => !v)}
+                  >
+                    {showPromptPreview ? "Hide prompt" : "Read prompt"}
+                  </button>
+                  <span className="cc-ghost-dot" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link
+                    href={
+                      signedIn
+                        ? "/me?compose=1"
+                        : "/signin?returnTo=%2Fme%3Fcompose%3D1"
+                    }
+                    className="cc-ghost-link"
+                  >
+                    {signedIn ? "Open My Roastery" : "Try in browser"}
+                  </Link>
+                  <span className="cc-ghost-dot" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link href="/connect" className="cc-ghost-link">
+                    Manual setup
+                  </Link>
+                </div>
+              </div>
+
+              <p className="cc-mono-caption">
+                WORKS IN CHATGPT · CLAUDE · CODEX · CURSOR · ANTIGRAVITY — ZERO
+                CONFIG
+              </p>
+
+              {showPromptPreview ? (
+                <div className="cc-prompt-drawer prompt-code-wrap">
+                  <CodeBlock
+                    code={universalStartPrompt}
+                    language="text"
+                    onCopy={copyPromptText}
+                  />
                 </div>
               ) : null}
-
-              <Message
-                speaker="Your AI"
-                variant="received"
-                avatar={
-                  <AgentAvatar
-                    agent="Kai"
-                    size={24}
-                    label=""
-                    state={agentGaze}
-                  />
-                }
-              >
-                {act === "roast" ? (
-                  <div className="cc-studio-confirm">
-                    <Inline justify="between" align="center" gap={8}>
-                      <Text variant="meta">
-                        Confirm Bean · Private by default
-                      </Text>
-                      <Status tone={roastConfirmed ? "success" : "warning"}>
-                        {roastConfirmed ? "Saved" : "Waiting for confirmation"}
-                      </Status>
-                    </Inline>
-                    <Heading level={3} className="cc-studio-takeaway">
-                      Lead with the hard truth, not the build-up
-                    </Heading>
-                    <div className="cc-criteria-grid">
-                      <Stack gap={4}>
-                        <Text variant="meta">What mattered more</Text>
-                        <Text as="p" variant="body">
-                          Upfront trust and clarity over softening the moment.
-                        </Text>
-                      </Stack>
-                      <Stack gap={4}>
-                        <Text variant="meta">Except when</Text>
-                        <Text as="p" variant="help">
-                          External announcements needing legal review first.
-                        </Text>
-                      </Stack>
-                    </div>
-                    <Inline justify="between" align="center" gap={8}>
-                      <Button
-                        emphasis={roastConfirmed ? "soft" : "filled"}
-                        tone={roastConfirmed ? "neutral" : "brand"}
-                        size="compact"
-                        onClick={() => setRoastConfirmed(true)}
-                      >
-                        {roastConfirmed
-                          ? "Roasted into Roastery"
-                          : "Confirm & Roast"}
-                      </Button>
-                      <Text variant="meta">Never saved silently</Text>
-                    </Inline>
-                  </div>
-                ) : (
-                  <Stack gap={8}>
-                    <Heading
-                      level={3}
-                      className={
-                        isDecaf
-                          ? "cc-studio-takeaway cc-studio-decaf"
-                          : "cc-studio-takeaway"
-                      }
-                    >
-                      {isDecaf
-                        ? "“Both candidates have strong pros and cons depending on your goals…”"
-                        : act === "brew"
-                          ? brewMode === "growth"
-                            ? "Hire the fast-learning generalist—unless certification is required today."
-                            : "Hire the proven specialist—your deadline leaves no room for ramp-up."
-                          : activeGuest.headline}
-                    </Heading>
-                    <Text
-                      as="p"
-                      variant="body"
-                      className={isDecaf ? "cc-studio-decaf" : undefined}
-                    >
-                      {streamedText}
-                    </Text>
-                    {!isDecaf && !isStreaming ? (
-                      <Text variant="meta">
-                        {act === "brew"
-                          ? brewMode === "growth"
-                            ? "Guided by your Growth Roast Bean · Boundary verified"
-                            : "Guided by your Specialist Roast Bean · Boundary verified"
-                          : activeGuest.cite}
-                      </Text>
-                    ) : isDecaf && !isStreaming ? (
-                      <Text variant="meta">
-                        No Taste connected — generic fence-sitting
-                      </Text>
-                    ) : null}
-                  </Stack>
-                )}
-              </Message>
-            </Stack>
-
-            <div className="cc-studio-foot">
-              <Text variant="meta">{composerHint}</Text>
-              <Button
-                emphasis="quiet"
-                size="compact"
-                onClick={() => setPlayNonce((n) => n + 1)}
-              >
-                Replay
-              </Button>
-            </div>
-          </div>
-
-          {/* RIGHT PANE: Recessed Connected Taste Inspector */}
-          <aside className="cc-studio-inspector" aria-label={drawerHeading}>
-            <div className="cc-inspector-head">
-              <Text variant="body">{drawerHeading}</Text>
-              <Text variant="meta">{drawerSub}</Text>
             </div>
 
-            <div className="cc-inspector-list">
-              {act === "roast" ? (
-                <>
-                  {roastConfirmed ? (
-                    <div className="cc-ledger-bean" data-active="true">
-                      <Inline justify="between" align="center" gap={6}>
-                        <Status tone="success">Roasted just now</Status>
-                        <Text variant="meta">#communication</Text>
-                      </Inline>
-                      <Heading level={4}>
-                        Lead with the hard truth, not the build-up
-                      </Heading>
-                      <Text variant="help">
-                        Upfront trust and clarity over softening the moment.
-                      </Text>
-                    </div>
-                  ) : null}
-                  <div className="cc-ledger-bean" data-active="false">
-                    <Inline justify="between" align="center" gap={6}>
-                      <Text variant="meta">Confirmed · Private</Text>
-                      <Text variant="meta">#hiring</Text>
-                    </Inline>
-                    <Heading level={4}>{BREW_BEANS[0].title}</Heading>
-                    <Text variant="help">{BREW_BEANS[0].tradeoff}</Text>
-                  </div>
-                </>
-              ) : (
-                (act === "brew" ? BREW_BEANS : activeGuest.beans).map(
-                  (bean, idx) => {
-                    const isBeanActive =
-                      act === "brew"
-                        ? (brewMode === "growth" && idx === 0) ||
-                          (brewMode === "craft" && idx === 1)
-                        : idx === 0;
-                    const isClickable = act === "brew";
-                    return (
-                      <button
-                        key={bean.id}
-                        type="button"
-                        className="cc-ledger-bean"
-                        data-active={isBeanActive}
-                        data-clickable={isClickable}
-                        disabled={!isClickable}
-                        onClick={() => {
-                          if (act === "brew") {
-                            setBrewMode(idx === 0 ? "growth" : "craft");
-                          }
-                        }}
-                      >
-                        <Inline justify="between" align="center" gap={6}>
-                          <Text variant="meta">{bean.label}</Text>
-                          <Text variant="meta">{bean.tag}</Text>
-                        </Inline>
-                        <Heading level={4}>{bean.title}</Heading>
-                        <Text variant="help">{bean.tradeoff}</Text>
-                        <Text variant="meta">Except: {bean.boundary}</Text>
-                      </button>
-                    );
-                  },
-                )
-              )}
-            </div>
-          </aside>
-        </div>
-      </section>
+            {/* RIGHT: FRAMELESS TACTILE PRIORITY BEAM (DRAG OR TAP — ZERO BOXES!) */}
+            <div
+              className="cc-dial-zone"
+              aria-label="Interactive Taste priority demo"
+            >
+              <div className="cc-dial-question">
+                <span className="cc-mono-eyebrow">
+                  LIVE CALL // HIRING FINALIST
+                </span>
+                <p className="cc-dial-prompt">
+                  “Fast-learning generalist, or proven specialist for a Q3
+                  launch?”
+                </p>
+              </div>
 
-      {/* 3. ASYMMETRIC EDITORIAL MANIFESTO (Why Coffee Chat) */}
-      <section className="cc-manifesto" aria-label="Why Coffee Chat">
-        <Stack gap={16}>
-          <span className="cc-section-index">Why Coffee Chat</span>
-          <Heading level={2} className="cc-manifesto-title">
-            Nothing is unimportant.
-            <br />
-            Taste is <em className="cc-accent-ink">what you put first.</em>
-          </Heading>
-          <Text as="p" className="cc-hero-lead">
-            Everyone agrees speed, quality, honesty, and caution all matter. In
-            real work, good things collide—and what decides the call is{" "}
-            <strong>which one wins</strong> and{" "}
-            <strong>when the rule flips</strong>. We save links and notes
-            everywhere, but nothing organizes our priority order.
-          </Text>
-        </Stack>
-
-        <div className="cc-manifesto-list">
-          <div className="cc-manifesto-row">
-            <span className="cc-manifesto-num">01</span>
-            <Stack gap={6}>
-              <Heading level={3}>Why a Coffee Chat here actually works</Heading>
-              <Text as="p" variant="help">
-                You don’t grab coffee with someone for textbook advice—you want
-                to know what they put first when good options clash. Their
-                confirmed Beans let your AI apply their real priorities to your
-                situation, never roleplayed.
-              </Text>
-            </Stack>
-          </div>
-
-          <div className="cc-manifesto-row">
-            <span className="cc-manifesto-num">02</span>
-            <Stack gap={6}>
-              <Heading level={3}>Why your AI stops saying “it depends”</Heading>
-              <Text as="p" variant="help">
-                Models treat every principle as equally valid. Once you Roast
-                your priority order into private Beans, your AI stops hedging
-                and commits to what you actually optimize for.
-              </Text>
-            </Stack>
-          </div>
-
-          <div className="cc-manifesto-row">
-            <span className="cc-manifesto-num">03</span>
-            <Stack gap={6}>
-              <Heading level={3}>Confirmed by you, zero server AI</Heading>
-              <Text as="p" variant="help">
-                Nothing saves without your confirmation, and Coffee Chat runs no
-                models of its own. Everything stays private by default and brews
-                straight inside your AI.
-              </Text>
-            </Stack>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. UNIFIED COMPARISON SPREAD (On the Table right now) */}
-      <section className="cc-spread-section" aria-label="On the Table right now">
-        {totalCorpusPublicCount > 0 && featuredTable ? (
-          <>
-            <Inline justify="between" align="end" gap={16} wrap>
-              <Stack gap={6}>
-                <span className="cc-section-index">On the Table right now</span>
-                <Heading level={2}>Same essay. Opposite Roasts.</Heading>
-                <Text variant="help">
-                  {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
-                </Text>
-              </Stack>
-              <ButtonGroup label="Table navigation">
-                <Link
-                  href={`/sources/${featuredTable.originId}`}
-                  emphasis="soft"
-                  size="compact"
+              {/* Frameless 3-Stop Selector + Tactile Draggable Hairline Beam */}
+              <div className="cc-dial-control">
+                <div
+                  className="cc-dial-stops"
+                  role="radiogroup"
+                  aria-label="Tilt priority to change the AI call"
                 >
-                  Open this Table
-                </Link>
-                <Link href="/sources" emphasis="quiet" size="compact">
-                  Browse all Tables
-                </Link>
-              </ButtonGroup>
-            </Inline>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={brewMode === "growth"}
+                    className="cc-dial-stop"
+                    data-active={brewMode === "growth"}
+                    onClick={() => setHeroBias(16)}
+                  >
+                    <span className="cc-dial-stop-name">Growth Roast</span>
+                    <span className="cc-dial-stop-pole">Learning speed</span>
+                  </button>
 
-            <div className="cc-spread">
-              {contrastingPreview.map((b) => (
-                <article key={b.id} className="cc-spread-col">
-                  <Inline justify="between" align="center" gap={8} wrap>
-                    <Inline gap={8} align="center">
-                      <Avatar label={b.ownerDisplayName} size="compact" />
-                      <Link
-                        href={`/@${b.ownerHandle}`}
-                        className="person-inline-link"
-                      >
-                        <Text variant="body">{b.ownerDisplayName}</Text>
-                        <Text variant="meta">@{b.ownerHandle}</Text>
-                      </Link>
-                    </Inline>
-                    <Link
-                      href={`/@${b.ownerHandle}`}
-                      emphasis="soft"
-                      size="compact"
-                    >
-                      Coffee Chat
-                    </Link>
-                  </Inline>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={brewMode === "decaf"}
+                    className="cc-dial-stop cc-dial-stop-center"
+                    data-active={brewMode === "decaf"}
+                    onClick={() => setHeroBias(50)}
+                  >
+                    <span className="cc-dial-stop-name">Default AI</span>
+                    <span className="cc-dial-stop-pole">50 / 50</span>
+                  </button>
 
-                  <Heading level={3}>{b.title}</Heading>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={brewMode === "craft"}
+                    className="cc-dial-stop cc-dial-stop-end"
+                    data-active={brewMode === "craft"}
+                    onClick={() => setHeroBias(84)}
+                  >
+                    <span className="cc-dial-stop-name">Specialist Roast</span>
+                    <span className="cc-dial-stop-pole">Proven craft</span>
+                  </button>
+                </div>
 
-                  <div className="cc-criteria-grid">
-                    <Stack gap={4}>
-                      <Text variant="meta">What mattered more</Text>
-                      <Text as="p" variant="body">
-                        {b.tradeoff}
-                      </Text>
-                    </Stack>
-                    <Stack gap={4}>
-                      <Text variant="meta">Except when</Text>
-                      <Text as="p" variant="help">
-                        {b.boundary}
-                      </Text>
-                    </Stack>
+                <div className="cc-slider-shell">
+                  <div className="cc-slider-rail" aria-hidden="true">
+                    <span className="cc-slider-center-tick" />
+                    <span
+                      className="cc-slider-fill"
+                      data-muted={isDecaf}
+                      style={{
+                        insetInlineStart: `${fillStart}%`,
+                        inlineSize: `${fillWidth}%`,
+                      }}
+                    />
+                    <span
+                      className="cc-slider-thumb"
+                      data-muted={isDecaf}
+                      style={{ insetInlineStart: `${heroBias}%` }}
+                    />
                   </div>
-                </article>
+                  <input
+                    type="range"
+                    min={8}
+                    max={92}
+                    value={heroBias}
+                    aria-label="Drag to tilt Taste between Learning speed and Proven craft"
+                    className="cc-slider-input"
+                    onChange={(e) => setHeroBias(Number(e.target.value))}
+                  />
+                </div>
+
+                <div className="cc-slider-hint">
+                  <span data-wins={leftWins}>← Drag or tap a priority</span>
+                  <span data-wins={rightWins}>Watch the AI commit →</span>
+                </div>
+              </div>
+
+              {/* FRAMELESS LIVE AI VERDICT */}
+              <div
+                key={brewMode}
+                className="cc-verdict-stage"
+                data-decaf={isDecaf}
+              >
+                <span className="cc-mono-eyebrow">{activeCall.kicker}</span>
+                <p className="cc-verdict-headline">{activeCall.verdict}</p>
+                <p className="cc-verdict-note">{activeCall.note}</p>
+                <span className="cc-verdict-boundary">
+                  {activeCall.boundary}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          STAGE 02 — FOUNDER THESIS + FRAMELESS 3-AXIS PRIORITY LENS
+         ================================================================ */}
+      <section className="cc-band" aria-label="Why Coffee Chat">
+        <div className="cc-band-inner cc-split-editorial">
+          <div className="cc-band-lead">
+            <span className="cc-mono-eyebrow">01 // WHY IT WORKS</span>
+            <h2 className="cc-display-h2">
+              Nothing is unimportant.
+              <br />
+              Taste is <em className="cc-ink-em">what you put first.</em>
+            </h2>
+            <p className="cc-editorial-p">
+              Everyone agrees speed, craft, and honesty matter. In real work,
+              good values collide—and judgment is simply which one wins, and
+              where the rule flips.
+            </p>
+          </div>
+
+          <div className="cc-lens-panel">
+            <div
+              className="cc-underline-tabs"
+              role="radiogroup"
+              aria-label="Compare priority order"
+            >
+              {(
+                [
+                  ["default", "Default AI"],
+                  ["claire", "@claire"],
+                  ["david", "@david"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={lensPreset === id}
+                  className="cc-underline-tab"
+                  data-active={lensPreset === id}
+                  onClick={() => setLensPreset(id)}
+                >
+                  {label}
+                </button>
               ))}
             </div>
-          </>
-        ) : (
-          <Card
-            title="Start the first Coffee Chat Table"
-            description="No public Beans yet — start in your AI or privately in My Roastery, and share one whenever you want contrasting takes"
-            variant="raised"
-            density="regular"
-            action={
-              <ButtonGroup label="Get started actions">
+
+            <div className="cc-lens-beams">
+              {LENS_AXES.map(([leftPole, rightPole], idx) => (
+                <HairlineBeam
+                  key={leftPole}
+                  leftLabel={leftPole}
+                  rightLabel={rightPole}
+                  position={activeLens.values[idx] ?? 50}
+                  muted={activeLens.muted}
+                />
+              ))}
+            </div>
+
+            <p className="cc-lens-caption">{activeLens.caption}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          STAGE 03 — TWO LIVING MOMENTS: ROAST & COFFEE CHAT (FRAMELESS)
+         ================================================================ */}
+      <section className="cc-band" aria-label="How Coffee Chat works in real life">
+        <div className="cc-band-inner cc-moments-stack">
+          {/* MOMENT A: ROAST FROM ONE CORRECTION */}
+          <div className="cc-moment-row">
+            <div className="cc-moment-copy">
+              <span className="cc-mono-eyebrow">02 // ROAST</span>
+              <h2 className="cc-moment-h2">
+                Correct your AI once.
+                <br />
+                Never repeat it.
+              </h2>
+              <p className="cc-editorial-p-sm">
+                Push back naturally during real work. Coffee Chat drafts the
+                trade-off and waits for your explicit tap before saving
+                privately.
+              </p>
+            </div>
+
+            <div className="cc-moment-artifact">
+              <div className="cc-roast-diff">
+                <span className="cc-roast-struck">
+                  Slide 4 · Missed Q3 target (-12%)
+                </span>
+                <p className="cc-roast-quote">
+                  “Don’t bury bad news on slide 4. Put the honest status in
+                  sentence 1.”
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="cc-confirm-cue"
+                data-confirmed={roastConfirmed}
+                onClick={() => setRoastConfirmed((v) => !v)}
+              >
+                <span className="cc-confirm-ring" aria-hidden="true">
+                  <span className="cc-confirm-dot" />
+                </span>
+                <span className="cc-confirm-label">
+                  {roastConfirmed
+                    ? "CONFIRMED · SAVED PRIVATELY"
+                    : "TAP TO CONFIRM & ROAST PRIVATELY"}
+                </span>
+              </button>
+
+              <div
+                className="cc-roast-result"
+                data-confirmed={roastConfirmed}
+              >
+                <p className="cc-roast-title">
+                  Lead with the hard truth, not the build-up
+                </p>
+                <HairlineBeam
+                  leftLabel="Hard truth first"
+                  rightLabel="Soft build-up"
+                  position={roastConfirmed ? 16 : 44}
+                  muted={!roastConfirmed}
+                />
+                <span className="cc-verdict-boundary">
+                  {roastConfirmed
+                    ? "Live across every connected AI · Except: external legal review"
+                    : "Waiting for your confirmation · Private by default"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* MOMENT B: COFFEE CHAT WITH SOMEONE ELSE'S TASTE */}
+          <div className="cc-moment-row cc-moment-divider">
+            <div className="cc-moment-copy">
+              <span className="cc-mono-eyebrow">03 // COFFEE CHAT</span>
+              <h2 className="cc-moment-h2">
+                Sit down with someone’s
+                <br />
+                real priorities.
+              </h2>
+              <p className="cc-editorial-p-sm">
+                Ask how someone else would weigh your real decision—grounded in
+                their confirmed public Beans, clearly attributed, never
+                roleplayed.
+              </p>
+            </div>
+
+            <div className="cc-moment-artifact">
+              <p className="cc-chat-question">
+                “Polish another month, or show 10 customers a rough draft this
+                week?”
+              </p>
+
+              <div
+                className="cc-underline-tabs"
+                role="radiogroup"
+                aria-label="Choose someone to Coffee Chat with"
+              >
+                {(
+                  [
+                    ["claire", "Coffee Chat with @claire"],
+                    ["david", "Coffee Chat with @david"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={guest === key}
+                    className="cc-underline-tab"
+                    data-active={guest === key}
+                    onClick={() => setGuest(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div key={guest} className="cc-chat-verdict">
+                <p className="cc-verdict-headline">{activeGuest.verdict}</p>
+                <p className="cc-verdict-note">{activeGuest.reason}</p>
+                <HairlineBeam
+                  leftLabel={activeGuest.leftPole}
+                  rightLabel={activeGuest.rightPole}
+                  position={activeGuest.position}
+                />
+                <span className="cc-verdict-boundary">
+                  Attributed to {activeGuest.handle} · Never roleplayed ·{" "}
+                  {activeGuest.boundary}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* MOMENT C: QUIET ARCHITECTURAL INVARIANTS */}
+          <div className="cc-invariants-strip">
+            <div className="cc-invariant">
+              <span className="cc-mono-eyebrow">CONFIRM GATE</span>
+              <p className="cc-invariant-text">
+                Nothing saves silently. Every Bean waits for your explicit tap.
+              </p>
+            </div>
+            <div className="cc-invariant">
+              <span className="cc-mono-eyebrow">ZERO SERVER AI</span>
+              <p className="cc-invariant-text">
+                Coffee Chat runs no models. Your own AI connects directly via
+                MCP.
+              </p>
+            </div>
+            <div className="cc-invariant">
+              <span className="cc-mono-eyebrow">PRIVATE BY DEFAULT</span>
+              <p className="cc-invariant-text">
+                Keep your Roastery private; share only the takes you put On the
+                Table.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          STAGE 04 — LIVE ON THE TABLE (FRAMELESS 2-COLUMN EDITORIAL SPLIT)
+         ================================================================ */}
+      <section className="cc-band" aria-label="On the Table right now">
+        <div className="cc-band-inner">
+          {totalCorpusPublicCount > 0 && featuredTable ? (
+            <>
+              <div className="cc-table-head">
+                <div>
+                  <span className="cc-mono-eyebrow">
+                    ON THE TABLE RIGHT NOW
+                  </span>
+                  <h2 className="cc-moment-h2">
+                    Same essay. Opposite Roasts.
+                  </h2>
+                  <p className="cc-table-source">
+                    {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
+                  </p>
+                </div>
+                <div className="cc-ghost-links">
+                  <Link
+                    href={`/sources/${featuredTable.originId}`}
+                    className="cc-ghost-link cc-ghost-link-strong"
+                  >
+                    Open this Table →
+                  </Link>
+                  <span className="cc-ghost-dot" aria-hidden="true">
+                    ·
+                  </span>
+                  <Link href="/sources" className="cc-ghost-link">
+                    Browse all Tables
+                  </Link>
+                </div>
+              </div>
+
+              <div className="cc-open-spread">
+                {contrastingPreview.map((b, idx) => {
+                  const poles = splitTradeoffPoles(b.tradeoff);
+                  return (
+                    <article key={b.id} className="cc-open-spread-col">
+                      <div className="cc-spread-author">
+                        <Link
+                          href={`/@${b.ownerHandle}`}
+                          className="cc-author-link"
+                        >
+                          <span className="cc-author-name">
+                            {b.ownerDisplayName}
+                          </span>
+                          <span className="cc-author-handle">
+                            @{b.ownerHandle}
+                          </span>
+                        </Link>
+                        <Link
+                          href={`/@${b.ownerHandle}`}
+                          className="cc-ghost-link"
+                        >
+                          Coffee Chat →
+                        </Link>
+                      </div>
+
+                      <h3 className="cc-spread-title">{b.title}</h3>
+
+                      {poles ? (
+                        <HairlineBeam
+                          leftLabel={idx === 1 ? poles[1] : poles[0]}
+                          rightLabel={idx === 1 ? poles[0] : poles[1]}
+                          position={idx === 1 ? 82 : 18}
+                        />
+                      ) : (
+                        <p className="cc-verdict-note">{b.tradeoff}</p>
+                      )}
+
+                      <span className="cc-verdict-boundary">
+                        Stops if: {b.boundary}
+                      </span>
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="cc-empty-closing">
+              <span className="cc-mono-eyebrow">START YOUR ROASTERY</span>
+              <h2 className="cc-moment-h2">
+                Start the first Coffee Chat Table.
+              </h2>
+              <p className="cc-editorial-p-sm">
+                Every Bean starts private to you and your connected AI. Share
+                only what you explicitly choose to put On the Table.
+              </p>
+              <div className="cc-cta-cluster">
                 <Button
                   emphasis="filled"
                   tone="neutral"
-                  size="compact"
+                  shape="pill"
+                  size="comfortable"
                   onClick={() =>
                     router.push(
                       signedIn
@@ -849,26 +816,37 @@ export function HomeClient({
                 >
                   Roast a private Bean
                 </Button>
-                <Link href="/connect" emphasis="soft" size="compact">
-                  Manual setup
+                <Link href="/connect" className="cc-ghost-link">
+                  Manual setup →
                 </Link>
-              </ButtonGroup>
-            }
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ================================================================
+          STAGE 05 — FINAL DESIRE CLOSER
+         ================================================================ */}
+      <section className="cc-band cc-band-closer" aria-label="Get started">
+        <div className="cc-band-inner cc-closer-inner">
+          <h2 className="cc-display-h2">
+            Ready to stop hearing
+            <br />
+            <em className="cc-ink-em">“it depends”?</em>
+          </h2>
+          <Button
+            emphasis="filled"
+            tone="brand"
+            shape="pill"
+            size="comfortable"
+            onClick={() => void handleCopyFooterPrompt()}
           >
-            <Stack gap={8}>
-              <Inline gap={8} align="center">
-                <Badge tone="neutral" dot={false}>
-                  Private by default
-                </Badge>
-              </Inline>
-              <Text variant="help">
-                Every Bean starts private to you and your connected AI. Share
-                only the priority calls you explicitly choose to put On the
-                Table.
-              </Text>
-            </Stack>
-          </Card>
-        )}
+            {copiedFooterPrompt
+              ? "Copied — paste into your AI"
+              : "Copy prompt & start now"}
+          </Button>
+        </div>
       </section>
     </div>
   );

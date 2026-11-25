@@ -57,12 +57,9 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
       page.getByRole("button", { name: /Copied — paste into any AI/ }),
     ).toBeVisible();
     await expect(page.getByText(/Connect to Coffee Chat at/)).toBeVisible();
-    // Interactive 3-act stage: Act 01 Specialist Roast toggle + Act 03 Coffee Chat with @david
-    await page.getByRole("radio", { name: "Specialist Roast" }).click();
+    // Interactive tactile Hero Taste Beam (Specialist Roast) + Frameless Coffee Chat with @david
+    await page.getByRole("radio", { name: /Specialist Roast/ }).click();
     await expect(page.getByText(/Hire the proven specialist/)).toBeVisible();
-    await page
-      .getByRole("tab", { name: /03 · Coffee Chat with other Taste/ })
-      .click();
     await page.getByRole("radio", { name: "Coffee Chat with @david" }).click();
     await expect(page.getByText(/Based on @david’s Beans/)).toBeVisible();
     await expect(

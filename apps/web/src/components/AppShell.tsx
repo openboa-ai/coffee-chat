@@ -38,6 +38,7 @@ export function AppShell({ user, children }: AppShellProps) {
     }
   };
 
+  const isHome = pathname === "/";
   const isWideWorkspace = pathname === "/me" || pathname.startsWith("/me/");
 
   return (
@@ -47,7 +48,15 @@ export function AppShell({ user, children }: AppShellProps) {
         appearance={appearance}
         onAppearanceChange={handleAppearanceChange}
       />
-      <main className={isWideWorkspace ? "app-main-wide" : "app-main"}>
+      <main
+        className={
+          isHome
+            ? "app-main-home"
+            : isWideWorkspace
+              ? "app-main-wide"
+              : "app-main"
+        }
+      >
         {children}
       </main>
       <footer className="app-footer" aria-label="Coffee Chat footer">
