@@ -9,7 +9,6 @@ import { Button } from "@openboa/yogurt/button";
 import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { Checkbox } from "@openboa/yogurt/checkbox";
-import { Composer } from "@openboa/yogurt/composer";
 import { ConfirmDialog } from "@openboa/yogurt/confirm-dialog";
 import { Dialog } from "@openboa/yogurt/dialog";
 import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
@@ -756,23 +755,41 @@ export function WorkspaceClient({
                 }
               />
 
-              {/* Native Yogurt Composer for Quick Roast */}
-              <div className="roastery-composer">
-                <Composer
-                  label="Quick Roast"
-                  placeholder="Paste an article link or jot a real call you just made…"
-                  value={quickSpark}
-                  onValueChange={setQuickSpark}
-                  sendTone="brand"
-                  shortcutHint="Enter to start Roasting"
-                  onSend={({ text }) => {
+              {/* Compact inline Quick Roast bar — keeps 2-pane workbench above the fold */}
+              <div className="cc-quick-roast-bar">
+                <div className="cc-quick-roast-field">
+                  <TextField
+                    label="Quick Roast"
+                    hiddenLabel
+                    size="compact"
+                    placeholder="Paste an article link or jot a real call you just made to start Roasting…"
+                    value={quickSpark}
+                    onChange={(e) => setQuickSpark(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && quickSpark.trim()) {
+                        e.preventDefault();
+                        setEditingBean(null);
+                        setPrefillRelations([]);
+                        setRoastSparkSeed(quickSpark.trim());
+                        setQuickSpark("");
+                        setRoastOpen(true);
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  emphasis="soft"
+                  size="compact"
+                  onClick={() => {
                     setEditingBean(null);
                     setPrefillRelations([]);
-                    setRoastSparkSeed(text.trim());
+                    setRoastSparkSeed(quickSpark.trim());
                     setQuickSpark("");
                     setRoastOpen(true);
                   }}
-                />
+                >
+                  Quick Roast
+                </Button>
               </div>
 
               {/* Single clean filter toolbar — height-matched compact controls */}
@@ -1154,29 +1171,26 @@ export function WorkspaceClient({
                               {inspectedBean.take}
                             </Text>
 
-                            <Surface
-                              variant="surface"
-                              density="compact"
-                              className="bean-criteria-box"
-                            >
-                              <Stack gap={8}>
-                                <Stack gap={2}>
-                                  <Text variant="meta">What mattered more</Text>
-                                  <Text as="p" variant="body">
-                                    {inspectedBean.tradeoff}
-                                  </Text>
-                                </Stack>
-                                <Divider />
-                                <Text as="p" variant="help">
-                                  Except when: {inspectedBean.boundary}
+                            <div className="cc-criteria-grid">
+                              <Stack gap={4}>
+                                <Text variant="meta">What mattered more</Text>
+                                <Text as="p" variant="body">
+                                  {inspectedBean.tradeoff}
                                 </Text>
-                                {inspectedBean.uncertainty ? (
-                                  <Text as="p" variant="meta">
-                                    Open question: {inspectedBean.uncertainty}
-                                  </Text>
-                                ) : null}
                               </Stack>
-                            </Surface>
+                              <Stack gap={4}>
+                                <Text variant="meta">Except when</Text>
+                                <Text as="p" variant="help">
+                                  {inspectedBean.boundary}
+                                </Text>
+                              </Stack>
+                            </div>
+
+                            {inspectedBean.uncertainty ? (
+                              <Text as="p" variant="meta">
+                                Open question: {inspectedBean.uncertainty}
+                              </Text>
+                            ) : null}
                           </Stack>
 
                           <Inline justify="between" align="center" gap={8} wrap>
@@ -1276,8 +1290,8 @@ export function WorkspaceClient({
                                       {o.sourceTitle ?? o.url}
                                     </Text>
                                     {o.quotation ? (
-                                      <blockquote className="bean-quote">
-                                        <Text variant="body">
+                                      <blockquote className="cc-quote">
+                                        <Text variant="help">
                                           &ldquo;{o.quotation}&rdquo;
                                         </Text>
                                       </blockquote>

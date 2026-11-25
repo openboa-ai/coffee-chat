@@ -12,7 +12,6 @@ import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
 import { Stack } from "@openboa/yogurt/stack";
-import { Surface } from "@openboa/yogurt/surface";
 import { Text } from "@openboa/yogurt/text";
 import type { UiBeanDetail } from "./types.js";
 
@@ -89,7 +88,7 @@ export function PerspectiveDiffCard({
                     <Heading level={3}>{bean.title}</Heading>
 
                     {firstSource?.quotation ? (
-                      <blockquote className="bean-quote">
+                      <blockquote className="cc-quote">
                         <Text variant="help">
                           &ldquo;{firstSource.quotation}&rdquo;
                         </Text>
@@ -100,24 +99,20 @@ export function PerspectiveDiffCard({
                       {bean.take}
                     </Text>
 
-                    <Surface
-                      variant="surface"
-                      density="compact"
-                      className="bean-criteria-box"
-                    >
-                      <Stack gap={6}>
-                        <Stack gap={2}>
-                          <Text variant="meta">What mattered more</Text>
-                          <Text as="p" variant="body">
-                            {bean.tradeoff}
-                          </Text>
-                        </Stack>
-                        <Divider />
-                        <Text as="p" variant="help">
-                          Except when: {bean.boundary}
+                    <div className="cc-criteria-grid">
+                      <Stack gap={4}>
+                        <Text variant="meta">What mattered more</Text>
+                        <Text as="p" variant="body">
+                          {bean.tradeoff}
                         </Text>
                       </Stack>
-                    </Surface>
+                      <Stack gap={4}>
+                        <Text variant="meta">Except when</Text>
+                        <Text as="p" variant="help">
+                          {bean.boundary}
+                        </Text>
+                      </Stack>
+                    </div>
 
                     <Divider />
 

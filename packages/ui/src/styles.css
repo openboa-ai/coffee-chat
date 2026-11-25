@@ -1,34 +1,78 @@
 @layer yg.utilities {
   .app-shell {
-    --app-max-width: 70rem;
-    --app-wide-width: 82rem;
-    --app-gutter: clamp(var(--boa-space-16), 3vi, var(--boa-space-32));
+    --app-max-width: 72rem;
+    --app-wide-width: 84rem;
+    --app-gutter: clamp(var(--boa-space-20), 4vi, var(--boa-space-48));
     min-block-size: 100dvh;
+    display: flex;
+    flex-direction: column;
     background: var(--yg-surface);
     color: var(--yg-text);
   }
 
-  /* Masthead matching Yogurt Guide shell rhythm */
+  /* Quiet architectural top bar — sits flush on canvas with hairline boundary */
   .app-masthead-wrap {
     position: sticky;
     inset-block-start: 0;
     z-index: 20;
-    background: var(--yg-canvas);
+    background: var(--yg-surface);
+    border-block-end: 1px solid var(--yg-border-subtle);
   }
 
-  .app-masthead {
+  .app-masthead.yg-navbar {
     inline-size: 100%;
-    min-block-size: 52px;
+    min-block-size: 64px;
     box-sizing: border-box;
-    padding-block: var(--boa-space-6);
+    padding-block: var(--boa-space-8);
     padding-inline: max(
       var(--app-gutter),
       calc((100% - var(--app-max-width)) / 2 + var(--app-gutter))
     );
-    background: var(--yg-canvas);
+    background: transparent;
     border: 0;
     border-radius: 0;
-    border-block-end: 1px solid var(--yg-border-subtle);
+    gap: clamp(var(--boa-space-16), 3vw, var(--boa-space-40));
+  }
+
+  /* Clean typographic nav links — no boxed pills around active route */
+  .app-masthead .yg-nav-list[data-orientation="horizontal"] {
+    gap: clamp(var(--boa-space-4), 1.4vw, var(--boa-space-16));
+  }
+
+  .app-masthead .yg-nav-list[data-orientation="horizontal"] a {
+    position: relative;
+    padding: var(--boa-space-6) var(--boa-space-6);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--yg-muted);
+    font-weight: 480;
+    transition: color var(--yg-press) var(--yg-settle);
+  }
+
+  .app-masthead .yg-nav-list[data-orientation="horizontal"] a:hover {
+    background: transparent;
+    color: var(--yg-text);
+  }
+
+  .app-masthead .yg-nav-list[data-orientation="horizontal"] a[aria-current] {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--yg-text);
+    font-weight: 580;
+  }
+
+  .app-masthead
+    .yg-nav-list[data-orientation="horizontal"]
+    a[aria-current]::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--boa-space-6);
+    inset-block-end: 0;
+    block-size: 1.5px;
+    background: var(--yg-brand-ink);
   }
 
   .app-brand-identity.yg-link {
@@ -36,8 +80,9 @@
     align-items: center;
     gap: var(--boa-space-8);
     color: var(--yg-text);
-    font: var(--yg-font-card-title);
-    letter-spacing: var(--yg-tracking-card-title);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
     text-decoration: none;
     white-space: nowrap;
   }
@@ -54,7 +99,7 @@
     padding: 2px var(--boa-space-8) 2px 3px;
     border-radius: var(--yg-radius-pill);
     border: 1px solid var(--yg-border-subtle);
-    background: var(--yg-surface);
+    background: var(--yg-raised);
     color: var(--yg-text);
     font: var(--yg-font-label);
     text-decoration: none;
@@ -72,6 +117,7 @@
   }
 
   .app-main {
+    flex: 1;
     inline-size: 100%;
     max-inline-size: var(--app-max-width);
     margin-inline: auto;
@@ -80,10 +126,11 @@
   }
 
   .app-main-wide {
+    flex: 1;
     inline-size: 100%;
     max-inline-size: var(--app-wide-width);
     margin-inline: auto;
-    padding: var(--boa-space-16) var(--app-gutter) var(--boa-space-64);
+    padding: var(--boa-space-24) var(--app-gutter) var(--boa-space-64);
     box-sizing: border-box;
   }
 
@@ -91,6 +138,62 @@
     padding: var(--boa-space-16);
     background: var(--yg-surface);
     color: var(--yg-text);
+  }
+
+  /* Quiet architectural footer */
+  .app-footer {
+    border-block-start: 1px solid var(--yg-border-subtle);
+    padding-block: var(--boa-space-24);
+    padding-inline: max(
+      var(--app-gutter),
+      calc((100% - var(--app-max-width)) / 2 + var(--app-gutter))
+    );
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--boa-space-12);
+    color: var(--yg-muted);
+  }
+
+  .app-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--boa-space-20);
+  }
+
+  .app-footer-links .yg-link {
+    color: var(--yg-muted);
+    text-decoration: none;
+    font: var(--yg-font-meta);
+  }
+
+  .app-footer-links .yg-link:hover {
+    color: var(--yg-text);
+    text-decoration: none;
+  }
+
+  /* Architectural PageHeader: title left, actions right, anchored on bottom hairline */
+  .app-shell .yg-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--boa-space-16);
+    padding-block-end: var(--boa-space-20);
+    border-block-end: 1px solid var(--yg-border-subtle);
+  }
+
+  .app-shell .yg-page-header .yg-page-header-title .yg-heading {
+    font-size: clamp(1.625rem, 2.8vw, 2.125rem);
+    font-weight: 580;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .app-shell .yg-page-header .yg-page-header-actions {
+    flex-shrink: 0;
   }
 
   /* Quiet inline identity link — never hard underlined */
@@ -107,202 +210,382 @@
     text-decoration: none;
   }
 
-  /* Home Hero — aligned with Yogurt Brand opening rhythm */
-  .home-hero-grid {
-    grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr);
+  /* =========================================================================
+     HOME — Editorial Opening + Universal Start Bar + Split Studio Stage
+     ========================================================================= */
+
+  .cc-home-stack {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 7vh, 5.5rem);
+  }
+
+  .cc-hero {
+    padding-block-start: clamp(var(--boa-space-12), 4vh, var(--boa-space-40));
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-24);
+  }
+
+  .cc-hero-kicker {
+    display: inline-flex;
     align-items: center;
-    padding-block: var(--boa-space-8) var(--boa-space-4);
+    gap: var(--boa-space-8);
+    color: var(--yg-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
 
-  .home-hero-title.yg-heading {
-    font-size: clamp(2.25rem, 4.4vw, 3.25rem);
-    font-weight: var(--boa-role-weight-heading);
-    line-height: 1.06;
-    letter-spacing: var(--boa-tracking-display);
+  .cc-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.62fr) minmax(240px, 0.72fr);
+    gap: clamp(var(--boa-space-20), 4vw, var(--boa-space-48));
+    align-items: end;
   }
 
-  .home-hero-lead.yg-text {
-    max-inline-size: 56ch;
+  .cc-hero-title.yg-heading {
+    margin: 0;
+    font-size: clamp(2.15rem, 4.35vw, 3.65rem);
+    font-weight: 560;
+    line-height: 1.04;
+    letter-spacing: -0.038em;
+    color: var(--yg-text);
+    text-wrap: balance;
+  }
+
+  .cc-accent-ink {
+    color: var(--yg-brand-ink);
+    font-style: normal;
+  }
+
+  .cc-hero-lead.yg-text {
+    margin: 0 0 0.25em;
     color: var(--yg-muted);
     font-size: 1.0625rem;
-    line-height: 1.55;
+    line-height: 1.56;
+    max-inline-size: 38ch;
+    text-wrap: pretty;
   }
 
-  .home-hero-artwork {
-    display: grid;
-    place-items: center;
-    align-self: stretch;
-    min-block-size: 12.5rem;
-    padding: var(--boa-space-24);
+  /* Sculpted Universal Start Command Bar */
+  .cc-start-shell {
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-12);
+    max-inline-size: 56rem;
+  }
+
+  .cc-start-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--boa-space-12);
+    padding: 6px 6px 6px var(--boa-space-20);
     border-radius: var(--yg-radius-card);
-    border: 1px solid var(--yg-border-subtle);
+    border: 1px solid var(--yg-border-chrome);
     background: var(--yg-raised);
   }
 
-  .home-prompt-code {
-    max-inline-size: 46rem;
+  .cc-start-preview {
+    min-inline-size: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--yg-muted);
+    font-size: 0.875rem;
+    letter-spacing: -0.005em;
   }
 
-  /* Plain-language prompt CodeBlocks wrap cleanly instead of clipping horizontally */
-  .prompt-code-wrap pre {
-    white-space: pre-wrap;
-    word-break: break-word;
+  .cc-start-preview strong {
+    color: var(--yg-text);
+    font-weight: 540;
   }
 
-  /* Flush-width Composer inside My Roastery (matches pane reading edges) */
-  .roastery-composer .yg-composer {
-    max-inline-size: none;
-    inline-size: 100%;
-    margin-inline: 0;
-  }
-
-  /* Isolate SegmentedControl inside underline Tabs panel from underline tab marker rule */
-  .yg-tabs[data-presentation="underline"]
-    [role="tabpanel"]
-    .yg-segment
-    > .yg-selection-marker {
-    display: none;
-  }
-
-  /* Interactive 3-Act Stage — pure Yogurt Cards, Transcript, Message & Tabs */
-  .stage-toolbar {
+  .cc-start-subrow {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--boa-space-12);
+    padding-inline: var(--boa-space-4);
   }
 
-  .stage-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) 56px minmax(280px, 4.2fr);
+  /* Plain-language prompt CodeBlocks wrap cleanly instead of clipping */
+  .prompt-code-wrap pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Unified Split Studio Frame — zero floating boxes, zero SVG wires */
+  .cc-studio-frame {
+    border-radius: var(--yg-radius-card);
+    border: 1px solid var(--yg-border-subtle);
+    background: var(--yg-raised);
+    overflow: hidden;
+  }
+
+  .cc-studio-topbar {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--boa-space-12) var(--boa-space-24);
+    padding: var(--boa-space-12) var(--boa-space-24) 0;
+    border-block-end: 1px solid var(--yg-border-subtle);
+    background: var(--yg-raised);
   }
 
-  .stage-conversation-card {
-    min-block-size: 22rem;
+  .cc-studio-tabs .yg-tabs[data-presentation="underline"] [role="tablist"] {
+    border-block-end: 0;
+    gap: var(--boa-space-24);
   }
 
-  .stage-trace-strip {
+  .cc-studio-tabs .yg-tabs [role="tabpanel"] {
+    display: none;
+  }
+
+  .cc-studio-mode-wrap {
+    padding-block-end: var(--boa-space-10);
+  }
+
+  .cc-studio-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.48fr) minmax(300px, 0.95fr);
+    min-block-size: 27rem;
+  }
+
+  .cc-studio-conversation {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--boa-space-20);
+    padding: var(--boa-space-24) var(--boa-space-32);
+    background: var(--yg-raised);
+  }
+
+  .cc-studio-session-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--boa-space-12);
+    padding-block-end: var(--boa-space-12);
+    border-block-end: 1px solid var(--yg-border-subtle);
+  }
+
+  .cc-studio-trace {
     display: flex;
     align-items: center;
     gap: var(--boa-space-8);
     padding: var(--boa-space-8) var(--boa-space-12);
     border-radius: var(--yg-radius-control);
     background: var(--yg-surface);
-    border: 1px solid var(--yg-border-subtle);
+    color: var(--yg-muted);
+    font-size: 0.8125rem;
   }
 
-  .stage-reply-decaf {
+  .cc-studio-takeaway.yg-heading {
+    font-size: 1.1875rem;
+    font-weight: 580;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  .cc-studio-decaf {
     color: var(--yg-muted);
   }
 
-  .stage-decaf-strike {
-    text-decoration: line-through;
-    color: var(--yg-muted);
+  .cc-studio-confirm {
+    border-block: 1px solid var(--yg-border-subtle);
+    padding-block: var(--boa-space-16);
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-12);
   }
 
-  .stage-card-footer-row {
-    inline-size: 100%;
-  }
-
-  .stage-bridge-col {
+  .cc-studio-foot {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: var(--boa-space-12);
+    padding-block-start: var(--boa-space-12);
+    border-block-start: 1px solid var(--yg-border-subtle);
   }
 
-  .stage-signal-path {
-    fill: none;
-    stroke: var(--yg-brand-ink);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-dasharray: 240;
-    stroke-dashoffset: 240;
+  .cc-studio-foot button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Recessed Right Taste Inspector Pane */
+  .cc-studio-inspector {
+    display: flex;
+    flex-direction: column;
+    border-inline-start: 1px solid var(--yg-border-subtle);
+    background: var(--yg-surface);
+  }
+
+  .cc-inspector-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--boa-space-8);
+    padding: var(--boa-space-16) var(--boa-space-24);
+    border-block-end: 1px solid var(--yg-border-subtle);
+  }
+
+  .cc-inspector-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .cc-ledger-bean {
+    position: relative;
+    width: 100%;
+    text-align: start;
+    border: 0;
+    border-block-end: 1px solid var(--yg-border-subtle);
+    background: transparent;
+    padding: var(--boa-space-20) var(--boa-space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-8);
+    color: inherit;
+    font: inherit;
+    opacity: 0.56;
     transition:
-      stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.25s ease;
+      background-color var(--yg-press) var(--yg-settle),
+      opacity var(--yg-press) var(--yg-settle);
   }
 
-  .stage-signal-path[data-state="drawn"] {
-    stroke-dashoffset: 0;
-    opacity: 0.9;
+  .cc-ledger-bean[data-clickable="true"] {
+    cursor: pointer;
   }
 
-  .stage-signal-path[data-state="dim"] {
-    stroke: var(--yg-border-chrome);
-    stroke-dasharray: 3 5;
-    stroke-dashoffset: 0;
-    opacity: 0.5;
+  .cc-ledger-bean[data-clickable="true"]:hover {
+    opacity: 0.85;
   }
 
-  .stage-signal-pulse {
-    fill: var(--yg-brand-ink);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-
-  .stage-signal-pulse[data-active="true"] {
+  .cc-ledger-bean[data-active="true"] {
+    background: var(--yg-raised);
     opacity: 1;
   }
 
-  .stage-bean-active.yg-card {
-    border-color: var(--yg-brand-border);
-    transition:
-      border-color var(--yg-press) var(--yg-settle),
-      opacity var(--yg-press) var(--yg-settle);
+  .cc-ledger-bean[data-active="true"]::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block: 0;
+    inline-size: 2.5px;
+    background: var(--yg-brand-ink);
   }
 
-  .stage-bean-idle.yg-card {
-    opacity: 0.62;
-    transition:
-      border-color var(--yg-press) var(--yg-settle),
-      opacity var(--yg-press) var(--yg-settle);
+  .cc-ledger-bean:last-child {
+    border-block-end: 0;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .stage-signal-path,
-    .stage-signal-pulse,
-    .stage-bean-active.yg-card,
-    .stage-bean-idle.yg-card {
-      transition: none !important;
-    }
+  /* Asymmetric Editorial Manifesto (Why Coffee Chat — zero icon card cliché) */
+  .cc-manifesto {
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: clamp(var(--boa-space-24), 5vw, var(--boa-space-64));
+    align-items: start;
+    padding-block-start: var(--boa-space-32);
+    border-block-start: 1px solid var(--yg-border-subtle);
   }
 
-  /* Why Coffee Chat section */
-  .why-headline.yg-heading {
-    font-size: clamp(1.625rem, 3vw, 2.2rem);
-    font-weight: var(--boa-role-weight-heading);
-    line-height: 1.14;
-    letter-spacing: var(--boa-tracking-heading);
+  .cc-section-index {
+    color: var(--yg-brand-ink);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
 
-  .steps-grid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-
-  /* Shared grids & structured content surfaces */
-  .split-grid {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
-
-  .table-dialogue-grid {
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    align-items: stretch;
-  }
-
-  .bean-quote {
+  .cc-manifesto-title.yg-heading {
     margin: 0;
-    padding: var(--boa-space-10) var(--boa-space-12);
-    border-radius: var(--yg-radius-control);
-    border: 1px solid var(--yg-border-subtle);
-    background: var(--yg-surface);
-    color: var(--yg-text);
+    font-size: clamp(1.875rem, 3.4vw, 2.75rem);
+    font-weight: 560;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
   }
 
-  .bean-criteria-box {
-    border-radius: var(--yg-radius-control);
+  .cc-manifesto-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cc-manifesto-row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--boa-space-16);
+    padding-block: var(--boa-space-20);
+    border-block-start: 1px solid var(--yg-border-subtle);
+  }
+
+  .cc-manifesto-row:first-child {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+
+  .cc-manifesto-num {
+    color: var(--yg-brand-ink);
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding-block-start: 2px;
+  }
+
+  /* Unified Side-by-Side Comparison Spread (Home bottom & Table views) */
+  .cc-spread-section {
+    padding-block-start: var(--boa-space-32);
+    border-block-start: 1px solid var(--yg-border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-20);
+  }
+
+  .cc-spread {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: var(--yg-radius-card);
     border: 1px solid var(--yg-border-subtle);
+    background: var(--yg-raised);
+    overflow: hidden;
+  }
+
+  .cc-spread-col {
+    padding: var(--boa-space-24) var(--boa-space-32);
+    display: flex;
+    flex-direction: column;
+    gap: var(--boa-space-16);
+  }
+
+  .cc-spread-col + .cc-spread-col {
+    border-inline-start: 1px solid var(--yg-border-subtle);
+  }
+
+  /* =========================================================================
+     SHARED EDITORIAL RECORD PATTERNS (Zero Box-in-Box Nesting)
+     ========================================================================= */
+
+  /* Hairline 2-column criteria ledger (What mattered more / Except when) */
+  .cc-criteria-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--boa-space-16) var(--boa-space-24);
+    padding-block-start: var(--boa-space-12);
+    border-block-start: 1px solid var(--yg-border-subtle);
+  }
+
+  /* Clean typographic pull-quote — no gray rounded box prison */
+  .cc-quote {
+    margin: 0;
+    padding-inline-start: var(--boa-space-16);
+    border-inline-start: 2px solid var(--yg-border-chrome);
+    color: var(--yg-muted);
   }
 
   .editorial-lead.yg-text {
@@ -311,24 +594,64 @@
     color: var(--yg-text);
   }
 
-  /* My Roastery 2-pane workbench */
+  .split-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+
+  /* Symmetrical 2-column Table Comparison grid (no 3+1 orphan row) */
+  .table-dialogue-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--boa-space-16);
+    align-items: stretch;
+  }
+
+  /* Equal-height Brew Bar starter prompt cards with aligned footers */
+  .cc-equal-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--boa-space-16);
+    align-items: stretch;
+  }
+
+  .cc-equal-cards .yg-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cc-equal-cards .yg-card-body {
+    flex: 1;
+  }
+
+  /* My Roastery compact inline Quick Roast bar + 2-pane workbench */
+  .cc-quick-roast-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--boa-space-8);
+  }
+
+  .cc-quick-roast-field {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
   .roastery-split {
     display: grid;
-    grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
+    grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
     gap: var(--boa-space-16);
     align-items: start;
   }
 
   .roastery-inspector {
     position: sticky;
-    inset-block-start: 68px;
+    inset-block-start: 80px;
   }
 
-  /* Tasting Notes metrics */
+  /* Tasting Notes hairline typographic metrics */
   .taste-strip {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: var(--boa-space-16);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--boa-space-24);
   }
 
   .taste-metric {
@@ -337,21 +660,26 @@
     gap: var(--boa-space-4);
   }
 
+  .taste-metric + .taste-metric {
+    padding-inline-start: var(--boa-space-24);
+    border-inline-start: 1px solid var(--yg-border-subtle);
+  }
+
   .taste-metric-value {
-    font-size: 1.875rem;
-    font-weight: var(--boa-role-weight-heading);
-    letter-spacing: var(--boa-tracking-heading);
+    font-size: 2rem;
+    font-weight: 560;
+    letter-spacing: -0.035em;
     font-variant-numeric: tabular-nums;
-    line-height: 1.1;
+    line-height: 1.08;
     color: var(--yg-text);
   }
 
-  /* Focused task containers (Sign In & OAuth Consent — Yogurt rule 5) */
+  /* Focused task containers (Sign In & OAuth Consent) */
   .auth-split-shell {
-    max-inline-size: 54rem;
+    max-inline-size: 56rem;
     margin-inline: auto;
-    padding-block: var(--boa-space-16);
-    grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+    padding-block: clamp(var(--boa-space-16), 5vh, var(--boa-space-48));
+    grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
     align-items: stretch;
   }
 
@@ -360,7 +688,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    gap: var(--boa-space-16);
+    gap: var(--boa-space-20);
     padding: var(--boa-space-32);
     border-radius: var(--yg-radius-card);
     border: 1px solid var(--yg-border-subtle);
@@ -370,7 +698,7 @@
   .focused-task-shell {
     max-inline-size: 42rem;
     margin-inline: auto;
-    padding-block: var(--boa-space-16);
+    padding-block: var(--boa-space-24);
   }
 
   .source-url-link {
@@ -378,21 +706,36 @@
   }
 
   @media (max-width: 960px) {
-    .home-hero-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .home-hero-artwork {
-      min-block-size: 9rem;
-    }
-
-    .stage-grid {
+    .cc-hero-grid {
       grid-template-columns: minmax(0, 1fr);
       gap: var(--boa-space-16);
     }
 
-    .stage-bridge-col {
-      display: none;
+    .cc-studio-body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cc-studio-inspector {
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--yg-border-subtle);
+    }
+
+    .cc-manifesto {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cc-spread {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .cc-spread-col + .cc-spread-col {
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--yg-border-subtle);
+    }
+
+    .table-dialogue-grid,
+    .cc-equal-cards {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .roastery-split {
@@ -408,9 +751,40 @@
     }
   }
 
-  @media (max-width: 720px) {
-    .home-hero-artwork {
-      display: none;
+  @media (max-width: 640px) {
+    .cc-start-bar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: var(--boa-space-12);
+    }
+
+    .cc-studio-topbar {
+      padding: var(--boa-space-12) var(--boa-space-16) 0;
+    }
+
+    .cc-studio-tabs .yg-tabs[data-presentation="underline"] [role="tablist"] {
+      gap: var(--boa-space-12);
+    }
+
+    .cc-studio-conversation,
+    .cc-spread-col {
+      padding: var(--boa-space-20);
+    }
+
+    .cc-criteria-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .taste-strip {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--boa-space-16);
+    }
+
+    .taste-metric + .taste-metric {
+      padding-inline-start: 0;
+      padding-block-start: var(--boa-space-16);
+      border-inline-start: 0;
+      border-block-start: 1px solid var(--yg-border-subtle);
     }
   }
 }

@@ -215,7 +215,9 @@ export function SignInPanel({
       <Surface variant="raised" className="auth-brand-panel">
         <ProjectMark project="coffee" label="" size={112} />
         <Stack gap={8}>
-          <Heading level={2}>Your Taste, across every AI.</Heading>
+          <Heading level={2}>
+            Your Taste, across <em className="cc-accent-ink">every AI.</em>
+          </Heading>
           <Text as="p" variant="help">
             Everything you Roast starts private to you and your connected AI.
             Nothing saves without your confirmation, and Coffee Chat runs zero

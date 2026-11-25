@@ -10,7 +10,6 @@ import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
 import { Divider } from "@openboa/yogurt/divider";
-import { Grid } from "@openboa/yogurt/grid";
 import { Heading } from "@openboa/yogurt/heading";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
@@ -273,7 +272,6 @@ export function SourceCompareClient({
                       key={pb.id}
                       variant="surface"
                       density="compact"
-                      className="bean-criteria-box"
                     >
                       <Stack gap={4}>
                         <Inline gap={8} align="center">
@@ -322,7 +320,7 @@ export function SourceCompareClient({
           <Heading level={2}>How each person read this source</Heading>
         </Stack>
 
-        <Grid className="table-dialogue-grid" gap={16}>
+        <div className="table-dialogue-grid">
           {beans.map((b) => {
             const matchingOrigin =
               b.origins.find((o) => o.url === normalizedUrl) ??
@@ -359,7 +357,7 @@ export function SourceCompareClient({
                   </Inline>
 
                   {matchingOrigin?.quotation ? (
-                    <blockquote className="bean-quote">
+                    <blockquote className="cc-quote">
                       <Stack gap={4}>
                         <Text variant="help">
                           &ldquo;{matchingOrigin.quotation}&rdquo;
@@ -381,24 +379,20 @@ export function SourceCompareClient({
                       {b.take}
                     </Text>
 
-                    <Surface
-                      variant="surface"
-                      density="compact"
-                      className="bean-criteria-box"
-                    >
-                      <Stack gap={8}>
-                        <Stack gap={2}>
-                          <Text variant="meta">What mattered more</Text>
-                          <Text as="p" variant="body">
-                            {b.tradeoff}
-                          </Text>
-                        </Stack>
-                        <Divider />
-                        <Text as="p" variant="help">
-                          Except when: {b.boundary}
+                    <div className="cc-criteria-grid">
+                      <Stack gap={4}>
+                        <Text variant="meta">What mattered more</Text>
+                        <Text as="p" variant="body">
+                          {b.tradeoff}
                         </Text>
                       </Stack>
-                    </Surface>
+                      <Stack gap={4}>
+                        <Text variant="meta">Except when</Text>
+                        <Text as="p" variant="help">
+                          {b.boundary}
+                        </Text>
+                      </Stack>
+                    </div>
                   </Stack>
 
                   {b.tags.length > 0 ? (
@@ -417,7 +411,7 @@ export function SourceCompareClient({
               </Card>
             );
           })}
-        </Grid>
+        </div>
       </Stack>
 
       {signedIn ? (

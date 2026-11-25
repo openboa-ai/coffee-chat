@@ -9,10 +9,7 @@ import { Button } from "@openboa/yogurt/button";
 import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { CodeBlock } from "@openboa/yogurt/code-block";
-import { Divider } from "@openboa/yogurt/divider";
-import { Grid } from "@openboa/yogurt/grid";
 import { Heading } from "@openboa/yogurt/heading";
-import { Icon } from "@openboa/yogurt/icon";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
 import { Message } from "@openboa/yogurt/message";
@@ -20,7 +17,6 @@ import { ProjectMark } from "@openboa/yogurt/project-mark";
 import { SegmentedControl } from "@openboa/yogurt/segmented-control";
 import { Stack } from "@openboa/yogurt/stack";
 import { Status } from "@openboa/yogurt/status";
-import { Surface } from "@openboa/yogurt/surface";
 import { Tabs } from "@openboa/yogurt/tabs";
 import { Text } from "@openboa/yogurt/text";
 import type {
@@ -167,13 +163,9 @@ export function HomeClient({
   const [guest, setGuest] = useState<ChatGuest>("claire");
   const [playNonce, setPlayNonce] = useState(0);
 
-  // Universal Hero Copy-and-Start CTA state (works regardless of which AI app the visitor uses)
   const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
   const [showPromptPreview, setShowPromptPreview] = useState(false);
 
-  // Live stage choreography
-  const [curveDrawn, setCurveDrawn] = useState(true);
-  const [pulseActive, setPulseActive] = useState(true);
   const [streamedText, setStreamedText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [roastConfirmed, setRoastConfirmed] = useState(false);
@@ -201,7 +193,7 @@ export function HomeClient({
         await navigator.clipboard.writeText(text);
       }
     } catch {
-      // Clipboard may be unavailable in restricted contexts; preview stays open for manual copy.
+      // Clipboard may be unavailable in restricted contexts; full prompt reveals below.
     }
   };
 
@@ -236,50 +228,22 @@ export function HomeClient({
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (reduced) {
-      setCurveDrawn(act !== "brew" || brewMode !== "decaf");
-      setPulseActive(false);
       setStreamedText(fullText);
       setIsStreaming(false);
       setRoastConfirmed(act === "roast");
       return clearTimers;
     }
 
-    setCurveDrawn(false);
-    setPulseActive(false);
     setStreamedText("");
     setIsStreaming(act !== "roast");
     setRoastConfirmed(false);
 
-    if (act === "brew" && brewMode === "decaf") {
-      schedule(120, () => {
-        const words = fullText.split(" ");
-        let idx = 0;
-        const step = () => {
-          if (idx < words.length) {
-            idx += 1;
-            setStreamedText(words.slice(0, idx).join(" "));
-            schedule(20, step);
-          } else {
-            setIsStreaming(false);
-          }
-        };
-        step();
-      });
-      return clearTimers;
-    }
-
     if (act === "roast") {
-      schedule(950, () => {
-        setRoastConfirmed(true);
-        setCurveDrawn(true);
-        schedule(200, () => setPulseActive(true));
-      });
+      schedule(900, () => setRoastConfirmed(true));
       return clearTimers;
     }
 
-    schedule(120, () => setCurveDrawn(true));
-    schedule(260, () => setPulseActive(true));
-    schedule(300, () => {
+    schedule(180, () => {
       const words = fullText.split(" ");
       let idx = 0;
       const step = () => {
@@ -322,26 +286,6 @@ export function HomeClient({
   })();
 
   const isDecaf = act === "brew" && brewMode === "decaf";
-  const topCurveState = isDecaf
-    ? "dim"
-    : act === "brew"
-      ? brewMode === "growth"
-        ? curveDrawn
-          ? "drawn"
-          : "idle"
-        : "dim"
-      : curveDrawn
-        ? "drawn"
-        : "idle";
-
-  const bottomCurveState = isDecaf
-    ? "dim"
-    : act === "brew" && brewMode === "craft"
-      ? curveDrawn
-        ? "drawn"
-        : "idle"
-      : "dim";
-
   const activeGuest = CHAT_GUEST_DATA[guest];
 
   const promptText =
@@ -372,7 +316,7 @@ export function HomeClient({
 
   const drawerHeading =
     act === "chat"
-      ? `${activeGuest.fullName} (${activeGuest.handle})`
+      ? `${activeGuest.fullName} · ${activeGuest.handle}`
       : "Your Roastery";
 
   const drawerSub =
@@ -384,22 +328,15 @@ export function HomeClient({
         ? "Public Taste"
         : "Private Beans";
 
-  const actDescription =
-    act === "brew"
-      ? "Switch between default AI and two private Beans—same question, different call."
-      : act === "roast"
-        ? "Correct your AI once. It drafts a private Bean and waits for your confirmation."
-        : "Consult someone else’s confirmed public Beans inside your AI—attributed, never roleplayed.";
-
   const composerHint =
     act === "brew"
       ? isDecaf
-        ? "Try Growth Roast or Specialist Roast above"
-        : "Try Unplugged (Decaf) or Specialist Roast above"
+        ? "Select a Roast on the right or above to see the call flip"
+        : "Select any Bean on the right or switch Roasts above"
       : act === "roast"
         ? roastConfirmed
-          ? "Saved privately · ready across your AI apps"
-          : "Nothing saves until you confirm"
+          ? "Saved privately · ready across every connected AI"
+          : "Nothing saves without your confirmation"
         : `Switch to ${guest === "claire" ? "@david" : "@claire"} above`;
 
   const agentGaze = isStreaming
@@ -408,51 +345,277 @@ export function HomeClient({
       ? "waiting"
       : "done";
 
-  const renderStagePanel = () => (
-    <Stack gap={16}>
-      <div className="stage-toolbar">
-        <Text variant="help">{actDescription}</Text>
-        {act === "brew" ? (
-          <SegmentedControl
-            label="Compare AI output by Taste"
-            value={brewMode}
-            onValueChange={(v) => setBrewMode(v as BrewMode)}
-            options={[
-              { id: "decaf", label: "Unplugged (Decaf)" },
-              { id: "growth", label: "Growth Roast" },
-              { id: "craft", label: "Specialist Roast" },
-            ]}
-          />
-        ) : act === "chat" ? (
-          <SegmentedControl
-            label="Choose someone to Coffee Chat with"
-            value={guest}
-            onValueChange={(v) => setGuest(v as ChatGuest)}
-            options={[
-              { id: "claire", label: "Coffee Chat with @claire" },
-              { id: "david", label: "Coffee Chat with @david" },
-            ]}
-          />
-        ) : null}
-      </div>
+  return (
+    <div className="cc-home-stack">
+      {/* 1. EDITORIAL OPENING + SCULPTED UNIVERSAL START BAR */}
+      <section className="cc-hero" aria-label="Introduction">
+        <span className="cc-hero-kicker">
+          <ProjectMark project="coffee" label="" size={18} />
+          <span>
+            Personal Taste for ChatGPT, Claude, Codex, Cursor &amp; Antigravity
+          </span>
+        </span>
 
-      <div className="stage-grid">
-        {/* LEFT: Native Yogurt Agent Conversation Card */}
-        <Card
-          title="Your AI"
-          description="ChatGPT, Claude, Codex, Cursor, or Antigravity"
-          headerAction={
-            <Badge tone={isDecaf ? "neutral" : "brand"} dot={false}>
-              {pluginChipLabel}
-            </Badge>
-          }
-          action={
-            <Inline
-              justify="between"
-              align="center"
-              gap={12}
-              className="stage-card-footer-row"
+        <div className="cc-hero-grid">
+          <Heading level={1} className="cc-hero-title">
+            Your AI knows everything.
+            <br />
+            Give it <em className="cc-accent-ink">your Taste.</em>
+          </Heading>
+
+          <Text as="p" className="cc-hero-lead">
+            Save how you weigh real trade-offs—so your AI answers with your
+            priorities, or lets you Coffee Chat with anyone else’s.
+          </Text>
+        </div>
+
+        <div className="cc-start-shell">
+          <div className="cc-start-bar">
+            <span className="cc-start-preview">
+              <strong>Start in any AI:</strong> Connect to Coffee Chat and help
+              me Roast my first private Bean…
+            </span>
+            <Button
+              emphasis="filled"
+              tone="brand"
+              size="comfortable"
+              onClick={() => void handleCopyStartPrompt()}
             >
+              {copiedHeroPrompt
+                ? "Copied — paste into any AI"
+                : "Copy prompt to start in your AI"}
+            </Button>
+          </div>
+
+          <div className="cc-start-subrow">
+            <Text variant="meta">
+              Paste into whatever AI you already use — no config file needed to
+              start.
+            </Text>
+            <ButtonGroup label="Alternative setup options">
+              <Button
+                emphasis="quiet"
+                size="compact"
+                onClick={() => setShowPromptPreview((v) => !v)}
+              >
+                {showPromptPreview ? "Hide prompt" : "Read full prompt"}
+              </Button>
+              <Link
+                href={
+                  signedIn
+                    ? "/me?compose=1"
+                    : "/signin?returnTo=%2Fme%3Fcompose%3D1"
+                }
+                emphasis="quiet"
+                size="compact"
+              >
+                {signedIn ? "Open My Roastery" : "Try in browser"}
+              </Link>
+              <Link href="/connect" emphasis="quiet" size="compact">
+                Manual setup
+              </Link>
+            </ButtonGroup>
+          </div>
+
+          {showPromptPreview ? (
+            <div className="prompt-code-wrap">
+              <CodeBlock
+                code={universalStartPrompt}
+                language="text"
+                onCopy={copyPromptText}
+              />
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* 2. UNIFIED SPLIT STUDIO STAGE (01 Brew -> 02 Roast -> 03 Coffee Chat) */}
+      <section className="cc-studio-frame" aria-label="Interactive product preview">
+        <div className="cc-studio-topbar">
+          <div className="cc-studio-tabs">
+            <Tabs
+              label="Coffee Chat use cases"
+              presentation="underline"
+              value={act}
+              onValueChange={(next) => setAct(next as StageAct)}
+              items={[
+                { id: "brew", label: "01 · Brew in your AI", panel: null },
+                {
+                  id: "roast",
+                  label: "02 · Roast from a correction",
+                  panel: null,
+                },
+                {
+                  id: "chat",
+                  label: "03 · Coffee Chat with other Taste",
+                  panel: null,
+                },
+              ]}
+            />
+          </div>
+
+          {act === "brew" ? (
+            <div className="cc-studio-mode-wrap">
+              <SegmentedControl
+                label="Compare AI output by Taste"
+                value={brewMode}
+                onValueChange={(v) => setBrewMode(v as BrewMode)}
+                options={[
+                  { id: "decaf", label: "Unplugged (Decaf)" },
+                  { id: "growth", label: "Growth Roast" },
+                  { id: "craft", label: "Specialist Roast" },
+                ]}
+              />
+            </div>
+          ) : act === "chat" ? (
+            <div className="cc-studio-mode-wrap">
+              <SegmentedControl
+                label="Choose someone to Coffee Chat with"
+                value={guest}
+                onValueChange={(v) => setGuest(v as ChatGuest)}
+                options={[
+                  { id: "claire", label: "Coffee Chat with @claire" },
+                  { id: "david", label: "Coffee Chat with @david" },
+                ]}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div className="cc-studio-body">
+          {/* LEFT PANE: Live AI Conversation */}
+          <div className="cc-studio-conversation">
+            <Stack gap={16}>
+              <div className="cc-studio-session-head">
+                <Inline gap={8} align="center">
+                  <AgentAvatar
+                    agent="Kai"
+                    size={22}
+                    label=""
+                    state={agentGaze}
+                  />
+                  <Text variant="body">Your AI</Text>
+                  <Text variant="meta">· Any connected chat</Text>
+                </Inline>
+                <Status tone={isDecaf ? "neutral" : "success"}>
+                  {pluginChipLabel}
+                </Status>
+              </div>
+
+              <Message
+                speaker="You"
+                variant="sent"
+                avatar={<Avatar label="You" size="compact" />}
+              >
+                <Text as="p" variant="body">
+                  {promptText}
+                </Text>
+              </Message>
+
+              {!isDecaf ? (
+                <div className="cc-studio-trace" role="status">
+                  <ProjectMark project="coffee" label="" size={16} />
+                  <span>{traceLabel}</span>
+                </div>
+              ) : null}
+
+              <Message
+                speaker="Your AI"
+                variant="received"
+                avatar={
+                  <AgentAvatar
+                    agent="Kai"
+                    size={24}
+                    label=""
+                    state={agentGaze}
+                  />
+                }
+              >
+                {act === "roast" ? (
+                  <div className="cc-studio-confirm">
+                    <Inline justify="between" align="center" gap={8}>
+                      <Text variant="meta">
+                        Confirm Bean · Private by default
+                      </Text>
+                      <Status tone={roastConfirmed ? "success" : "warning"}>
+                        {roastConfirmed ? "Saved" : "Waiting for confirmation"}
+                      </Status>
+                    </Inline>
+                    <Heading level={3} className="cc-studio-takeaway">
+                      Lead with the hard truth, not the build-up
+                    </Heading>
+                    <div className="cc-criteria-grid">
+                      <Stack gap={4}>
+                        <Text variant="meta">What mattered more</Text>
+                        <Text as="p" variant="body">
+                          Upfront trust and clarity over softening the moment.
+                        </Text>
+                      </Stack>
+                      <Stack gap={4}>
+                        <Text variant="meta">Except when</Text>
+                        <Text as="p" variant="help">
+                          External announcements needing legal review first.
+                        </Text>
+                      </Stack>
+                    </div>
+                    <Inline justify="between" align="center" gap={8}>
+                      <Button
+                        emphasis={roastConfirmed ? "soft" : "filled"}
+                        tone={roastConfirmed ? "neutral" : "brand"}
+                        size="compact"
+                        onClick={() => setRoastConfirmed(true)}
+                      >
+                        {roastConfirmed
+                          ? "Roasted into Roastery"
+                          : "Confirm & Roast"}
+                      </Button>
+                      <Text variant="meta">Never saved silently</Text>
+                    </Inline>
+                  </div>
+                ) : (
+                  <Stack gap={8}>
+                    <Heading
+                      level={3}
+                      className={
+                        isDecaf
+                          ? "cc-studio-takeaway cc-studio-decaf"
+                          : "cc-studio-takeaway"
+                      }
+                    >
+                      {isDecaf
+                        ? "“Both candidates have strong pros and cons depending on your goals…”"
+                        : act === "brew"
+                          ? brewMode === "growth"
+                            ? "Hire the fast-learning generalist—unless certification is required today."
+                            : "Hire the proven specialist—your deadline leaves no room for ramp-up."
+                          : activeGuest.headline}
+                    </Heading>
+                    <Text
+                      as="p"
+                      variant="body"
+                      className={isDecaf ? "cc-studio-decaf" : undefined}
+                    >
+                      {streamedText}
+                    </Text>
+                    {!isDecaf && !isStreaming ? (
+                      <Text variant="meta">
+                        {act === "brew"
+                          ? brewMode === "growth"
+                            ? "Guided by your Growth Roast Bean · Boundary verified"
+                            : "Guided by your Specialist Roast Bean · Boundary verified"
+                          : activeGuest.cite}
+                      </Text>
+                    ) : isDecaf && !isStreaming ? (
+                      <Text variant="meta">
+                        No Taste connected — generic fence-sitting
+                      </Text>
+                    ) : null}
+                  </Stack>
+                )}
+              </Message>
+            </Stack>
+
+            <div className="cc-studio-foot">
               <Text variant="meta">{composerHint}</Text>
               <Button
                 emphasis="quiet"
@@ -461,425 +624,92 @@ export function HomeClient({
               >
                 Replay
               </Button>
-            </Inline>
-          }
-          variant="raised"
-          density="regular"
-          className="stage-conversation-card"
-        >
-          <Stack gap={12}>
-            <Message
-              speaker="You"
-              variant="sent"
-              avatar={<Avatar label="You" size="compact" />}
-            >
-              <Text as="p" variant="body">
-                {promptText}
-              </Text>
-            </Message>
+            </div>
+          </div>
 
-            {!isDecaf ? (
-              <div className="stage-trace-strip" role="status">
-                <ProjectMark project="coffee" label="" size={16} />
-                <Text variant="meta">{traceLabel}</Text>
-              </div>
-            ) : null}
+          {/* RIGHT PANE: Recessed Connected Taste Inspector */}
+          <aside className="cc-studio-inspector" aria-label={drawerHeading}>
+            <div className="cc-inspector-head">
+              <Text variant="body">{drawerHeading}</Text>
+              <Text variant="meta">{drawerSub}</Text>
+            </div>
 
-            <Message
-              speaker="Your AI"
-              variant="received"
-              avatar={
-                <AgentAvatar
-                  agent="Kai"
-                  size={24}
-                  label=""
-                  state={agentGaze}
-                />
-              }
-            >
+            <div className="cc-inspector-list">
               {act === "roast" ? (
-                <Card
-                  title="Confirm Bean"
-                  description="Private by default — never saved silently"
-                  headerAction={
-                    <Badge
-                      tone={roastConfirmed ? "success" : "neutral"}
-                      dot={false}
-                    >
-                      {roastConfirmed ? "Saved" : "Draft"}
-                    </Badge>
-                  }
-                  action={
-                    <ButtonGroup label="Confirm drafted Bean">
-                      <Button
-                        emphasis={roastConfirmed ? "soft" : "filled"}
-                        tone={roastConfirmed ? "neutral" : "brand"}
-                        size="compact"
+                <>
+                  {roastConfirmed ? (
+                    <div className="cc-ledger-bean" data-active="true">
+                      <Inline justify="between" align="center" gap={6}>
+                        <Status tone="success">Roasted just now</Status>
+                        <Text variant="meta">#communication</Text>
+                      </Inline>
+                      <Heading level={4}>
+                        Lead with the hard truth, not the build-up
+                      </Heading>
+                      <Text variant="help">
+                        Upfront trust and clarity over softening the moment.
+                      </Text>
+                    </div>
+                  ) : null}
+                  <div className="cc-ledger-bean" data-active="false">
+                    <Inline justify="between" align="center" gap={6}>
+                      <Text variant="meta">Confirmed · Private</Text>
+                      <Text variant="meta">#hiring</Text>
+                    </Inline>
+                    <Heading level={4}>{BREW_BEANS[0].title}</Heading>
+                    <Text variant="help">{BREW_BEANS[0].tradeoff}</Text>
+                  </div>
+                </>
+              ) : (
+                (act === "brew" ? BREW_BEANS : activeGuest.beans).map(
+                  (bean, idx) => {
+                    const isBeanActive =
+                      act === "brew"
+                        ? (brewMode === "growth" && idx === 0) ||
+                          (brewMode === "craft" && idx === 1)
+                        : idx === 0;
+                    const isClickable = act === "brew";
+                    return (
+                      <button
+                        key={bean.id}
+                        type="button"
+                        className="cc-ledger-bean"
+                        data-active={isBeanActive}
+                        data-clickable={isClickable}
+                        disabled={!isClickable}
                         onClick={() => {
-                          setRoastConfirmed(true);
-                          setCurveDrawn(true);
-                          setPulseActive(true);
+                          if (act === "brew") {
+                            setBrewMode(idx === 0 ? "growth" : "craft");
+                          }
                         }}
                       >
-                        {roastConfirmed
-                          ? "Roasted into Roastery"
-                          : "Confirm & Roast"}
-                      </Button>
-                    </ButtonGroup>
-                  }
-                  variant="outlined"
-                  density="compact"
-                >
-                  <Stack gap={8}>
-                    <Heading level={4}>
-                      Lead with the hard truth, not the build-up
-                    </Heading>
-                    <Surface
-                      variant="surface"
-                      density="compact"
-                      className="bean-criteria-box"
-                    >
-                      <Stack gap={6}>
-                        <Stack gap={2}>
-                          <Text variant="meta">What mattered more</Text>
-                          <Text as="p" variant="body">
-                            Upfront trust and clarity over softening the moment.
-                          </Text>
-                        </Stack>
-                        <Divider />
-                        <Text as="p" variant="help">
-                          Except when: External announcements needing legal
-                          review first.
-                        </Text>
-                      </Stack>
-                    </Surface>
-                  </Stack>
-                </Card>
-              ) : (
-                <Stack gap={8}>
-                  <Heading
-                    level={3}
-                    className={isDecaf ? "stage-decaf-strike" : undefined}
-                  >
-                    {isDecaf
-                      ? "“Both candidates have strong pros and cons depending on your goals…”"
-                      : act === "brew"
-                        ? brewMode === "growth"
-                          ? "Hire the fast-learning generalist—unless certification is required today."
-                          : "Hire the proven specialist—your deadline leaves no room for ramp-up."
-                        : activeGuest.headline}
-                  </Heading>
-                  <Text
-                    as="p"
-                    variant="body"
-                    className={isDecaf ? "stage-reply-decaf" : undefined}
-                  >
-                    {streamedText}
-                  </Text>
-                  {!isDecaf && !isStreaming ? (
-                    <Status tone="success">
-                      {act === "brew"
-                        ? brewMode === "growth"
-                          ? "Guided by your Growth Roast Bean · Boundary verified"
-                          : "Guided by your Specialist Roast Bean · Boundary verified"
-                        : activeGuest.cite}
-                    </Status>
-                  ) : null}
-                </Stack>
-              )}
-            </Message>
-          </Stack>
-        </Card>
-
-        {/* CENTER: Subtle Ink Blue Bezier Signal */}
-        <div className="stage-bridge-col" aria-hidden="true">
-          <svg
-            viewBox="0 0 56 300"
-            width="56"
-            height="300"
-            style={{ overflow: "visible" }}
-          >
-            <path
-              className="stage-signal-path"
-              data-state={topCurveState}
-              d="M 0 150 C 26 150, 30 88, 56 88"
-            />
-            <path
-              className="stage-signal-path"
-              data-state={bottomCurveState}
-              d="M 0 150 C 26 150, 30 218, 56 218"
-            />
-
-            <circle
-              r="3"
-              className="stage-signal-pulse"
-              data-active={
-                pulseActive &&
-                ((act === "brew" && brewMode === "growth") || act === "chat")
-              }
-            >
-              <animateMotion
-                dur="1.8s"
-                repeatCount="indefinite"
-                path="M 56 88 C 30 88, 26 150, 0 150"
-              />
-            </circle>
-
-            <circle
-              r="3"
-              className="stage-signal-pulse"
-              data-active={
-                pulseActive && act === "brew" && brewMode === "craft"
-              }
-            >
-              <animateMotion
-                dur="1.8s"
-                repeatCount="indefinite"
-                path="M 56 218 C 30 218, 26 150, 0 150"
-              />
-            </circle>
-
-            <circle
-              r="3"
-              className="stage-signal-pulse"
-              data-active={pulseActive && act === "roast"}
-            >
-              <animateMotion
-                dur="1.4s"
-                repeatCount="indefinite"
-                path="M 0 150 C 26 150, 30 88, 56 88"
-              />
-            </circle>
-          </svg>
-        </div>
-
-        {/* RIGHT: Native Yogurt Bean Cards */}
-        <Stack gap={12}>
-          <Inline justify="between" align="center" gap={8}>
-            <Heading level={4}>{drawerHeading}</Heading>
-            <Badge tone="neutral" dot={false}>
-              {drawerSub}
-            </Badge>
-          </Inline>
-
-          {act === "roast" ? (
-            <Stack gap={12}>
-              {roastConfirmed ? (
-                <Card
-                  variant="raised"
-                  density="compact"
-                  className="stage-bean-active"
-                >
-                  <Stack gap={6}>
-                    <Inline justify="between" align="center" gap={6}>
-                      <Badge tone="success" dot={false}>
-                        Roasted just now
-                      </Badge>
-                      <Badge tone="neutral" dot={false}>
-                        #communication
-                      </Badge>
-                    </Inline>
-                    <Heading level={4}>
-                      Lead with the hard truth, not the build-up
-                    </Heading>
-                    <Text variant="help">
-                      Upfront trust and clarity over softening the moment.
-                    </Text>
-                  </Stack>
-                </Card>
-              ) : null}
-
-              <Card
-                variant="subtle"
-                density="compact"
-                className="stage-bean-idle"
-              >
-                <Stack gap={6}>
-                  <Inline justify="between" align="center" gap={6}>
-                    <Text variant="meta">Confirmed · Private</Text>
-                    <Badge tone="neutral" dot={false}>
-                      #hiring
-                    </Badge>
-                  </Inline>
-                  <Heading level={4}>{BREW_BEANS[0].title}</Heading>
-                  <Text variant="help">{BREW_BEANS[0].tradeoff}</Text>
-                </Stack>
-              </Card>
-            </Stack>
-          ) : (
-            <Stack gap={12}>
-              {(act === "brew" ? BREW_BEANS : activeGuest.beans).map(
-                (bean, idx) => {
-                  const isCardActive =
-                    act === "brew"
-                      ? (brewMode === "growth" && idx === 0 && pulseActive) ||
-                        (brewMode === "craft" && idx === 1 && pulseActive)
-                      : idx === 0 && pulseActive;
-                  return (
-                    <Card
-                      key={bean.id}
-                      variant={isCardActive ? "raised" : "subtle"}
-                      density="compact"
-                      className={
-                        isCardActive ? "stage-bean-active" : "stage-bean-idle"
-                      }
-                    >
-                      <Stack gap={6}>
                         <Inline justify="between" align="center" gap={6}>
-                          <Inline gap={6} align="center">
-                            <Text variant="meta">{bean.label}</Text>
-                            {isCardActive ? (
-                              <Badge tone="brand" dot={false}>
-                                Active
-                              </Badge>
-                            ) : null}
-                          </Inline>
-                          <Badge tone="neutral" dot={false}>
-                            {bean.tag}
-                          </Badge>
+                          <Text variant="meta">{bean.label}</Text>
+                          <Text variant="meta">{bean.tag}</Text>
                         </Inline>
                         <Heading level={4}>{bean.title}</Heading>
                         <Text variant="help">{bean.tradeoff}</Text>
                         <Text variant="meta">Except: {bean.boundary}</Text>
-                      </Stack>
-                    </Card>
-                  );
-                },
+                      </button>
+                    );
+                  },
+                )
               )}
-            </Stack>
-          )}
-        </Stack>
-      </div>
-    </Stack>
-  );
+            </div>
+          </aside>
+        </div>
+      </section>
 
-  return (
-    <Stack gap={48}>
-      {/* 1. HERO — Yogurt Brand Opening Rhythm + Universal One-Click Copy CTA */}
-      <Stack gap={24}>
-        <Grid className="home-hero-grid" gap={32}>
-          <Stack gap={16}>
-            <Inline gap={8} align="center">
-              <Badge tone="neutral" variant="soft" dot={false}>
-                Personal Taste plugin · ChatGPT, Claude, Codex, Cursor &amp;
-                Antigravity
-              </Badge>
-            </Inline>
-
-            <Heading level={1} className="home-hero-title">
-              Your AI knows everything.
-              <br />
-              Give it your Taste.
-            </Heading>
-
-            <Text as="p" className="home-hero-lead">
-              Save how you weigh real trade-offs—so your AI answers with your
-              priorities, or lets you Coffee Chat with anyone else’s.
-            </Text>
-
-            <ButtonGroup label="Start with Coffee Chat">
-              <Button
-                emphasis="filled"
-                tone="brand"
-                size="comfortable"
-                onClick={() => void handleCopyStartPrompt()}
-              >
-                {copiedHeroPrompt
-                  ? "Copied — paste into any AI"
-                  : "Copy prompt to start in your AI"}
-              </Button>
-              <Link
-                href={
-                  signedIn
-                    ? "/me?compose=1"
-                    : "/signin?returnTo=%2Fme%3Fcompose%3D1"
-                }
-                emphasis="soft"
-                size="comfortable"
-              >
-                {signedIn ? "Open My Roastery" : "Try in browser"}
-              </Link>
-              <Link href="/connect" emphasis="quiet" size="comfortable">
-                Manual setup
-              </Link>
-            </ButtonGroup>
-
-            <Inline gap={8} align="center" wrap>
-              <Text variant="meta">
-                Paste into whatever AI you already use — no config file needed
-                to start.
-              </Text>
-              <Button
-                emphasis="soft"
-                size="compact"
-                onClick={() => setShowPromptPreview((v) => !v)}
-              >
-                {showPromptPreview ? "Hide prompt" : "Preview prompt"}
-              </Button>
-            </Inline>
-          </Stack>
-
-          <Surface
-            variant="raised"
-            className="home-hero-artwork"
-            aria-hidden="true"
-          >
-            <ProjectMark project="coffee" label="" size={140} />
-          </Surface>
-        </Grid>
-
-        {showPromptPreview ? (
-          <div className="home-prompt-code prompt-code-wrap">
-            <CodeBlock
-              code={universalStartPrompt}
-              language="text"
-              onCopy={copyPromptText}
-            />
-          </div>
-        ) : null}
-      </Stack>
-
-      {/* 2. NATIVE YOGURT 3-ACT LIVE STAGE */}
-      <Tabs
-        label="Coffee Chat use cases"
-        presentation="underline"
-        value={act}
-        onValueChange={(next) => setAct(next as StageAct)}
-        items={[
-          {
-            id: "brew",
-            label: "01 · Brew in your AI",
-            panel: act === "brew" ? renderStagePanel() : null,
-          },
-          {
-            id: "roast",
-            label: "02 · Roast from a correction",
-            panel: act === "roast" ? renderStagePanel() : null,
-          },
-          {
-            id: "chat",
-            label: "03 · Coffee Chat with other Taste",
-            panel: act === "chat" ? renderStagePanel() : null,
-          },
-        ]}
-      />
-
-      <Divider />
-
-      {/* 3. WHY COFFEE CHAT EXISTS — DIRECTLY BELOW USE CASES */}
-      <Stack gap={24}>
-        <Stack gap={12}>
-          <Inline gap={8}>
-            <Badge tone="brand" variant="soft" dot={false}>
-              Why Coffee Chat
-            </Badge>
-          </Inline>
-          <Heading level={2} className="why-headline">
+      {/* 3. ASYMMETRIC EDITORIAL MANIFESTO (Why Coffee Chat) */}
+      <section className="cc-manifesto" aria-label="Why Coffee Chat">
+        <Stack gap={16}>
+          <span className="cc-section-index">Why Coffee Chat</span>
+          <Heading level={2} className="cc-manifesto-title">
             Nothing is unimportant.
             <br />
-            Taste is what you put first.
+            Taste is <em className="cc-accent-ink">what you put first.</em>
           </Heading>
-          <Text as="p" className="home-hero-lead">
+          <Text as="p" className="cc-hero-lead">
             Everyone agrees speed, quality, honesty, and caution all matter. In
             real work, good things collide—and what decides the call is{" "}
             <strong>which one wins</strong> and{" "}
@@ -888,10 +718,10 @@ export function HomeClient({
           </Text>
         </Stack>
 
-        <Grid className="steps-grid" gap={16}>
-          <Card variant="raised" density="regular">
-            <Stack gap={8}>
-              <Icon name="chat" />
+        <div className="cc-manifesto-list">
+          <div className="cc-manifesto-row">
+            <span className="cc-manifesto-num">01</span>
+            <Stack gap={6}>
               <Heading level={3}>Why a Coffee Chat here actually works</Heading>
               <Text as="p" variant="help">
                 You don’t grab coffee with someone for textbook advice—you want
@@ -900,11 +730,11 @@ export function HomeClient({
                 situation, never roleplayed.
               </Text>
             </Stack>
-          </Card>
+          </div>
 
-          <Card variant="raised" density="regular">
-            <Stack gap={8}>
-              <Icon name="sliders" />
+          <div className="cc-manifesto-row">
+            <span className="cc-manifesto-num">02</span>
+            <Stack gap={6}>
               <Heading level={3}>Why your AI stops saying “it depends”</Heading>
               <Text as="p" variant="help">
                 Models treat every principle as equally valid. Once you Roast
@@ -912,11 +742,11 @@ export function HomeClient({
                 and commits to what you actually optimize for.
               </Text>
             </Stack>
-          </Card>
+          </div>
 
-          <Card variant="raised" density="regular">
-            <Stack gap={8}>
-              <Icon name="check" />
+          <div className="cc-manifesto-row">
+            <span className="cc-manifesto-num">03</span>
+            <Stack gap={6}>
               <Heading level={3}>Confirmed by you, zero server AI</Heading>
               <Text as="p" variant="help">
                 Nothing saves without your confirmation, and Coffee Chat runs no
@@ -924,41 +754,39 @@ export function HomeClient({
                 straight inside your AI.
               </Text>
             </Stack>
-          </Card>
-        </Grid>
-      </Stack>
+          </div>
+        </div>
+      </section>
 
-      <Divider />
+      {/* 4. UNIFIED COMPARISON SPREAD (On the Table right now) */}
+      <section className="cc-spread-section" aria-label="On the Table right now">
+        {totalCorpusPublicCount > 0 && featuredTable ? (
+          <>
+            <Inline justify="between" align="end" gap={16} wrap>
+              <Stack gap={6}>
+                <span className="cc-section-index">On the Table right now</span>
+                <Heading level={2}>Same essay. Opposite Roasts.</Heading>
+                <Text variant="help">
+                  {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
+                </Text>
+              </Stack>
+              <ButtonGroup label="Table navigation">
+                <Link
+                  href={`/sources/${featuredTable.originId}`}
+                  emphasis="soft"
+                  size="compact"
+                >
+                  Open this Table
+                </Link>
+                <Link href="/sources" emphasis="quiet" size="compact">
+                  Browse all Tables
+                </Link>
+              </ButtonGroup>
+            </Inline>
 
-      {/* 4. SECONDARY BOTTOM SHOWCASE: Real Table preview */}
-      {totalCorpusPublicCount > 0 && featuredTable ? (
-        <Stack gap={16}>
-          <Inline justify="between" align="end" gap={16} wrap>
-            <Stack gap={4}>
-              <Text variant="meta">On the Table right now</Text>
-              <Heading level={2}>Same essay. Opposite Roasts.</Heading>
-              <Text variant="help">
-                {featuredTable.sourceTitle ?? featuredTable.normalizedUrl}
-              </Text>
-            </Stack>
-            <ButtonGroup label="Table navigation">
-              <Link
-                href={`/sources/${featuredTable.originId}`}
-                emphasis="soft"
-                size="compact"
-              >
-                Open this Table
-              </Link>
-              <Link href="/sources" emphasis="quiet" size="compact">
-                Browse all Tables
-              </Link>
-            </ButtonGroup>
-          </Inline>
-
-          <Grid className="split-grid" gap={16}>
-            {contrastingPreview.map((b) => (
-              <Card key={b.id} variant="raised" density="regular">
-                <Stack gap={12}>
+            <div className="cc-spread">
+              {contrastingPreview.map((b) => (
+                <article key={b.id} className="cc-spread-col">
                   <Inline justify="between" align="center" gap={8} wrap>
                     <Inline gap={8} align="center">
                       <Avatar label={b.ownerDisplayName} size="compact" />
@@ -981,63 +809,67 @@ export function HomeClient({
 
                   <Heading level={3}>{b.title}</Heading>
 
-                  <Surface
-                    variant="surface"
-                    density="compact"
-                    className="bean-criteria-box"
-                  >
-                    <Stack gap={6}>
-                      <Stack gap={2}>
-                        <Text variant="meta">What mattered more</Text>
-                        <Text as="p" variant="body">
-                          {b.tradeoff}
-                        </Text>
-                      </Stack>
-                      <Divider />
-                      <Text as="p" variant="help">
-                        Except when: {b.boundary}
+                  <div className="cc-criteria-grid">
+                    <Stack gap={4}>
+                      <Text variant="meta">What mattered more</Text>
+                      <Text as="p" variant="body">
+                        {b.tradeoff}
                       </Text>
                     </Stack>
-                  </Surface>
-                </Stack>
-              </Card>
-            ))}
-          </Grid>
-        </Stack>
-      ) : (
-        <Card
-          title="Start the first Coffee Chat Table"
-          description="No public Beans yet — start in your AI or privately in My Roastery, and share one whenever you want contrasting takes"
-          variant="raised"
-          density="regular"
-          action={
-            <ButtonGroup label="Get started actions">
-              <Button
-                emphasis="filled"
-                tone="neutral"
-                size="compact"
-                onClick={() =>
-                  router.push(
-                    signedIn
-                      ? "/me?compose=1"
-                      : "/signin?returnTo=%2Fme%3Fcompose%3D1",
-                  )
-                }
-              >
-                Roast a private Bean
-              </Button>
-              <Link href="/connect" emphasis="soft" size="compact">
-                Manual setup
-              </Link>
-            </ButtonGroup>
-          }
-        >
-          <Text variant="help">
-            Every Bean starts private to you and your connected AI. Share only
-            the priority calls you explicitly choose to put On the Table.
-          </Text>
-        </Card>
-      )}
-    </Stack>
+                    <Stack gap={4}>
+                      <Text variant="meta">Except when</Text>
+                      <Text as="p" variant="help">
+                        {b.boundary}
+                      </Text>
+                    </Stack>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
+        ) : (
+          <Card
+            title="Start the first Coffee Chat Table"
+            description="No public Beans yet — start in your AI or privately in My Roastery, and share one whenever you want contrasting takes"
+            variant="raised"
+            density="regular"
+            action={
+              <ButtonGroup label="Get started actions">
+                <Button
+                  emphasis="filled"
+                  tone="neutral"
+                  size="compact"
+                  onClick={() =>
+                    router.push(
+                      signedIn
+                        ? "/me?compose=1"
+                        : "/signin?returnTo=%2Fme%3Fcompose%3D1",
+                    )
+                  }
+                >
+                  Roast a private Bean
+                </Button>
+                <Link href="/connect" emphasis="soft" size="compact">
+                  Manual setup
+                </Link>
+              </ButtonGroup>
+            }
+          >
+            <Stack gap={8}>
+              <Inline gap={8} align="center">
+                <Badge tone="neutral" dot={false}>
+                  Private by default
+                </Badge>
+              </Inline>
+              <Text variant="help">
+                Every Bean starts private to you and your connected AI. Share
+                only the priority calls you explicitly choose to put On the
+                Table.
+              </Text>
+            </Stack>
+          </Card>
+        )}
+      </section>
+    </div>
   );
 }

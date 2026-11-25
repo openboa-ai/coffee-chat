@@ -6,7 +6,6 @@ import { Badge } from "@openboa/yogurt/badge";
 import { Button } from "@openboa/yogurt/button";
 import { Card } from "@openboa/yogurt/card";
 import { CodeBlock } from "@openboa/yogurt/code-block";
-import { Grid } from "@openboa/yogurt/grid";
 import { Inline } from "@openboa/yogurt/inline";
 import { ListHeader } from "@openboa/yogurt/list-header";
 import { CopyButton } from "@openboa/yogurt/motion-copy-button";
@@ -263,7 +262,7 @@ export function ConnectClient({
           title="Plain-language prompts to try right away"
           detail="Step 2 · First pours"
         />
-        <Grid className="split-grid" gap={16}>
+        <div className="cc-equal-cards">
           {starterPrompts.map((item) => (
             <Card
               key={item.id}
@@ -276,7 +275,7 @@ export function ConnectClient({
               <Text variant="help">{item.prompt}</Text>
             </Card>
           ))}
-        </Grid>
+        </div>
       </Stack>
     </Stack>
   );

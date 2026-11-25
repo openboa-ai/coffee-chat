@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { Link } from "@openboa/yogurt/link";
+import { Text } from "@openboa/yogurt/text";
 import { Yogurt } from "@openboa/yogurt/yogurt";
 import { NavHeader, type AppearanceMode } from "./NavHeader";
 
@@ -48,6 +50,14 @@ export function AppShell({ user, children }: AppShellProps) {
       <main className={isWideWorkspace ? "app-main-wide" : "app-main"}>
         {children}
       </main>
+      <footer className="app-footer" aria-label="Coffee Chat footer">
+        <Text variant="meta">Coffee Chat · Personal Taste for your AI</Text>
+        <nav className="app-footer-links" aria-label="Footer navigation">
+          <Link href="/sources">Tables</Link>
+          <Link href="/me">My Roastery</Link>
+          <Link href="/connect">Brew Bar</Link>
+        </nav>
+      </footer>
     </Yogurt>
   );
 }

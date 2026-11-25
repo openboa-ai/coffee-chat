@@ -186,8 +186,8 @@ export function ConfirmBeanCard({
                   <>
                     <Text variant="body">{origin.sourceTitle ?? origin.url}</Text>
                     {origin.quotation ? (
-                      <blockquote className="bean-quote">
-                        <Text variant="body">&ldquo;{origin.quotation}&rdquo;</Text>
+                      <blockquote className="cc-quote">
+                        <Text variant="help">&ldquo;{origin.quotation}&rdquo;</Text>
                       </blockquote>
                     ) : null}
                   </>
