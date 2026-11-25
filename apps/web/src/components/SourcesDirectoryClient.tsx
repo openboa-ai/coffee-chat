@@ -53,20 +53,22 @@ export function SourcesDirectoryClient({
         title="Tables"
         detail="Compare takes on a source — every Table gathers public Beans around one shared link"
         action={
-          <Button
-            emphasis="filled"
-            tone="brand"
-            size="compact"
-            onClick={() =>
-              router.push(
-                signedIn
-                  ? "/me?compose=1"
-                  : "/signin?returnTo=%2Fme%3Fcompose%3D1",
-              )
-            }
-          >
-            Start a Table
-          </Button>
+          <Inline gap={8}>
+            <Button
+              emphasis="filled"
+              tone="neutral"
+              size="compact"
+              onClick={() =>
+                router.push(
+                  signedIn
+                    ? "/me?compose=1"
+                    : "/signin?returnTo=%2Fme%3Fcompose%3D1",
+                )
+              }
+            >
+              Start a Table
+            </Button>
+          </Inline>
         }
       />
 

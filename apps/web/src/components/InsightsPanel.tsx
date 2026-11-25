@@ -48,29 +48,29 @@ export function InsightsPanel({
         <StatCard
           label="Beans"
           value={insights.totalCount}
-          detail={`Confirmed takes · ${insights.privateCount} private, ${insights.publicCount} on the Table`}
+          detail={`${insights.privateCount} private · ${insights.publicCount} public`}
           series={monthlySeries.length >= 2 ? monthlySeries : undefined}
         />
         <StatCard
           label="Active Criteria"
           value={insights.lifecycle.activeCount}
-          detail={`${insights.lifecycle.inTensionCount} in tension · ${insights.lifecycle.supersededCount} updated mind`}
+          detail={`${insights.lifecycle.inTensionCount} tension`}
         />
         <StatCard
-          label="Connected AI Apps"
+          label="Connected AI"
           value={insights.activeGrantCount}
-          detail={
-            insights.activeGrantCount > 0
-              ? "Brew ready in your connected AI"
-              : "None connected yet"
-          }
+          detail={insights.activeGrantCount > 0 ? "Brew ready" : "Not linked"}
         />
         <StatCard
           label="Shelf"
           value={insights.shelfCount}
-          detail="Live saved voices & takes"
+          detail="Live refs"
         />
       </div>
+
+      <Text variant="meta">
+        Confirmed takes · {insights.privateCount} private, {insights.publicCount} on the Table
+      </Text>
 
       <Card
         title="Judgment Health"

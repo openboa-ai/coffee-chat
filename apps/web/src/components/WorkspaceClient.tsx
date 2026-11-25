@@ -658,7 +658,7 @@ export function WorkspaceClient({
               <Stack gap={8}>
                 <Button
                   emphasis="filled"
-                  tone="brand"
+                  tone="neutral"
                   size="compact"
                   onClick={() => {
                     setEditingBean(null);
@@ -708,7 +708,7 @@ export function WorkspaceClient({
                     </Button>
                     <Button
                       emphasis="filled"
-                      tone="brand"
+                      tone="neutral"
                       size="compact"
                       onClick={() => {
                         setEditingBean(null);

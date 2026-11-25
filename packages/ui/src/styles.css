@@ -1,7 +1,7 @@
 @layer yg.utilities {
   .app-shell {
     min-height: 100dvh;
-    background: var(--yg-canvas);
+    background: var(--yg-surface);
     color: var(--yg-text);
   }
 
@@ -9,14 +9,13 @@
     position: sticky;
     top: 0;
     z-index: 20;
-    border-bottom: 1px solid var(--yg-border-subtle);
-    background: var(--yg-canvas);
+    background: var(--yg-surface);
+    padding: var(--boa-space-12) var(--boa-space-16) 0;
   }
 
   .app-header-inner {
     max-width: 1120px;
     margin: 0 auto;
-    padding: var(--boa-space-12) var(--boa-space-16);
   }
 
   .app-main {
@@ -33,7 +32,7 @@
 
   .app-widget-frame {
     padding: var(--boa-space-16);
-    background: var(--yg-canvas);
+    background: var(--yg-surface);
     color: var(--yg-text);
   }
 
@@ -86,7 +85,7 @@
 
   .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: var(--boa-space-12);
   }
 

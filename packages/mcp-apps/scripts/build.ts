@@ -17,7 +17,7 @@ const uiCssPath = resolve(pkgRoot, "../ui/src/styles.css");
 
 const cssBuild = await esbuild.build({
   stdin: {
-    contents: `@import ${JSON.stringify(yogurtCssPath)};\n@import ${JSON.stringify(uiCssPath)};\n`,
+    contents: `@layer ui-sdk, yg.tokens, yg.base, yg.components, yg.patterns, yg.utilities;\n@import ${JSON.stringify(yogurtCssPath)};\n@import ${JSON.stringify(uiCssPath)};\n`,
     resolveDir: pkgRoot,
     loader: "css",
   },

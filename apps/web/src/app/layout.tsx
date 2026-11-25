@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { AppShell } from "@/components/AppShell";
+import "./layers.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

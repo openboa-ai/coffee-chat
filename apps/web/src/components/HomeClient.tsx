@@ -262,7 +262,7 @@ export function HomeClient({
             </Button>
             <Button
               emphasis="filled"
-              tone="brand"
+              tone="neutral"
               size="compact"
               onClick={() =>
                 router.push(
@@ -352,20 +352,32 @@ export function HomeClient({
           density="regular"
         >
           <div className="split-grid">
-            {featuredTable.beans.slice(0, 2).map((b) => (
-              <Surface key={b.id} variant="surface" density="compact">
-                <Stack gap={8}>
-                  <Inline justify="between" align="center" gap={8}>
-                    <Link href={`/@${b.ownerHandle}`}>
-                      {b.ownerDisplayName} (@{b.ownerHandle})
-                    </Link>
-                  </Inline>
-                  <Text variant="body">{b.title}</Text>
-                  <Text variant="help">Trade-off: {b.tradeoff}</Text>
-                  <Text variant="meta">Boundary: {b.boundary}</Text>
-                </Stack>
-              </Surface>
-            ))}
+            {(() => {
+              const seen = new Set<string>();
+              const distinct = featuredTable.beans.filter((b) => {
+                if (seen.has(b.ownerHandle)) return false;
+                seen.add(b.ownerHandle);
+                return true;
+              });
+              const preview =
+                distinct.length >= 2
+                  ? distinct.slice(0, 2)
+                  : featuredTable.beans.slice(0, 2);
+              return preview.map((b) => (
+                <Surface key={b.id} variant="surface" density="compact">
+                  <Stack gap={8}>
+                    <Inline justify="between" align="center" gap={8}>
+                      <Link href={`/@${b.ownerHandle}`}>
+                        {b.ownerDisplayName} (@{b.ownerHandle})
+                      </Link>
+                    </Inline>
+                    <Text variant="body">{b.title}</Text>
+                    <Text variant="help">Trade-off: {b.tradeoff}</Text>
+                    <Text variant="meta">Boundary: {b.boundary}</Text>
+                  </Stack>
+                </Surface>
+              ));
+            })()}
           </div>
         </Card>
       ) : null}
