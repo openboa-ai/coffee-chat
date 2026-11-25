@@ -85,7 +85,7 @@ export function SourcesDirectoryClient({
       {/* Clean inline filter bar — no outer Card box wrapper */}
       <FilterBar
         label="Search Tables"
-        placeholder="Search article title, URL, @voice, or domain…"
+        placeholder="Search article title, URL, @handle, or domain…"
         query={query}
         onQueryChange={setQuery}
       >
@@ -141,7 +141,7 @@ export function SourcesDirectoryClient({
                 </Heading>
 
                 <Text variant="help">
-                  Voices at the Table:{" "}
+                  At this Table:{" "}
                   {src.authorHandles.map((h) => `@${h}`).join(", ")}
                 </Text>
 
@@ -160,7 +160,7 @@ export function SourcesDirectoryClient({
                 <Inline justify="between" align="center" gap={8}>
                   <Text variant="meta">
                     {src.authorHandles.length}{" "}
-                    {src.authorHandles.length === 1 ? "voice" : "voices"}
+                    {src.authorHandles.length === 1 ? "person" : "people"}
                   </Text>
                   <Link href={`/sources/${src.originId}`}>
                     Pull up a chair →

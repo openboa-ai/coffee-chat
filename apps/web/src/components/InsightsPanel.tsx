@@ -70,7 +70,7 @@ export function InsightsPanel({
     ) {
       reflections.push({
         id: "work-heavy",
-        text: "Every Bean came from live work calls—Roast a reading takeaway to start a Table and compare with other voices.",
+        text: "Every Bean came from live work calls—Roast a reading takeaway to start a Table and compare with others.",
       });
     }
     if (insights.publicCount === 0 && insights.privateCount > 0) {

@@ -657,7 +657,7 @@ export function WorkspaceClient({
                 />
                 <SidebarItem
                   label="Shelf"
-                  description="Voices & Beans kept on hand"
+                  description="People & Beans kept on hand"
                   icon={<Icon name="bookmark" />}
                   active={activeTab === "saved"}
                   badge={
@@ -718,7 +718,7 @@ export function WorkspaceClient({
                           description:
                             "Bring your active confirmed trade-offs and boundaries into your current work",
                           prompt:
-                            "Before recommending an approach for this task, check my confirmed Coffee Chat Beans and the voices on my Shelf. Apply the trade-offs that match this context, name which Bean guided each call, and withhold any Bean outside its stated boundary.",
+                            "Before recommending an approach for this task, check my confirmed Coffee Chat Beans and the people on my Shelf. Apply the trade-offs that match this context, name which Bean guided each call, and withhold any Bean outside its stated boundary.",
                         })
                       }
                     >
@@ -1388,13 +1388,13 @@ export function WorkspaceClient({
             <Stack gap={24}>
               <PageHeader
                 title="Shelf"
-                detail="Voices & Beans kept on hand — live references that disappear if made Private"
+                detail="People & Beans kept on hand — live references that disappear if made Private"
                 leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
               />
 
               <Card
-                title="Saved Voices"
-                description="People whose Taste you keep on hand and can Brew in your AI"
+                title="Saved People"
+                description="People whose Taste you keep on hand for a Coffee Chat in your AI"
                 headerAction={
                   <Badge tone="neutral" dot={false}>
                     {savedVoices.length}
@@ -1404,9 +1404,9 @@ export function WorkspaceClient({
                 density="regular"
               >
                 {savedVoices.length === 0 ? (
-                  <EmptyResult empty="No saved voices yet. Visit Tables or any Voice Profile to stock your Shelf." />
+                  <EmptyResult empty="No saved people yet. Visit Tables or any profile to stock your Shelf." />
                 ) : (
-                  <List label="Saved voices" divided>
+                  <List label="Saved people" divided>
                     {savedVoices.map((entry) => (
                       <ListRow
                         key={entry.id}
@@ -1420,14 +1420,14 @@ export function WorkspaceClient({
                               size="compact"
                               onClick={() =>
                                 setBrewDialog({
-                                  title: `Brew · Explore @${entry.person!.handle}'s Taste`,
+                                  title: `Coffee Chat with @${entry.person!.handle}`,
                                   description:
-                                    "Compare their public confirmed Beans against your current question without impersonation",
+                                    "Consult their public confirmed Beans for your current question without impersonation",
                                   prompt: `Check the public Coffee Chat Beans shared by @${entry.person!.handle} on my Shelf that relate to this topic. Explain what trade-offs they prioritize, note where their boundaries stop, and attribute every point clearly to their confirmed records.`,
                                 })
                               }
                             >
-                              Brew voice
+                              Coffee Chat
                             </Button>
                             <Button
                               emphasis="quiet"
@@ -1456,7 +1456,7 @@ export function WorkspaceClient({
                 density="regular"
               >
                 {savedBeans.length === 0 ? (
-                  <EmptyResult empty="No saved Beans yet. Save any public take from a Table or Voice Profile." />
+                  <EmptyResult empty="No saved Beans yet. Save any public take from a Table or profile." />
                 ) : (
                   <List label="Saved Beans" divided>
                     {savedBeans.map((entry) => (

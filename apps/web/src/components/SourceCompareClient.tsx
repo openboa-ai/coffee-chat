@@ -159,7 +159,7 @@ export function SourceCompareClient({
 
       <PageHeader
         title={displayTitle}
-        detail="Table · Same source, different Taste — compare what each voice prioritized and where their rule stops"
+        detail="Table · Same source, different Taste — compare what each person prioritized and where their rule stops"
         action={
           <Inline gap={8}>
             <Button
@@ -205,7 +205,7 @@ export function SourceCompareClient({
         </Link>
         <Text variant="meta">
           {uniqueAuthors.length}{" "}
-          {uniqueAuthors.length === 1 ? "voice" : "voices"} · {beans.length}{" "}
+          {uniqueAuthors.length === 1 ? "person" : "people"} · {beans.length}{" "}
           {beans.length === 1 ? "Bean" : "Beans"}
         </Text>
         {sharedDomains.length > 0 ? (
@@ -297,7 +297,7 @@ export function SourceCompareClient({
             }
           >
             Capture your take privately first, or put it On the Table to compare
-            side by side with these voices.
+            side by side with others.
           </Notice>
         )
       ) : null}
@@ -305,7 +305,7 @@ export function SourceCompareClient({
       {/* Editorial Side-by-Side Comparison Dialogue (replaces cramped spreadsheet table) */}
       <Stack gap={12}>
         <Stack gap={2}>
-          <Text variant="meta">Voices at this Table</Text>
+          <Text variant="meta">At this Table</Text>
           <Heading level={2}>How each person read this source</Heading>
         </Stack>
 
@@ -411,7 +411,7 @@ export function SourceCompareClient({
         title="Brew · Compare this Table in my AI"
         description="Bring these contrasting confirmed trade-offs and boundaries into your decision"
         activeGrantCount={activeGrantCount}
-        prompt={`Look at the Coffee Chat Table for "${displayTitle}" (${normalizedUrl}). Compare how the voices at this Table weigh different trade-offs and draw different boundaries, and help me decide which criteria fit my current context without impersonating any author.`}
+        prompt={`Look at the Coffee Chat Table for "${displayTitle}" (${normalizedUrl}). Compare how the people at this Table weigh different trade-offs and draw different boundaries, and help me decide which criteria fit my current context without impersonating any author.`}
       />
     </Stack>
   );

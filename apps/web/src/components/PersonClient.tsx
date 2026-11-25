@@ -158,7 +158,9 @@ export function PersonClient({
               size="compact"
               onClick={() => void toggleSavePerson()}
             >
-              {personShelfId ? "Voice on Shelf" : "Add Voice to Shelf"}
+              {personShelfId
+                ? "Saved on Shelf"
+                : `Save @${profile.handle} to Shelf`}
             </Button>
             <Button
               emphasis="filled"
@@ -187,7 +189,7 @@ export function PersonClient({
         <Text variant="body">&ldquo;{coffeeChatPrompt}&rdquo;</Text>
       </Card>
 
-      {/* Clean hairline Voice Tasting Notes strip (public counts & public tags only) */}
+      {/* Clean hairline public Tasting Notes strip (public counts & public tags only) */}
       <Card variant="raised" density="regular">
         <Stack gap={12}>
           <div className="taste-strip">

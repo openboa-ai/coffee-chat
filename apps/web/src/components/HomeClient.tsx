@@ -382,7 +382,7 @@ export function HomeClient({
         ? "5 Beans"
         : "4 Beans"
       : act === "chat"
-        ? "Shelf Voice"
+        ? "Public Taste"
         : "Private Beans";
 
   const composerHint =

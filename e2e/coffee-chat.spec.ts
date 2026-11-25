@@ -113,7 +113,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     ).toBeVisible();
     await expect(page.getByText("Confirmed Taste & Roast Log")).toBeVisible();
     await expect(page.getByText("How your Taste leans")).toBeVisible();
-    await expect(page.getByText("Voices & Beans kept on hand")).toBeVisible();
+    await expect(page.getByText("People & Beans kept on hand")).toBeVisible();
     await expect(page.getByText("Connected AI apps & sign-in")).toBeVisible();
 
     // 2A. Progressive 2-stage multi-origin Roast (Reading Origin + Work Origin, private by default)
@@ -428,15 +428,15 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     await page.getByRole("button", { name: "Enter Roastery (Test Auth)" }).click();
     await page.waitForURL("**/me");
 
-    // Live Shelf hydration across full reload: Voice on /@alice
+    // Live Shelf hydration across full reload: Person on /@alice
     await page.goto("/@alice");
-    await page.getByRole("button", { name: "Add Voice to Shelf" }).click();
+    await page.getByRole("button", { name: "Save @alice to Shelf" }).click();
     await expect(
-      page.getByRole("button", { name: "Voice on Shelf" }),
+      page.getByRole("button", { name: "Saved on Shelf" }),
     ).toBeVisible();
     await page.reload();
     await expect(
-      page.getByRole("button", { name: "Voice on Shelf" }),
+      page.getByRole("button", { name: "Saved on Shelf" }),
     ).toBeVisible();
 
     // Live Shelf hydration across full reload: Bean on /sources/[id]

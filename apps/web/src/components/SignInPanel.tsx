@@ -184,7 +184,7 @@ export function SignInPanel({
                   />
                   <TextField
                     label="Display Name"
-                    help="Shown on public Beans and your Voice Profile"
+                    help="Shown on public Beans and your public profile"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Alice Park"

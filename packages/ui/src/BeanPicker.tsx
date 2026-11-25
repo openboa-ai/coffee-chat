@@ -79,10 +79,10 @@ export function BeanPicker({
 
         <SearchField
           label="Filter Beans"
-          help="Search headline, trade-off, domain, or @voice"
+          help="Search headline, trade-off, domain, or @handle"
           value={query}
           onValueChange={setQuery}
-          placeholder="Search headline, trade-off, domain, or @voice"
+          placeholder="Search headline, trade-off, domain, or @handle"
         />
 
         {filtered.length === 0 ? (
