@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0-local.1",
+  "surfaces": {
+    "ui": {
+      "target": "web",
+      "root": "packages/ui/src"
+    },
+    "mcp-apps": {
+      "target": "web",
+      "root": "packages/mcp-apps/src"
+    },
+    "web": {
+      "target": "web",
+      "root": "apps/web/src/components"
+    },
+    "app": {
+      "target": "web",
+      "root": "apps/web/src/app"
+    }
+  }
+}

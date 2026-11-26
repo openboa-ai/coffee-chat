@@ -1,0 +1,26 @@
+{
+  "name": "@coffee-chat/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@coffee-chat/core": "*",
+    "@coffee-chat/mcp-apps": "*",
+    "@coffee-chat/ui": "*",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@openboa/yogurt": "file:../../vendor/openboa-yogurt-0.2.0-local.1.tgz",
+    "better-auth": "^1.3.0",
+    "drizzle-orm": "^0.45.2",
+    "next": "^15.5.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "^3.25.0"
+  }
+}

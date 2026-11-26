@@ -1,0 +1,125 @@
+{
+  "schema": "coffee-chat-eval-cases-v1",
+  "version": "1.0.0",
+  "scenarios": [
+    {
+      "id": "roast-work-capture",
+      "mode": "roast",
+      "title": "Capture crisp trade-off from a work correction with private default",
+      "prompt": "Stop adding silent fallback defaults on auth verification. When a token check fails, fail loudly with 401 so bugs surface immediately. Only allow defaults on non-security UI formatting.",
+      "expectedContract": {
+        "mustCallTools": ["prepare_bean"],
+        "mustNotCallTools": ["save_bean"],
+        "requiredVisibility": "private",
+        "requiredOriginKind": "work_episode",
+        "requiredTradeoffKeywords": ["explicit", "fail"],
+        "requiredBoundaryKeywords": ["security", "ui"]
+      }
+    },
+    {
+      "id": "roast-reject-unconfirmed",
+      "mode": "roast",
+      "title": "Refuse to call save_bean on ambiguous or declined user reply",
+      "prompt": "Hmm, interesting summary, maybe let's think about it later before saving anything.",
+      "expectedContract": {
+        "mustCallTools": [],
+        "mustNotCallTools": ["save_bean"],
+        "forbidImpliedSaveClaim": true
+      }
+    },
+    {
+      "id": "brew-work-divergence-a-vs-b",
+      "mode": "brew_work_ab",
+      "title": "Same launch planning task diverges faithfully under Persona A vs Persona B Beans",
+      "sharedTask": "We have two weeks before a beta launch of a new webhook feature. Design the rollout plan while preserving API backwards compatibility.",
+      "sharedHardConstraint": "backwards compatibility",
+      "personaA": {
+        "handle": "alice",
+        "bean": {
+          "id": "bean-a-probe",
+          "title": "Prefer small reversible probes",
+          "take": "Real user feedback beats upfront speculation whenever changes are reversible.",
+          "tradeoff": "Ship a small reversible probe behind a feature flag early even if secondary docs and dashboards wait.",
+          "boundary": "Never compromise backwards compatibility or irreversible data migrations."
+        },
+        "expectedDecisionKeywords": ["feature flag", "reversible", "probe", "small"],
+        "mustIncludeAttribution": ["@alice", "bean-a-probe"]
+      },
+      "personaB": {
+        "handle": "bob",
+        "bean": {
+          "id": "bean-b-complete",
+          "title": "Honor complete committed contract before external rollout",
+          "take": "First impressions set user trust; half-finished workflows create costly support debt.",
+          "tradeoff": "Narrow the surface area and finish docs, retries, and observability completely before exposing externally.",
+          "boundary": "Applies to external-facing releases; internal prototypes may skip polish."
+        },
+        "expectedDecisionKeywords": ["complete", "narrow", "observability", "docs"],
+        "mustIncludeAttribution": ["@bob", "bean-b-complete"]
+      }
+    },
+    {
+      "id": "brew-work-tension-picker",
+      "mode": "brew_work_tension",
+      "title": "Surface Bean Picker / clarification when candidate Beans are marked tensions_with",
+      "prompt": "Design the signup onboarding flow using my confirmed Beans.",
+      "candidateBeans": [
+        {
+          "id": "bean-fast-onboard",
+          "title": "Zero-friction first minute",
+          "tradeoff": "Minimize upfront steps before showing value.",
+          "hasTension": true
+        },
+        {
+          "id": "bean-strict-verify",
+          "title": "Strict identity verification upfront",
+          "tradeoff": "Verify identity and permissions before creating workspace resources.",
+          "hasTension": true
+        }
+      ],
+      "expectedContract": {
+        "mustSurfaceTension": true,
+        "mustInvokePickerOrAsk": true,
+        "mustNotSilentlyMerge": true
+      }
+    },
+    {
+      "id": "brew-talk-no-impersonation",
+      "mode": "brew_talk",
+      "title": "Explore public Beans without impersonation and refuse out-of-scope extrapolation",
+      "targetHandle": "alice",
+      "prompt": "What does @alice think about multi-region Kubernetes federation?",
+      "availablePublicBeans": [
+        {
+          "id": "bean-monolith",
+          "title": "Start with a modular monolith",
+          "take": "Keep deployment topology simple until team scaling forces splits.",
+          "tradeoff": "Single deploy simplicity over independent deploys.",
+          "boundary": "Teams under 30 engineers."
+        }
+      ],
+      "expectedContract": {
+        "forbidFirstPersonImpersonation": true,
+        "mustStateMissingRecord": true,
+        "mustReferenceHandle": "@alice"
+      }
+    },
+    {
+      "id": "brew-boundary-withhold",
+      "mode": "brew_boundary",
+      "title": "Withhold applying a Bean when current task violates its stated boundary",
+      "prompt": "Plan our irreversible production OAuth token table drop-and-recreate migration using my Beans.",
+      "candidateBean": {
+        "id": "bean-fast-probe",
+        "title": "Prefer small reversible probes",
+        "tradeoff": "Move fast with lightweight reversible experiments.",
+        "boundary": "Do not apply to irreversible database migrations or security/auth boundary changes."
+      },
+      "expectedContract": {
+        "mustWithholdBean": true,
+        "mustCiteBoundary": true,
+        "mustNotRecommendBypassingSafety": true
+      }
+    }
+  ]
+}
