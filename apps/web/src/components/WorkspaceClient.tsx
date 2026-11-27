@@ -618,6 +618,7 @@ export function WorkspaceClient({
         label="My Roastery navigation"
         variant="inset"
         collapse="rail"
+        width="17.5rem"
         navigation={
           <>
             <SidebarHeader>
@@ -690,22 +691,11 @@ export function WorkspaceClient({
             </SidebarContent>
 
             <SidebarFooter>
-              <Stack gap={6}>
-                <Button
-                  emphasis="soft"
-                  size="compact"
-                  onClick={() => {
-                    setEditingBean(null);
-                    setPrefillRelations([]);
-                    setRoastOpen(true);
-                  }}
-                >
-                  Roast a Bean
-                </Button>
-                <Link href="/connect" emphasis="quiet" size="compact">
+              <div className="cc-roastery-sidebar-footer">
+                <Link href="/connect" emphasis="soft" size="compact">
                   Open Brew Bar
                 </Link>
-              </Stack>
+              </div>
             </SidebarFooter>
           </>
         }
@@ -719,7 +709,7 @@ export function WorkspaceClient({
             <Stack gap={16}>
               <PageHeader
                 title="My Roastery"
-                detail="My Beans · Private by default, confirmed by you, ready to Brew in your AI"
+                detail="My Beans · Private by default, confirmed by you, ready to Brew in your Agents"
                 leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
                 action={
                   <ButtonGroup label="Roastery actions">
@@ -728,7 +718,7 @@ export function WorkspaceClient({
                       size="compact"
                       onClick={() =>
                         setBrewDialog({
-                          title: "Brew · Pour my Beans into AI",
+                          title: "Brew · Pour my Beans into your Agent",
                           description:
                             "Bring your active confirmed trade-offs and boundaries into your current work",
                           prompt:
@@ -736,7 +726,7 @@ export function WorkspaceClient({
                         })
                       }
                     >
-                      Brew in my AI
+                      Brew in my Agent
                     </Button>
                     <Button
                       emphasis="filled"
@@ -793,11 +783,12 @@ export function WorkspaceClient({
               </div>
 
               {/* Single clean filter toolbar — height-matched compact controls */}
-              <FilterBar
-                label="Search My Beans"
-                placeholder="Search headline, trade-off, domain, or source…"
-                size="compact"
-                query={query}
+              <div className="cc-roastery-filters">
+                <FilterBar
+                  label="Search My Beans"
+                  placeholder="Search headline, trade-off, domain, or source…"
+                  size="compact"
+                  query={query}
                 onQueryChange={(val) => {
                   setQuery(val);
                   setPage(1);
@@ -906,7 +897,8 @@ export function WorkspaceClient({
                     Reset
                   </Button>
                 ) : null}
-              </FilterBar>
+                </FilterBar>
+              </div>
 
               {loadingList ? (
                 <Text variant="meta">Refreshing My Beans…</Text>
@@ -976,7 +968,7 @@ export function WorkspaceClient({
                 >
                   <Text variant="help">
                     Everything you Roast starts Private to you and your
-                    connected AI. Put a Bean On the Table only when you want
+                    connected Agents. Put a Bean On the Table only when you want
                     others to compare perspectives.
                   </Text>
                 </Card>
@@ -985,45 +977,47 @@ export function WorkspaceClient({
                   {/* Left Pane: Scannable Bean Index */}
                   <Stack gap={12}>
                     <Card variant="raised" density="compact">
-                      <List label="Your confirmed Beans" divided>
-                        {beans.map((b) => {
-                          const isSelected = inspectedBean?.id === b.id;
-                          return (
-                            <ListRow
-                              key={b.id}
-                              current={isSelected}
-                              title={b.title}
-                              description={b.tradeoffPreview}
-                              inlineMeta={
-                                <Inline gap={4} align="center">
-                                  <Badge
-                                    tone={
-                                      b.visibility === "public"
-                                        ? "brand"
-                                        : "neutral"
-                                    }
-                                    dot={false}
-                                  >
-                                    {b.visibility === "public"
-                                      ? "On the Table"
-                                      : "Private"}
-                                  </Badge>
-                                  {b.hasTension ? (
-                                    <Badge tone="warning">In Tension</Badge>
-                                  ) : null}
-                                  {b.supersededByBeanId ? (
-                                    <Badge tone="warning">Updated Mind</Badge>
-                                  ) : null}
-                                </Inline>
-                              }
-                              trailing={
-                                <Text variant="meta">v{b.revisionNumber}</Text>
-                              }
-                              onActivate={() => void openInspector(b.id)}
-                            />
-                          );
-                        })}
-                      </List>
+                      <div className="roastery-bean-list">
+                        <List label="Your confirmed Beans" divided>
+                          {beans.map((b) => {
+                            const isSelected = inspectedBean?.id === b.id;
+                            return (
+                              <ListRow
+                                key={b.id}
+                                current={isSelected}
+                                title={b.title}
+                                description={b.tradeoffPreview}
+                                inlineMeta={
+                                  <Inline gap={4} align="center">
+                                    <Badge
+                                      tone={
+                                        b.visibility === "public"
+                                          ? "brand"
+                                          : "neutral"
+                                      }
+                                      dot={false}
+                                    >
+                                      {b.visibility === "public"
+                                        ? "On the Table"
+                                        : "Private"}
+                                    </Badge>
+                                    {b.hasTension ? (
+                                      <Badge tone="warning">In Tension</Badge>
+                                    ) : null}
+                                    {b.supersededByBeanId ? (
+                                      <Badge tone="warning">Updated Mind</Badge>
+                                    ) : null}
+                                  </Inline>
+                                }
+                                trailing={
+                                  <Text variant="meta">v{b.revisionNumber}</Text>
+                                }
+                                onActivate={() => void openInspector(b.id)}
+                              />
+                            );
+                          })}
+                        </List>
+                      </div>
                     </Card>
 
                     {totalPages > 1 ? (
@@ -1065,7 +1059,7 @@ export function WorkspaceClient({
                               <Text variant="meta">
                                 {inspectedBean.attestationKind ===
                                 "agent_attested"
-                                  ? "AI-Roasted"
+                                  ? "Agent-Roasted"
                                   : "Web-Roasted"}{" "}
                                 · Rev {inspectedBean.revisionNumber}
                               </Text>
@@ -1172,14 +1166,30 @@ export function WorkspaceClient({
                             </Text>
 
                             <div className="cc-criteria-grid">
-                              <Stack gap={4}>
-                                <Text variant="meta">What mattered more</Text>
+                              <Stack
+                                gap={4}
+                                className="cc-criteria-col cc-criteria-priority"
+                              >
+                                <Text
+                                  variant="meta"
+                                  className="cc-criteria-label"
+                                >
+                                  What mattered more
+                                </Text>
                                 <Text as="p" variant="body">
                                   {inspectedBean.tradeoff}
                                 </Text>
                               </Stack>
-                              <Stack gap={4}>
-                                <Text variant="meta">Except when</Text>
+                              <Stack
+                                gap={4}
+                                className="cc-criteria-col cc-criteria-boundary"
+                              >
+                                <Text
+                                  variant="meta"
+                                  className="cc-criteria-label"
+                                >
+                                  Except when
+                                </Text>
                                 <Text as="p" variant="help">
                                   {inspectedBean.boundary}
                                 </Text>
@@ -1193,7 +1203,7 @@ export function WorkspaceClient({
                             ) : null}
                           </Stack>
 
-                          <Inline justify="between" align="center" gap={8} wrap>
+                          <div className="cc-bean-action-strip">
                             <ButtonGroup label="Bean actions">
                               <Button
                                 emphasis="soft"
@@ -1225,7 +1235,7 @@ export function WorkspaceClient({
                                   setBrewDialog({
                                     title: `Brew · Apply "${inspectedBean.title}"`,
                                     description:
-                                      "Use this confirmed Bean in your connected AI host",
+                                      "Use this confirmed Bean in your connected Agent",
                                     prompt: `Apply my Coffee Chat Bean "${inspectedBean.title}" to this decision: prioritize "${inspectedBean.tradeoff}", and respect its boundary ("${inspectedBean.boundary}").`,
                                   })
                                 }
@@ -1253,9 +1263,7 @@ export function WorkspaceClient({
                                 }
                               }}
                             />
-                          </Inline>
-
-                          <Divider />
+                          </div>
 
                           {/* Grounded Origins */}
                           <Stack gap={8}>
@@ -1343,7 +1351,7 @@ export function WorkspaceClient({
                                         ·{" "}
                                         {rev.attestationKind ===
                                         "agent_attested"
-                                          ? "AI-Roasted"
+                                          ? "Agent-Roasted"
                                           : "Web-Roasted"}
                                       </Text>
                                       <Text variant="help">
@@ -1428,7 +1436,7 @@ export function WorkspaceClient({
 
               <Card
                 title="Saved People"
-                description="People whose Taste you keep on hand for a Coffee Chat in your AI"
+                description="People whose Taste you keep on hand for a Coffee Chat in your Agents"
                 headerAction={
                   <Badge tone="neutral" dot={false}>
                     {savedVoices.length}
@@ -1537,13 +1545,13 @@ export function WorkspaceClient({
             <Stack gap={24}>
               <PageHeader
                 title="Brew Bar & Account"
-                detail="Connected AI apps, explicit login linking, and full Roastery export"
+                detail="Connected Agents, explicit login linking, and full Roastery export"
                 leading={<SidebarTrigger label="Toggle Roastery sidebar" />}
               />
 
               <Card
-                title="Connected AI Apps"
-                description="Live AI host authorizations — revoking cuts off access immediately"
+                title="Connected Agents"
+                description="Live Agent authorizations — revoking cuts off access immediately"
                 headerAction={
                   <Button
                     emphasis="soft"
@@ -1819,7 +1827,7 @@ export function WorkspaceClient({
         onOpenChange={(next) => {
           if (!next) setBrewDialog(null);
         }}
-        title={brewDialog?.title ?? "Brew in my AI"}
+        title={brewDialog?.title ?? "Brew in my Agent"}
         description={brewDialog?.description ?? ""}
         prompt={brewDialog?.prompt ?? ""}
         activeGrantCount={activeGrants.length}

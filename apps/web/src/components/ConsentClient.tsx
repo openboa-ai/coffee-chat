@@ -73,11 +73,11 @@ export function ConsentClient(props: ConsentClientProps) {
       <Stack gap={24}>
         <PageHeader
           title="Brew Authorization"
-          detail="Connect an AI app to your Roastery"
+          detail="Connect an Agent to your Roastery"
         />
 
         <Card
-          title="Review AI app permissions"
+          title="Review Agent permissions"
           description={`Signed in as @${props.userHandle} — you can revoke access anytime from Brew Bar & Account`}
           action={
             <ButtonGroup label="Authorization decision" justify="end">
@@ -116,7 +116,7 @@ export function ConsentClient(props: ConsentClientProps) {
               source="Coffee Chat"
               asOf="Active request"
               facts={[
-                { id: "client", label: "AI App", value: props.clientId },
+                { id: "client", label: "Agent Client", value: props.clientId },
                 {
                   id: "permissions",
                   label: "Permissions",
@@ -127,7 +127,7 @@ export function ConsentClient(props: ConsentClientProps) {
             />
 
             <Text variant="help">
-              Nothing is saved automatically by a connected AI app without your
+              Nothing is saved automatically by a connected Agent without your
               explicit confirmation.
             </Text>
           </Stack>

@@ -44,9 +44,14 @@ export function BeanCard({
 }: BeanCardProps) {
   const firstSource = bean.origins.find((o) => o.kind === "source_excerpt");
   const firstWork = bean.origins.find((o) => o.kind === "work_episode");
+  const isSuperseded = Boolean(bean.supersededByBeanId);
 
   return (
-    <Card variant="raised" density="regular">
+    <Card
+      variant="raised"
+      density="regular"
+      className={isSuperseded ? "cc-bean-card cc-bean-superseded" : "cc-bean-card"}
+    >
       <Stack gap={16}>
         <Inline justify="between" align="center" gap={12}>
           {showOwner ? (
@@ -112,14 +117,18 @@ export function BeanCard({
         ) : null}
 
         <div className="cc-criteria-grid">
-          <Stack gap={4}>
-            <Text variant="meta">What mattered more</Text>
+          <Stack gap={4} className="cc-criteria-col cc-criteria-priority">
+            <Text variant="meta" className="cc-criteria-label">
+              What mattered more
+            </Text>
             <Text as="p" variant="body">
               {bean.tradeoff}
             </Text>
           </Stack>
-          <Stack gap={4}>
-            <Text variant="meta">Except when</Text>
+          <Stack gap={4} className="cc-criteria-col cc-criteria-boundary">
+            <Text variant="meta" className="cc-criteria-label">
+              Except when
+            </Text>
             <Text as="p" variant="help">
               {bean.boundary}
             </Text>
@@ -135,7 +144,13 @@ export function BeanCard({
             {bean.relations.map((rel, idx) => (
               <Badge
                 key={rel.id ?? idx}
-                tone={rel.kind === "tensions_with" ? "warning" : "accent"}
+                tone={
+                  rel.kind === "tensions_with"
+                    ? "warning"
+                    : rel.kind === "supersedes" && rel.direction === "incoming"
+                      ? "neutral"
+                      : "accent"
+                }
                 dot={false}
               >
                 {formatRelationHumanLabel(rel.kind, rel.direction)}:{" "}

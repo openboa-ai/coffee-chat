@@ -68,6 +68,16 @@ export function SourceCompareClient({
   const [brewOpen, setBrewOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+  const orderedBeans = useMemo(
+    () =>
+      [...beans].sort(
+        (a, b) =>
+          Number(Boolean(a.supersededByBeanId)) -
+          Number(Boolean(b.supersededByBeanId)),
+      ),
+    [beans],
+  );
+
   const uniqueAuthors = useMemo(
     () => Array.from(new Set(beans.map((b) => b.ownerHandle))),
     [beans],
@@ -136,7 +146,7 @@ export function SourceCompareClient({
       setToastMsg(`Added your Bean "${saved.title}" to this Table.`);
     } else {
       setToastMsg(
-        `Saved private Bean "${saved.title}" (visible only to you and your AI).`,
+        `Saved private Bean "${saved.title}" (visible only to you and your Agents).`,
       );
     }
   };
@@ -194,9 +204,12 @@ export function SourceCompareClient({
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      <Card variant="subtle" density="compact">
+      <Card variant="raised" density="compact">
         <Inline justify="between" align="center" gap={12} wrap>
           <Inline gap={12} align="center" wrap>
+            <Badge tone="neutral" dot={false}>
+              Source
+            </Badge>
             <Link
               href={normalizedUrl}
               target="_blank"
@@ -321,14 +334,20 @@ export function SourceCompareClient({
         </Stack>
 
         <div className="table-dialogue-grid">
-          {beans.map((b) => {
+          {orderedBeans.map((b) => {
             const matchingOrigin =
               b.origins.find((o) => o.url === normalizedUrl) ??
               b.origins.find((o) => o.kind === "source_excerpt");
             const isSaved = Boolean(shelfMap[b.id]);
+            const isSuperseded = Boolean(b.supersededByBeanId);
 
             return (
-              <Card key={b.id} variant="raised" density="regular">
+              <Card
+                key={b.id}
+                variant="raised"
+                density="regular"
+                className={isSuperseded ? "cc-bean-superseded" : undefined}
+              >
                 <Stack gap={16}>
                   <Inline justify="between" align="center" gap={8}>
                     <Inline gap={8} align="center">
@@ -341,8 +360,8 @@ export function SourceCompareClient({
                           <Text variant="body">{b.ownerDisplayName}</Text>
                           <Text variant="meta">@{b.ownerHandle}</Text>
                         </Link>
-                        {b.supersededByBeanId ? (
-                          <Badge tone="warning">Updated Mind</Badge>
+                        {isSuperseded ? (
+                          <Badge tone="warning">Updated Mind · Earlier take</Badge>
                         ) : null}
                       </Stack>
                     </Inline>
@@ -380,14 +399,18 @@ export function SourceCompareClient({
                     </Text>
 
                     <div className="cc-criteria-grid">
-                      <Stack gap={4}>
-                        <Text variant="meta">What mattered more</Text>
+                      <Stack gap={4} className="cc-criteria-col cc-criteria-priority">
+                        <Text variant="meta" className="cc-criteria-label">
+                          What mattered more
+                        </Text>
                         <Text as="p" variant="body">
                           {b.tradeoff}
                         </Text>
                       </Stack>
-                      <Stack gap={4}>
-                        <Text variant="meta">Except when</Text>
+                      <Stack gap={4} className="cc-criteria-col cc-criteria-boundary">
+                        <Text variant="meta" className="cc-criteria-label">
+                          Except when
+                        </Text>
                         <Text as="p" variant="help">
                           {b.boundary}
                         </Text>
@@ -428,7 +451,7 @@ export function SourceCompareClient({
       <AgentHandoffDialog
         open={brewOpen}
         onOpenChange={setBrewOpen}
-        title="Brew · Compare this Table in my AI"
+        title="Brew · Compare this Table in your Agent"
         description="Bring these contrasting confirmed trade-offs and boundaries into your decision"
         activeGrantCount={activeGrantCount}
         prompt={`Look at the Coffee Chat Table for "${displayTitle}" (${normalizedUrl}). Compare how the people at this Table weigh different trade-offs and draw different boundaries, and help me decide which criteria fit my current context without impersonating any author.`}

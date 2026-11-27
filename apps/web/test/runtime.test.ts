@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { createDatabase, type DatabaseHandle } from "@coffee-chat/core";
 import {
   getAppOrigin,
   isVercelRuntime,
   resolvePgliteRuntimeConfig,
+  setDbHandleForTests,
 } from "@/lib/runtime";
+import { GET as getHealth } from "@/app/api/health/route";
 
 describe("Web runtime configuration (local & Vercel UI-preview)", () => {
   it("detects Vercel runtime flags safely", () => {
@@ -98,5 +101,34 @@ describe("Web runtime configuration (local & Vercel UI-preview)", () => {
     ).toBe("https://custom.example.com");
 
     expect(getAppOrigin(undefined, {})).toBe("http://localhost:3000");
+  });
+
+  describe("/api/health endpoint", () => {
+    let dbHandle: DatabaseHandle | null = null;
+
+    afterEach(async () => {
+      setDbHandleForTests(null);
+      if (dbHandle) {
+        await dbHandle.close();
+        dbHandle = null;
+      }
+    });
+
+    it("reports schema readiness and Cache-Control: private, no-store without leaking secrets", async () => {
+      dbHandle = await createDatabase();
+      setDbHandleForTests(dbHandle);
+
+      const res = await getHealth();
+      expect(res.status).toBe(200);
+      expect(res.headers.get("cache-control")).toBe("private, no-store");
+      const body = (await res.json()) as {
+        ok: boolean;
+        driver: string;
+        schemaReady: boolean;
+      };
+      expect(body.ok).toBe(true);
+      expect(body.driver).toBe("pglite");
+      expect(body.schemaReady).toBe(true);
+    });
   });
 });

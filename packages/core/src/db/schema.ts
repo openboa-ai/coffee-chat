@@ -29,22 +29,26 @@ export const users = pgTable("users", {
     .defaultNow(),
 });
 
-export const sessions = pgTable("sessions", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("sessions_user_idx").on(table.userId)],
+);
 
 export const accounts = pgTable(
   "accounts",
@@ -78,6 +82,7 @@ export const accounts = pgTable(
       table.providerId,
       table.accountId,
     ),
+    index("accounts_user_idx").on(table.userId),
   ],
 );
 
@@ -128,6 +133,8 @@ export const beans = pgTable(
   },
   (table) => [
     index("beans_owner_visibility_idx").on(table.ownerId, table.visibility),
+    index("beans_visibility_updated_idx").on(table.visibility, table.updatedAt),
+    index("beans_owner_updated_idx").on(table.ownerId, table.updatedAt),
   ],
 );
 
@@ -210,6 +217,7 @@ export const beanRelations = pgTable(
       table.kind,
     ),
     index("bean_relations_owner_idx").on(table.ownerId),
+    index("bean_relations_to_bean_idx").on(table.toBeanId, table.kind),
   ],
 );
 
@@ -231,7 +239,17 @@ export const shelfItems = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("shelf_items_user_idx").on(table.userId)],
+  (table) => [
+    index("shelf_items_user_idx").on(table.userId),
+    index("shelf_items_user_target_bean_idx").on(
+      table.userId,
+      table.targetBeanId,
+    ),
+    index("shelf_items_user_target_user_idx").on(
+      table.userId,
+      table.targetUserId,
+    ),
+  ],
 );
 
 export const mutationReceipts = pgTable(
@@ -289,7 +307,10 @@ export const oauthGrants = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index("oauth_grants_user_idx").on(table.userId)],
+  (table) => [
+    index("oauth_grants_user_idx").on(table.userId),
+    index("oauth_grants_user_active_idx").on(table.userId, table.revokedAt),
+  ],
 );
 
 export const oauthAuthCodes = pgTable("oauth_auth_codes", {

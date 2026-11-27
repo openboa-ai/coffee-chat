@@ -38,7 +38,12 @@ export function InsightsPanel({
     timeStyle: "short",
   });
 
-  // Deterministic editorial reflections computed strictly from PersonalInsightsView (zero server AI)
+  const maxTagCount = Math.max(
+    1,
+    ...insights.topTags.map((item) => item.count),
+  );
+
+  // Deterministic editorial reflections computed strictly from PersonalInsightsView (zero server models)
   const reflections: Array<{
     id: string;
     text: string;
@@ -55,7 +60,7 @@ export function InsightsPanel({
     if (insights.lifecycle.inTensionCount > 0) {
       reflections.push({
         id: "tension",
-        text: `${insights.lifecycle.inTensionCount} ${insights.lifecycle.inTensionCount === 1 ? "Bean is" : "Beans are"} in tension—reconciling them clarifies which trade-off should lead when your AI brews.`,
+        text: `${insights.lifecycle.inTensionCount} ${insights.lifecycle.inTensionCount === 1 ? "Bean is" : "Beans are"} in tension—reconciling them clarifies which trade-off should lead when your Agent brews.`,
         actionLabel: "Review tension",
         onAction: () => onSelectLifecycle("in_tension"),
       });
@@ -88,7 +93,7 @@ export function InsightsPanel({
   if (insights.activeGrantCount === 0) {
     reflections.push({
       id: "brew-bar",
-      text: "Brew Bar isn't linked yet—connect your AI host once so these confirmed criteria actually shape daily answers.",
+      text: "Brew Bar isn't linked yet—connect your Agent once so these confirmed criteria actually shape daily answers.",
       actionLabel: "Open Brew Bar",
       onAction: onOpenConnect,
     });
@@ -98,7 +103,7 @@ export function InsightsPanel({
   ) {
     reflections.push({
       id: "brew-ready",
-      text: `Brew Ready—${insights.lifecycle.activeCount} active ${insights.lifecycle.activeCount === 1 ? "Bean" : "Beans"} and ${insights.shelfCount} live Shelf ${insights.shelfCount === 1 ? "ref" : "refs"} are serving ${insights.activeGrantCount} connected AI ${insights.activeGrantCount === 1 ? "host" : "hosts"}.`,
+      text: `Brew Ready—${insights.lifecycle.activeCount} active ${insights.lifecycle.activeCount === 1 ? "Bean" : "Beans"} and ${insights.shelfCount} live Shelf ${insights.shelfCount === 1 ? "ref" : "refs"} are serving ${insights.activeGrantCount} connected ${insights.activeGrantCount === 1 ? "Agent" : "Agents"}.`,
     });
   }
 
@@ -145,7 +150,7 @@ export function InsightsPanel({
               <Text variant="meta">
                 {insights.shelfCount} on Shelf ·{" "}
                 {insights.activeGrantCount > 0
-                  ? `${insights.activeGrantCount} AI linked`
+                  ? `${insights.activeGrantCount} ${insights.activeGrantCount === 1 ? "Agent" : "Agents"} linked`
                   : "Brew Bar unlinked"}
               </Text>
             </div>
@@ -185,7 +190,7 @@ export function InsightsPanel({
       {reflections.length > 0 ? (
         <Card
           title="Palate Check"
-          description="Honest deterministic observations from your current Beans — zero server AI"
+          description="Honest deterministic observations from your current Beans — zero server models"
           variant="raised"
           density="regular"
         >
@@ -222,18 +227,32 @@ export function InsightsPanel({
             <EmptyResult empty="Add Domains when Roasting Beans to see where your judgment concentrates." />
           ) : (
             <List label="Taste profile by domain" divided>
-              {insights.topTags.map((item) => (
-                <ListRow
-                  key={item.tag}
-                  title={`#${item.tag}`}
-                  trailing={
-                    <Badge tone="neutral" dot={false}>
-                      {item.count} {item.count === 1 ? "Bean" : "Beans"}
-                    </Badge>
-                  }
-                  onActivate={() => onSelectDomain(item.tag)}
-                />
-              ))}
+              {insights.topTags.map((item) => {
+                const widthPct = Math.max(
+                  14,
+                  Math.round((item.count / maxTagCount) * 100),
+                );
+                return (
+                  <ListRow
+                    key={item.tag}
+                    title={`#${item.tag}`}
+                    trailing={
+                      <span className="cc-domain-meter">
+                        <span className="cc-domain-track" aria-hidden="true">
+                          <span
+                            className="cc-domain-fill"
+                            style={{ inlineSize: `${widthPct}%` }}
+                          />
+                        </span>
+                        <Badge tone="neutral" dot={false}>
+                          {item.count} {item.count === 1 ? "Bean" : "Beans"}
+                        </Badge>
+                      </span>
+                    }
+                    onActivate={() => onSelectDomain(item.tag)}
+                  />
+                );
+              })}
             </List>
           )}
         </Card>
@@ -245,7 +264,7 @@ export function InsightsPanel({
           facts={[
             {
               id: "ai-roasted",
-              label: "AI-Roasted · Captured in AI",
+              label: "Agent-Roasted · Captured in Agents",
               value: insights.captureMix.agentAttestedCount,
               unit: "Beans",
             },

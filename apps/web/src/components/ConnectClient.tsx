@@ -29,7 +29,7 @@ export function ConnectClient({
   connectedClientNames,
 }: ConnectClientProps) {
   const router = useRouter();
-  const [hostTab, setHostTab] = useState("chatgpt");
+  const [hostTab, setHostTab] = useState("oauth-url");
   const [copiedQuickStart, setCopiedQuickStart] = useState(false);
 
   const universalStartPrompt = `Connect to Coffee Chat at ${mcpUrl} (sign in when prompted). Once connected, help me Roast my first private Bean from a real decision or article I share with you—ask what mattered more and when the rule stops applying, and wait for my confirmation before saving.`;
@@ -52,73 +52,58 @@ export function ConnectClient({
 
   const hostConfigs = [
     {
-      id: "chatgpt",
-      label: "ChatGPT",
+      id: "oauth-url",
+      label: "Remote URL (OAuth)",
       language: "text",
-      hint: "In Settings → Apps & Connectors → Add Custom Connector, paste this URL and approve once.",
-      code: `Connector URL: ${mcpUrl}\nAuth: OAuth (automatic discovery)`,
+      hint: "For web and desktop Agents with custom MCP connectors: paste this URL and approve sign-in once via OAuth auto-discovery.",
+      code: `Connector URL: ${mcpUrl}\nTransport: Streamable HTTP\nAuth: OAuth 2.1 + PKCE (automatic discovery)`,
     },
     {
-      id: "claude",
-      label: "Claude",
-      language: "bash",
-      hint: "Add Coffee Chat to Claude Code once from your terminal, or connect the URL in Claude Connectors.",
-      code: `claude mcp add --transport http coffee-chat "${mcpUrl}"`,
+      id: "json",
+      label: "JSON (mcpServers)",
+      language: "json",
+      hint: "Standard MCP client configuration for IDEs, desktop Agents, and local workspaces.",
+      code: JSON.stringify(
+        {
+          mcpServers: {
+            "coffee-chat": {
+              url: mcpUrl,
+            },
+          },
+        },
+        null,
+        2,
+      ),
     },
     {
-      id: "codex",
-      label: "Codex",
+      id: "toml",
+      label: "TOML",
       language: "toml",
-      hint: "Add Coffee Chat to ~/.codex/config.toml, then approve sign-in once when prompted.",
+      hint: "For Agents configured with TOML server entries — approve sign-in once on first call.",
       code: `[mcp_servers.coffee_chat]\nurl = "${mcpUrl}"`,
     },
     {
-      id: "cursor",
-      label: "Cursor",
-      language: "json",
-      hint: "Add to .cursor/mcp.json to Brew your Beans directly inside Cursor.",
-      code: JSON.stringify(
-        {
-          mcpServers: {
-            "coffee-chat": {
-              url: mcpUrl,
-            },
-          },
-        },
-        null,
-        2,
-      ),
-    },
-    {
-      id: "antigravity",
-      label: "Antigravity",
-      language: "json",
-      hint: "Add Coffee Chat to your Antigravity remote connector config and approve on first use.",
-      code: JSON.stringify(
-        {
-          mcpServers: {
-            "coffee-chat": {
-              url: mcpUrl,
-            },
-          },
-        },
-        null,
-        2,
-      ),
+      id: "http",
+      label: "Discovery & Metadata",
+      language: "bash",
+      hint: "Inspect the live OAuth Protected Resource metadata or register a dynamic client directly.",
+      code: `curl -s "${mcpUrl.replace(/\/api\/mcp$/, "")}/.well-known/oauth-protected-resource"`,
     },
   ];
 
   const starterPrompts = [
     {
       id: "brew-work",
-      title: "Brew · Answer with my Taste",
+      step: "01 · Brew",
+      title: "Answer with my Taste",
       description: "Apply your confirmed priorities and respect every boundary",
       prompt:
         "Before recommending a path here, check my confirmed Coffee Chat Beans on this topic. Apply what I actually prioritize, tell me which Bean guided the call, and hold back any Bean outside its stated boundary.",
     },
     {
       id: "roast-work",
-      title: "Roast · Save a correction as a private Bean",
+      step: "02 · Roast",
+      title: "Save a correction as a private Bean",
       description:
         "Turn one real pushback into a lasting rule after your confirmation",
       prompt:
@@ -126,9 +111,10 @@ export function ConnectClient({
     },
     {
       id: "coffee-chat-other",
-      title: "Coffee Chat · Ask someone else’s Taste",
+      step: "03 · Coffee Chat",
+      title: "Consult someone else’s Taste",
       description:
-        "Consult another person’s confirmed Beans without fake roleplay",
+        "Weigh another person’s confirmed Beans without fake roleplay",
       prompt:
         "Have a Coffee Chat with @claire using her confirmed public Coffee Chat Beans on this decision. Walk through what she puts first, note where her boundary stops, and attribute every point explicitly without impersonating her.",
     },
@@ -138,7 +124,7 @@ export function ConnectClient({
     <Stack gap={24}>
       <PageHeader
         title="Brew Bar"
-        detail="Connect your AI once — Brew your own Taste or Coffee Chat with anyone else’s anywhere you work"
+        detail="Connect your Agents once — Brew your own Taste or Coffee Chat with anyone else’s anywhere you work"
         action={
           <Inline gap={8}>
             {signedIn ? (
@@ -151,8 +137,7 @@ export function ConnectClient({
               </Button>
             ) : (
               <Button
-                emphasis="filled"
-                tone="brand"
+                emphasis="soft"
                 size="compact"
                 onClick={() => router.push("/signin?returnTo=/connect")}
               >
@@ -178,30 +163,30 @@ export function ConnectClient({
               </Button>
             }
           >
-            Connected apps:{" "}
+            Connected Agents:{" "}
             {connectedClientNames.length > 0
               ? connectedClientNames.join(", ")
-              : "Active AI app"}
-            . Your Beans stay private to you and your connected AI until you put
-            one On the Table.
+              : "Active Agent"}
+            . Your Beans stay private to you and your connected Agents until you
+            put one On the Table.
           </Notice>
         ) : (
           <Notice title="No AI app connected yet" tone="neutral">
-            Copy the universal start prompt below or pick your AI app for manual
-            setup. You can revoke any connection instantly from Brew Bar &amp;
+            Copy the universal start prompt below or use a manual MCP config
+            snippet. You can revoke any connection instantly from Brew Bar &amp;
             Account.
           </Notice>
         )
       ) : (
         <Notice title="Private by default" tone="neutral">
-          Your AI connects with secure sign-in approval and never roasts or
-          saves a Bean without your explicit confirmation.
+          Your Agents connect with secure sign-in approval and never roast or
+          save a Bean without your explicit confirmation.
         </Notice>
       )}
 
       <Card
-        title="Fastest start · Paste into any AI"
-        description="Works regardless of which AI app you use — no config file needed to begin"
+        title="Fastest start · Paste into any Agent"
+        description="Works with any MCP-compatible Agent — no config file needed to begin"
         headerAction={
           <Button
             emphasis="filled"
@@ -225,18 +210,18 @@ export function ConnectClient({
       </Card>
 
       <Card
-        title="Manual setup by AI app"
-        description="Prefer configuring your connector directly? Pick your AI app below"
+        title="Manual MCP configuration"
+        description="Prefer configuring your connector directly? Pick your format below"
         headerAction={
           <Badge tone="neutral" dot={false}>
-            5 AI apps supported
+            Standard MCP + OAuth 2.1
           </Badge>
         }
         variant="raised"
         density="regular"
       >
         <Tabs
-          label="AI host setup"
+          label="Manual MCP setup"
           presentation="pill"
           value={hostTab}
           onValueChange={setHostTab}
@@ -267,12 +252,12 @@ export function ConnectClient({
             <Card
               key={item.id}
               title={item.title}
-              description={item.description}
+              description={`${item.step} · ${item.description}`}
               action={<CopyButton value={item.prompt} onCopy={copyText} />}
               variant="raised"
               density="regular"
             >
-              <Text variant="help">{item.prompt}</Text>
+              <p className="cc-prompt-quote">{item.prompt}</p>
             </Card>
           ))}
         </div>

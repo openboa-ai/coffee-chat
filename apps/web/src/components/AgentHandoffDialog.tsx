@@ -45,14 +45,14 @@ export function AgentHandoffDialog({
       <Stack gap={16}>
         {typeof activeGrantCount === "number" ? (
           activeGrantCount > 0 ? (
-            <Notice title="Brew Ready · AI connected" tone="success">
-              You have {activeGrantCount} active connected AI{" "}
-              {activeGrantCount === 1 ? "app" : "apps"}. Paste this prompt into
-              your AI chat to Brew these Beans directly.
+            <Notice title="Brew Ready · Agent connected" tone="success">
+              You have {activeGrantCount} active connected{" "}
+              {activeGrantCount === 1 ? "Agent" : "Agents"}. Paste this prompt
+              into your Agent to Brew these Beans directly.
             </Notice>
           ) : (
             <Notice
-              title="No AI app connected yet"
+              title="No Agent connected yet"
               tone="warning"
               action={
                 <Link href="/connect" emphasis="soft" size="compact">
@@ -67,7 +67,7 @@ export function AgentHandoffDialog({
         ) : (
           <Inline gap={8} align="center" wrap>
             <Badge tone="neutral" dot={false}>
-              Works with your connected AI
+              Works with your connected Agents
             </Badge>
             <Link href="/connect" emphasis="quiet" size="compact">
               Setup in Brew Bar
@@ -96,8 +96,9 @@ export function AgentHandoffDialog({
         </Inline>
 
         <Text variant="meta">
-          Plain-language handoff — your connected AI checks confirmed trade-offs
-          and respects every stated boundary without impersonating anyone.
+          Plain-language handoff — your connected Agent checks confirmed
+          trade-offs and respects every stated boundary without impersonating
+          anyone.
         </Text>
       </Stack>
     </Dialog>

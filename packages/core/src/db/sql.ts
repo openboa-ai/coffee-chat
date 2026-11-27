@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions(user_id);
 
 CREATE TABLE IF NOT EXISTS accounts (
   id TEXT PRIMARY KEY,
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS accounts_provider_account_idx ON accounts(provider_id, account_id);
+CREATE INDEX IF NOT EXISTS accounts_user_idx ON accounts(user_id);
 
 CREATE TABLE IF NOT EXISTS verifications (
   id TEXT PRIMARY KEY,
@@ -65,6 +67,8 @@ CREATE TABLE IF NOT EXISTS beans (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS beans_owner_visibility_idx ON beans(owner_id, visibility);
+CREATE INDEX IF NOT EXISTS beans_visibility_updated_idx ON beans(visibility, updated_at DESC);
+CREATE INDEX IF NOT EXISTS beans_owner_updated_idx ON beans(owner_id, updated_at DESC);
 
 CREATE TABLE IF NOT EXISTS bean_revisions (
   id TEXT PRIMARY KEY,
@@ -105,6 +109,7 @@ CREATE TABLE IF NOT EXISTS bean_relations (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS bean_relations_unique_idx ON bean_relations(from_bean_id, to_bean_id, kind);
 CREATE INDEX IF NOT EXISTS bean_relations_owner_idx ON bean_relations(owner_id);
+CREATE INDEX IF NOT EXISTS bean_relations_to_bean_idx ON bean_relations(to_bean_id, kind);
 
 CREATE TABLE IF NOT EXISTS shelf_items (
   id TEXT PRIMARY KEY,
@@ -115,6 +120,8 @@ CREATE TABLE IF NOT EXISTS shelf_items (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS shelf_items_user_idx ON shelf_items(user_id);
+CREATE INDEX IF NOT EXISTS shelf_items_user_target_bean_idx ON shelf_items(user_id, target_bean_id);
+CREATE INDEX IF NOT EXISTS shelf_items_user_target_user_idx ON shelf_items(user_id, target_user_id);
 
 CREATE TABLE IF NOT EXISTS mutation_receipts (
   id TEXT PRIMARY KEY,
@@ -146,6 +153,7 @@ CREATE TABLE IF NOT EXISTS oauth_grants (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS oauth_grants_user_idx ON oauth_grants(user_id);
+CREATE INDEX IF NOT EXISTS oauth_grants_user_active_idx ON oauth_grants(user_id, revoked_at);
 
 CREATE TABLE IF NOT EXISTS oauth_auth_codes (
   code_hash TEXT PRIMARY KEY,

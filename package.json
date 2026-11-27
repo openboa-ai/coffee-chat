@@ -23,7 +23,8 @@
     "test:e2e": "playwright test",
     "test": "npm run build:mcp-apps && npm run test:core && npm run test:mcp-apps && npm run test:web && npm run test:evals",
     "check:yogurt": "yogurt check",
-    "db:generate": "npm --workspace @coffee-chat/core run db:generate"
+    "db:generate": "npm --workspace @coffee-chat/core run db:generate",
+    "db:migrate": "npm --workspace @coffee-chat/core run db:migrate"
   },
   "dependencies": {
     "@openboa/yogurt": "file:vendor/openboa-yogurt-0.2.0-local.1.tgz",

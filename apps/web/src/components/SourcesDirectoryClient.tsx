@@ -84,35 +84,39 @@ export function SourcesDirectoryClient({
         }
       />
 
-      <FilterBar
-        label="Search Tables"
-        placeholder="Search article title, URL, @handle, or domain…"
-        size="compact"
-        query={query}
-        onQueryChange={setQuery}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          navigate(query, initialTag, 1);
+        }}
       >
-        <ButtonGroup label="Search Table controls">
-          <Button
-            emphasis="soft"
-            size="compact"
-            onClick={() => navigate(query, initialTag, 1)}
-          >
-            Search
-          </Button>
-          {initialQuery || initialTag ? (
-            <Button
-              emphasis="quiet"
-              size="compact"
-              onClick={() => {
-                setQuery("");
-                navigate("", "", 1);
-              }}
-            >
-              Clear
+        <FilterBar
+          label="Search Tables"
+          placeholder="Search article title, URL, @handle, or domain…"
+          size="compact"
+          query={query}
+          onQueryChange={setQuery}
+        >
+          <ButtonGroup label="Search Table controls">
+            <Button type="submit" emphasis="soft" size="compact">
+              Search
             </Button>
-          ) : null}
-        </ButtonGroup>
-      </FilterBar>
+            {initialQuery || initialTag ? (
+              <Button
+                type="button"
+                emphasis="quiet"
+                size="compact"
+                onClick={() => {
+                  setQuery("");
+                  navigate("", "", 1);
+                }}
+              >
+                Clear
+              </Button>
+            ) : null}
+          </ButtonGroup>
+        </FilterBar>
+      </form>
 
       {sources.length === 0 ? (
         <EmptyResult
@@ -141,12 +145,17 @@ export function SourcesDirectoryClient({
                 </Inline>
 
                 <Heading level={3}>
-                  {src.sourceTitle ?? src.normalizedUrl}
+                  <Link
+                    href={`/sources/${src.originId}`}
+                    className="cc-table-card-title-link"
+                  >
+                    {src.sourceTitle ?? src.normalizedUrl}
+                  </Link>
                 </Heading>
 
                 <Text variant="help">
                   At this Table:{" "}
-                  {src.authorHandles.map((h) => `@${h}`).join(", ")}
+                  {src.authorHandles.map((h) => `@${h}`).join(" · ")}
                 </Text>
 
                 {src.tags.length > 0 ? (

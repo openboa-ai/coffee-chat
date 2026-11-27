@@ -213,17 +213,47 @@ export function SignInPanel({
       </Card>
 
       <Surface variant="raised" className="auth-brand-panel">
-        <ProjectMark project="coffee" label="" size={112} />
-        <Stack gap={8}>
-          <Heading level={2}>
-            Your Taste, across <em className="cc-accent-ink">every AI.</em>
-          </Heading>
-          <Text as="p" variant="help">
-            Everything you Roast starts private to you and your connected AI.
-            Nothing saves without your confirmation, and Coffee Chat runs zero
-            server models.
-          </Text>
+        <Stack gap={16}>
+          <ProjectMark project="coffee" label="" size={96} />
+          <Stack gap={8}>
+            <Heading level={2}>
+              Your Taste, across{" "}
+              <em className="cc-accent-ink">every Agent.</em>
+            </Heading>
+            <Text as="p" variant="help">
+              Distill the real calls and reading takeaways you already care
+              about into confirmed Beans that travel across every Agent you use.
+            </Text>
+          </Stack>
         </Stack>
+
+        <ul className="auth-principles" aria-label="Coffee Chat principles">
+          <li>
+            <span className="auth-principle-kicker">01 · Private by default</span>
+            <Text variant="help">
+              Every Bean starts private in My Roastery until you choose to put
+              it On the Table.
+            </Text>
+          </li>
+          <li>
+            <span className="auth-principle-kicker">
+              02 · Confirmed by you
+            </span>
+            <Text variant="help">
+              No Agent can silently write or publish a Bean without your
+              explicit sign-off.
+            </Text>
+          </li>
+          <li>
+            <span className="auth-principle-kicker">
+              03 · Zero server models
+            </span>
+            <Text variant="help">
+              Coffee Chat stores structured trade-offs and boundaries—your own
+              Agents do all the thinking.
+            </Text>
+          </li>
+        </ul>
       </Surface>
     </Grid>
   );

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { sql } from "drizzle-orm";
 import {
   addToShelf,
   approveOAuthAuthorization,
@@ -32,7 +33,9 @@ import {
   registerOAuthClientDcr,
   revokeUserGrant,
   saveBean,
+  SCHEMA_DDL,
   setBeanVisibility,
+  splitSqlStatements,
   unlinkProviderAccount,
   verifyAccessToken,
 } from "../src/index.js";
@@ -794,5 +797,40 @@ describe("Core domain, privacy, concurrency, and OAuth 2.1 invariants (PGlite)",
     ]);
     // Keep unused reference check clean
     expect(b3.bean.id).toBeTruthy();
+  });
+
+  it("creates Neon Pool driver supporting interactive transactions and installs all hot-path indexes", async () => {
+    const statements = splitSqlStatements(SCHEMA_DDL);
+    expect(statements.length).toBeGreaterThanOrEqual(25);
+    expect(statements.every((s) => !s.endsWith(";"))).toBe(true);
+
+    const idxResult = await handle.db.execute(
+      sql`SELECT indexname FROM pg_indexes WHERE schemaname = 'public'`,
+    );
+    const indexNames = new Set(
+      ((idxResult as unknown as { rows?: Array<{ indexname: string }> }).rows ?? []).map(
+        (r) => r.indexname,
+      ),
+    );
+    for (const expectedIndex of [
+      "sessions_user_idx",
+      "accounts_user_idx",
+      "beans_visibility_updated_idx",
+      "beans_owner_updated_idx",
+      "bean_relations_to_bean_idx",
+      "shelf_items_user_target_bean_idx",
+      "shelf_items_user_target_user_idx",
+      "oauth_grants_user_active_idx",
+    ]) {
+      expect(indexNames.has(expectedIndex), `missing index ${expectedIndex}`).toBe(true);
+    }
+
+    // Verify Neon Pool driver wiring without making an external network connection.
+    const neonHandle = await createDatabase({
+      databaseUrl: "postgresql://user:pass@ep-demo.us-east-2.aws.neon.tech/neondb?sslmode=require",
+    });
+    expect(neonHandle.driver).toBe("neon");
+    expect(typeof neonHandle.db.transaction).toBe("function");
+    await neonHandle.close();
   });
 });

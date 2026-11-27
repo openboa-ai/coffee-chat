@@ -8,6 +8,8 @@ import { Button } from "@openboa/yogurt/button";
 import { ButtonGroup } from "@openboa/yogurt/button-group";
 import { Card } from "@openboa/yogurt/card";
 import { CodeBlock } from "@openboa/yogurt/code-block";
+import { DisclosureRow } from "@openboa/yogurt/disclosure-row";
+import { Divider } from "@openboa/yogurt/divider";
 import { EmptyResult } from "@openboa/yogurt/empty-result";
 import { Inline } from "@openboa/yogurt/inline";
 import { Link } from "@openboa/yogurt/link";
@@ -50,6 +52,16 @@ export function PersonClient({
   );
   const [brewOpen, setBrewOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const orderedPublicBeans = useMemo(
+    () =>
+      [...profile.publicBeans].sort(
+        (a, b) =>
+          Number(Boolean(a.supersededByBeanId)) -
+          Number(Boolean(b.supersededByBeanId)),
+      ),
+    [profile.publicBeans],
+  );
 
   // Public-only Tasting Notes derived strictly from profile.publicBeans (zero private leakage)
   const publicInsights = useMemo(() => {
@@ -150,7 +162,7 @@ export function PersonClient({
     <Stack gap={24}>
       <PageHeader
         title={profile.displayName}
-        detail={`@${profile.handle} · Confirmed public Taste ready for a Coffee Chat in your AI`}
+        detail={`@${profile.handle} · Confirmed public Taste ready for a Coffee Chat in your Agents`}
         leading={<Avatar label={profile.displayName} size="large" />}
         action={
           <ButtonGroup label={`Actions for @${profile.handle}`}>
@@ -179,24 +191,9 @@ export function PersonClient({
         <Toast message={toastMsg} onDismiss={() => setToastMsg(null)} />
       ) : null}
 
-      <Card
-        title={`Coffee Chat with @${profile.handle} in your Agent`}
-        description="Paste into any Agent — attributed to confirmed Beans, never impersonated"
-        variant="raised"
-        density="regular"
-      >
-        <div className="prompt-code-wrap">
-          <CodeBlock
-            code={coffeeChatPrompt}
-            language="text"
-            onCopy={copyText}
-          />
-        </div>
-      </Card>
-
       <Card variant="raised" density="regular">
-        <Stack gap={12}>
-          <div className="taste-strip">
+        <Stack gap={16}>
+          <div className="taste-strip taste-strip-two">
             <div className="taste-metric">
               <Text variant="meta">On the Table · Public Beans</Text>
               <span className="taste-metric-value">{profile.publicCount}</span>
@@ -225,16 +222,36 @@ export function PersonClient({
               ))}
             </Inline>
           ) : null}
+
+          <Divider />
+
+          <DisclosureRow
+            label={`Quick prompt · Coffee Chat with @${profile.handle} in any Agent`}
+          >
+            <Stack gap={8}>
+              <Text variant="help">
+                Paste into any Agent — attributed to confirmed Beans, never
+                impersonated.
+              </Text>
+              <div className="prompt-code-wrap">
+                <CodeBlock
+                  code={coffeeChatPrompt}
+                  language="text"
+                  onCopy={copyText}
+                />
+              </div>
+            </Stack>
+          </DisclosureRow>
         </Stack>
       </Card>
 
-      {profile.publicBeans.length === 0 ? (
+      {orderedPublicBeans.length === 0 ? (
         <EmptyResult
           empty={`@${profile.handle} has not put any Beans On the Table yet.`}
         />
       ) : (
         <Stack gap={16}>
-          {profile.publicBeans.map((bean) => {
+          {orderedPublicBeans.map((bean) => {
             const firstSourceOriginId = bean.origins.find(
               (o) => o.kind === "source_excerpt" && o.originId,
             )?.originId;
@@ -274,7 +291,7 @@ export function PersonClient({
         open={brewOpen}
         onOpenChange={setBrewOpen}
         title={`Coffee Chat with @${profile.handle}`}
-        description="Bring their confirmed trade-offs and boundaries into your AI without impersonation"
+        description="Bring their confirmed trade-offs and boundaries into your Agent without impersonation"
         activeGrantCount={activeGrantCount}
         prompt={coffeeChatPrompt}
       />
