@@ -28,6 +28,7 @@
     --cc-glass-border: color-mix(in srgb, var(--boa-color-earth-800) 14%, transparent);
     --cc-reticle: color-mix(in srgb, var(--yg-brand-ink) 32%, transparent);
     --cc-text-halo: color-mix(in srgb, var(--boa-color-earth-50) 92%, transparent);
+    --cc-alert: var(--boa-color-terracotta-600);
     background: var(--cc-linen);
     color: var(--cc-espresso);
   }
@@ -45,6 +46,7 @@
     --cc-glass-border: color-mix(in srgb, var(--boa-color-earth-200) 16%, transparent);
     --cc-reticle: color-mix(in srgb, var(--yg-brand-ink) 38%, transparent);
     --cc-text-halo: color-mix(in srgb, var(--boa-color-neutral-950) 90%, transparent);
+    --cc-alert: var(--boa-color-terracotta-300);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -61,6 +63,7 @@
       --cc-glass-border: color-mix(in srgb, var(--boa-color-earth-200) 16%, transparent);
       --cc-reticle: color-mix(in srgb, var(--yg-brand-ink) 38%, transparent);
       --cc-text-halo: color-mix(in srgb, var(--boa-color-neutral-950) 90%, transparent);
+      --cc-alert: var(--boa-color-terracotta-300);
     }
   }
 
@@ -452,6 +455,363 @@
 
   .cc-hud-dot[data-alert="true"] {
     background: var(--boa-color-terracotta-500);
+  }
+
+  .cc-hud-reel-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px var(--boa-space-10);
+    margin-inline-start: var(--boa-space-6);
+    border: 1px solid var(--cc-glass-border);
+    border-radius: var(--yg-radius-pill);
+    background: transparent;
+    color: var(--yg-brand-ink);
+    font-family: var(--yg-font-mono);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .cc-hud-reel-btn:hover,
+  .cc-hud-reel-btn[data-playing="true"] {
+    background: var(--yg-brand-ink);
+    color: var(--yg-on-inverse);
+    border-color: var(--yg-brand-ink);
+  }
+
+  /* =========================================================================
+     STORY-LOCKED SPATIAL SVG TELEMETRY HUD (Synced 1:1 to Camera Rig)
+     ========================================================================= */
+
+  .cc-story-hud {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .cc-story-hud-rig {
+    position: absolute;
+    inset: 0;
+    transform:
+      translate3d(var(--cc-rig-x, 0px), var(--cc-rig-y, 0px), 0)
+      scale(var(--cc-rig-scale, 1))
+      rotate(var(--cc-rig-roll, 0deg));
+    opacity: calc(1 - var(--cc-whip-energy, 0) * 0.72);
+    will-change: transform, opacity;
+  }
+
+  .cc-hud-svg {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0;
+    transform: scale(0.985);
+    transition:
+      opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-hud-svg[data-visible="true"] {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .cc-svg-hairline {
+    stroke: var(--cc-reticle);
+    stroke-width: 1;
+  }
+
+  .cc-svg-hairline-strong {
+    stroke: color-mix(in srgb, var(--cc-espresso) 38%, transparent);
+    stroke-width: 1.25;
+  }
+
+  .cc-svg-ring-accent {
+    stroke: var(--yg-brand-ink);
+    stroke-width: 1.6;
+    transition:
+      stroke 0.3s ease,
+      stroke-dasharray 0.35s ease;
+  }
+
+  .cc-svg-ring-warm {
+    stroke: var(--cc-crema);
+    stroke-width: 1.8;
+    transition: stroke 0.3s ease;
+  }
+
+  .cc-svg-ring-muted {
+    stroke: color-mix(in srgb, var(--cc-roast-muted) 58%, transparent);
+    stroke-width: 1.25;
+  }
+
+  .cc-svg-ring-alert {
+    stroke: var(--cc-alert);
+    stroke-width: 1.6;
+  }
+
+  .cc-svg-dot-accent {
+    fill: var(--yg-brand-ink);
+  }
+
+  .cc-svg-dot-muted {
+    fill: var(--cc-roast-muted);
+  }
+
+  .cc-svg-dot-alert {
+    fill: var(--cc-alert);
+  }
+
+  .cc-svg-mono,
+  .cc-svg-mono-accent,
+  .cc-svg-mono-warm,
+  .cc-svg-mono-alert,
+  .cc-svg-slate,
+  .cc-svg-noise,
+  .cc-svg-label,
+  .cc-svg-label-sm {
+    paint-order: stroke;
+    stroke: color-mix(in srgb, var(--cc-linen) 76%, transparent);
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+  }
+
+  .cc-svg-mono {
+    font-family: var(--yg-font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    fill: var(--cc-roast-muted);
+  }
+
+  .cc-svg-mono-accent {
+    font-family: var(--yg-font-mono);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.12em;
+    fill: var(--yg-brand-ink);
+  }
+
+  .cc-svg-mono-warm {
+    font-family: var(--yg-font-mono);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.12em;
+    fill: var(--cc-crema);
+  }
+
+  .cc-svg-mono-alert {
+    font-family: var(--yg-font-mono);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.12em;
+    fill: var(--cc-alert);
+  }
+
+  .cc-svg-slate {
+    font-family: var(--yg-font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    fill: color-mix(in srgb, var(--cc-espresso) 64%, transparent);
+  }
+
+  .cc-svg-label {
+    font-family: var(--yg-font-sans);
+    font-size: 14px;
+    font-weight: 580;
+    fill: var(--cc-espresso);
+  }
+
+  .cc-svg-label-sm {
+    font-family: var(--yg-font-sans);
+    font-size: 12.5px;
+    font-weight: 560;
+    fill: var(--cc-espresso);
+  }
+
+  .cc-svg-noise {
+    font-family: var(--yg-font-sans);
+    font-size: 12.5px;
+    font-style: italic;
+    fill: var(--cc-roast-muted);
+    transition: opacity 0.45s ease;
+  }
+
+  /* Cut 01: Taste Lock Needle Kinematics */
+  .cc-hud-spin-slow {
+    animation: cc-spin-slow 46s linear infinite;
+  }
+
+  @keyframes cc-spin-slow {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .cc-needle-oscillate {
+    animation: cc-needle-hedge 2.4s ease-in-out infinite;
+  }
+
+  @keyframes cc-needle-hedge {
+    0%,
+    100% {
+      transform: translateX(-54px);
+    }
+    50% {
+      transform: translateX(54px);
+    }
+  }
+
+  .cc-needle-lock-left {
+    transform: translateX(-186px);
+    transition: transform 0.55s cubic-bezier(0.22, 1.32, 0.36, 1);
+  }
+
+  .cc-needle-lock-right {
+    transform: translateX(186px);
+    transition: transform 0.55s cubic-bezier(0.22, 1.32, 0.36, 1);
+  }
+
+  /* Cut 02: Conversation Distillation & 360deg Vault Seal Ring */
+  .cc-svg-flow-muted {
+    stroke: color-mix(in srgb, var(--cc-roast-muted) 42%, transparent);
+    stroke-width: 1.25;
+    stroke-dasharray: 4 7;
+    animation: cc-dash-in 2.2s linear infinite;
+  }
+
+  @keyframes cc-dash-in {
+    to {
+      stroke-dashoffset: -44;
+    }
+  }
+
+  .cc-distill-filaments {
+    transition: opacity 0.5s ease;
+  }
+
+  .cc-distill-filaments[data-confirmed="true"] {
+    opacity: 0.32;
+  }
+
+  .cc-svg-seal-ring {
+    stroke: var(--yg-brand-ink);
+    stroke-width: 2.2;
+    stroke-dasharray: 604;
+    stroke-dashoffset: 604;
+    transition: stroke-dashoffset 0.78s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-svg-seal-ring[data-confirmed="true"] {
+    stroke-dashoffset: 0;
+  }
+
+  .cc-bean-callouts {
+    opacity: 0.72;
+    transition: opacity 0.4s ease;
+  }
+
+  .cc-bean-callouts[data-confirmed="true"] {
+    opacity: 1;
+  }
+
+  /* Cut 03: Live Pour Conduit Packets + Slamming Boundary Shield Gate */
+  .cc-svg-pour-flow {
+    stroke: var(--yg-brand-ink);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 6 14;
+    animation: cc-pour-stream 0.9s linear infinite;
+  }
+
+  @keyframes cc-pour-stream {
+    to {
+      stroke-dashoffset: -40;
+    }
+  }
+
+  .cc-svg-pour-paused {
+    stroke: color-mix(in srgb, var(--cc-roast-muted) 35%, transparent);
+    stroke-width: 1.4;
+    stroke-dasharray: 3 8;
+  }
+
+  .cc-svg-pour-blocked {
+    stroke: color-mix(in srgb, var(--cc-alert) 30%, transparent);
+    stroke-width: 1.4;
+    stroke-dasharray: 2 10;
+  }
+
+  .cc-boundary-gate {
+    opacity: 0;
+    transform: scaleX(0.35);
+    transform-origin: 1062px 368px;
+    transition:
+      opacity 0.22s ease,
+      transform 0.32s cubic-bezier(0.22, 1.35, 0.36, 1);
+  }
+
+  .cc-boundary-gate[data-triggered="true"] {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .cc-svg-gate-bar {
+    stroke: var(--cc-alert);
+    stroke-width: 2.2;
+  }
+
+  .cc-svg-gate-pulse {
+    stroke: var(--cc-alert);
+    stroke-width: 1.5;
+    animation: cc-gate-ring 1.6s ease-out infinite;
+    transform-origin: 1062px 368px;
+  }
+
+  @keyframes cc-gate-ring {
+    0% {
+      transform: scale(0.75);
+      opacity: 0.95;
+    }
+    100% {
+      transform: scale(2.1);
+      opacity: 0;
+    }
+  }
+
+  /* Cut 04: Two-Cup Lateral Dolly Sync & Comparison Arc */
+  .cc-two-cup-rig {
+    transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .cc-cup-node {
+    opacity: 0.42;
+    transition: opacity 0.35s ease;
+  }
+
+  .cc-cup-node[data-active="true"] {
+    opacity: 1;
+  }
+
+  .cc-svg-bridge-active {
+    stroke: var(--yg-brand-ink);
+    stroke-width: 2;
+    stroke-dasharray: 6 10;
+    animation: cc-pour-stream 1.4s linear infinite;
+  }
+
+  @media (max-width: 1080px) {
+    .cc-story-hud {
+      display: none;
+    }
   }
 
   /* 5 Full-Viewport Acts */
@@ -902,12 +1262,21 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .cc-stream-cursor {
+    .cc-stream-cursor,
+    .cc-hud-spin-slow,
+    .cc-needle-oscillate,
+    .cc-svg-flow-muted,
+    .cc-svg-pour-flow,
+    .cc-svg-gate-pulse,
+    .cc-svg-bridge-active {
       animation: none;
     }
 
     .cc-hud-bar,
-    .cc-hold-ring-fill {
+    .cc-hold-ring-fill,
+    .cc-two-cup-rig,
+    .cc-svg-seal-ring,
+    .cc-boundary-gate {
       transition: none;
     }
   }

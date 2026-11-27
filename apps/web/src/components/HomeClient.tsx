@@ -20,6 +20,7 @@ import type {
   StageRoastMode,
 } from "@/lib/coffee-scene/cinemaEngine";
 import { CoffeeWorldStage } from "./CoffeeWorldStage";
+import { CoffeeStoryHud } from "./CoffeeStoryHud";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -145,6 +146,8 @@ const ROAST_SCENARIOS = [
     beanTitle: "Show an honest draft to 5 real people before polishing",
     tradeoff: "Fast real-world feedback over upfront perfection.",
     boundary: "Public brand launches or irreversible customer commitments.",
+    priorityShort: "Signal > upfront polish",
+    boundaryShort: "Stops at public brand launches",
   },
   {
     id: "trust",
@@ -156,6 +159,8 @@ const ROAST_SCENARIOS = [
     beanTitle: "Never ship a shortcut that touches money or privacy",
     tradeoff: "Durable customer trust on day one over faster early demos.",
     boundary: "Throwaway visual prototypes using sample data only.",
+    priorityShort: "Day-1 trust > fast demos",
+    boundaryShort: "Except sample-data prototypes",
   },
   {
     id: "hiring",
@@ -167,6 +172,8 @@ const ROAST_SCENARIOS = [
     beanTitle: "Hire fast learners over ready-made playbooks",
     tradeoff: "Ownership and learning speed over exact prior industry background.",
     boundary: "Roles requiring day-one regulatory certification.",
+    priorityShort: "Ownership > prior playbooks",
+    boundaryShort: "Except regulated day-1 roles",
   },
 ] as const;
 
@@ -195,6 +202,10 @@ export function HomeClient({
 
   // Act 04: Two-Cup Coffee Chat
   const [chatPartner, setChatPartner] = useState<StageChatPartner>("claire");
+
+  // Automated Robot-Arm Motion-Control Story Reel
+  const [reelPlaying, setReelPlaying] = useState(false);
+  const reelTimersRef = useRef<number[]>([]);
 
   // Copy prompt state
   const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
@@ -319,6 +330,89 @@ export function HomeClient({
     );
   };
 
+  const stopReel = () => {
+    for (const id of reelTimersRef.current) {
+      window.clearTimeout(id);
+    }
+    reelTimersRef.current = [];
+    setReelPlaying(false);
+  };
+
+  useEffect(() => {
+    if (!reelPlaying) return;
+    const cancelOnInput = () => stopReel();
+    window.addEventListener("wheel", cancelOnInput, { passive: true });
+    window.addEventListener("touchstart", cancelOnInput, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", cancelOnInput);
+      window.removeEventListener("touchstart", cancelOnInput);
+    };
+  }, [reelPlaying]);
+
+  useEffect(() => {
+    return () => {
+      for (const id of reelTimersRef.current) {
+        window.clearTimeout(id);
+      }
+    };
+  }, []);
+
+  const toggleReel = () => {
+    if (reelPlaying) {
+      stopReel();
+      return;
+    }
+    setReelPlaying(true);
+    const schedule = (ms: number, fn: () => void) => {
+      reelTimersRef.current.push(window.setTimeout(fn, ms));
+    };
+
+    // Choreographed 16-second Motion-Control Camera Sequence
+    jumpToChapter("taste-gap");
+    setRoastMode("decaf");
+    setRoastConfirmed(false);
+    setBrewActive(true);
+    setBoundaryTriggered(false);
+    setChatPartner("claire");
+
+    schedule(1650, () => {
+      setRoastMode("growth");
+      triggerRipple();
+    });
+    schedule(3400, () => {
+      jumpToChapter("roast");
+    });
+    schedule(4900, () => {
+      setRoastConfirmed(true);
+      triggerRipple();
+    });
+    schedule(6900, () => {
+      jumpToChapter("brew");
+      setBrewActive(true);
+      setBoundaryTriggered(false);
+    });
+    schedule(8800, () => {
+      setBoundaryTriggered(true);
+      triggerRipple();
+    });
+    schedule(10900, () => {
+      jumpToChapter("coffee-chat");
+      setChatPartner("claire");
+    });
+    schedule(12500, () => {
+      setChatPartner("david");
+      triggerRipple();
+    });
+    schedule(14100, () => {
+      setChatPartner("both");
+      triggerRipple();
+    });
+    schedule(16000, () => {
+      jumpToChapter("start");
+      stopReel();
+    });
+  };
+
   const activeHero =
     HERO_MODES.find((m) => m.id === roastMode) ?? HERO_MODES[1]!;
   const activeScenario =
@@ -377,7 +471,7 @@ export function HomeClient({
 
   return (
     <div ref={scopeRef} className="cc-spatial-page">
-      {/* Persistent Full-Viewport Photorealistic GLSL WebGL Coffee Cinema Stage */}
+      {/* Persistent Full-Viewport Motion-Control WebGL Coffee Cinema Stage */}
       <CoffeeWorldStage
         roastMode={roastMode}
         roastConfirmed={roastConfirmed}
@@ -388,6 +482,18 @@ export function HomeClient({
         rippleNonce={rippleNonce}
         onActChange={setActiveAct}
         onHoldBurst={handleHoldBurst}
+      />
+
+      {/* Story-Locked Spatial SVG Telemetry HUD synced 1:1 to Camera Rig */}
+      <CoffeeStoryHud
+        activeAct={activeAct}
+        roastMode={roastMode}
+        roastConfirmed={roastConfirmed}
+        roastPriorityShort={activeScenario.priorityShort}
+        roastBoundaryShort={activeScenario.boundaryShort}
+        brewActive={brewActive}
+        boundaryTriggered={boundaryTriggered}
+        chatPartner={chatPartner}
       />
 
       {/* Frameless Architectural Viewport Reticles */}
@@ -417,13 +523,26 @@ export function HomeClient({
                 data-active={isCurrent}
                 aria-current={isCurrent ? "step" : undefined}
                 aria-label={`Jump to chapter ${chap.code} ${chap.label}`}
-                onClick={() => jumpToChapter(chap.id)}
+                onClick={() => {
+                  if (reelPlaying) stopReel();
+                  jumpToChapter(chap.id);
+                }}
               >
                 <span className="cc-hud-bar" />
                 <span className="cc-hud-step-code">{chap.code}</span>
               </button>
             );
           })}
+          <button
+            type="button"
+            className="cc-hud-reel-btn"
+            data-playing={reelPlaying}
+            aria-pressed={reelPlaying}
+            aria-label={reelPlaying ? "Stop camera reel" : "Play camera reel"}
+            onClick={toggleReel}
+          >
+            {reelPlaying ? "■ STOP" : "▶ REEL"}
+          </button>
         </nav>
 
         <div className="cc-hud-telemetry">
