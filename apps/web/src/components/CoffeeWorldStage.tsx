@@ -5,13 +5,10 @@ import {
   mountCoffeeCinemaEngine,
   type CoffeeCinemaInput,
   type StageChatPartner,
-  type StageRoastMode,
 } from "@/lib/coffee-scene/cinemaEngine";
 
 export interface CoffeeWorldStageProps {
-  roastMode: StageRoastMode;
   roastConfirmed: boolean;
-  brewActive: boolean;
   boundaryTriggered: boolean;
   chatPartner: StageChatPartner;
   holding: boolean;
@@ -32,9 +29,7 @@ function resolveDocumentAppearance(): "light" | "dark" {
 }
 
 export function CoffeeWorldStage({
-  roastMode,
   roastConfirmed,
-  brewActive,
   boundaryTriggered,
   chatPartner,
   holding,
@@ -49,18 +44,14 @@ export function CoffeeWorldStage({
   const stateRef = useRef<CoffeeCinemaInput>({
     scrollProgress: 0,
     appearance: "light",
-    roastMode,
     roastConfirmed,
-    brewActive,
     boundaryTriggered,
     chatPartner,
     holding,
     rippleNonce,
   });
 
-  stateRef.current.roastMode = roastMode;
   stateRef.current.roastConfirmed = roastConfirmed;
-  stateRef.current.brewActive = brewActive;
   stateRef.current.boundaryTriggered = boundaryTriggered;
   stateRef.current.chatPartner = chatPartner;
   stateRef.current.holding = holding;
@@ -119,7 +110,7 @@ export function CoffeeWorldStage({
   return (
     <div
       ref={containerRef}
-      className="cc-stage-canvas"
+      className="cc-cinema-canvas"
       aria-hidden="true"
     />
   );

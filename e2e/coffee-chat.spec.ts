@@ -46,7 +46,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     expect(cacheControl).toContain("no-store");
 
     await expect(
-      page.getByRole("heading", { level: 1, name: /Give them your Taste/ }),
+      page.getByRole("heading", { level: 1, name: /Except how you decide/ }),
     ).toBeVisible();
     await expect(page.getByText("Nothing is unimportant.")).toBeVisible();
     // Primary Hero CTA copies a universal agent-agnostic start prompt and reveals it cleanly
@@ -57,10 +57,12 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
       page.getByRole("button", { name: /Copied — paste into any Agent/ }),
     ).toBeVisible();
     await expect(page.getByText(/Connect to Coffee Chat at/)).toBeVisible();
-    // Interactive tactile Hero Taste Beam (Specialist Roast) + Frameless Coffee Chat with @david
-    await page.getByRole("radio", { name: /Specialist Roast/ }).click();
-    await expect(page.getByText(/Hire the proven specialist/)).toBeVisible();
-    await page.getByRole("radio", { name: "Coffee Chat with @david" }).click();
+    // Interactive 5-cut storyboard checks: Cut 02 Confirm Bean, Cut 03 Boundary freeze, Cut 04 Two-Cup Coffee Chat
+    await page.getByRole("button", { name: "Confirm & keep this Bean" }).click();
+    await expect(page.getByText(/Confirmed Bean ✓/)).toBeVisible();
+    await page.getByRole("radio", { name: /Public billing launch/ }).click();
+    await expect(page.getByText(/Hold back speed on this launch/)).toBeVisible();
+    await page.getByRole("radio", { name: /@david/ }).click();
     await expect(page.getByText(/Based on @david’s Beans/)).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Roast a private Bean" }),
@@ -520,7 +522,7 @@ test.describe.serial("Coffee Chat MVP Redesign E2E (Yogurt 0.2.0)", () => {
     // Populated Home / shows value-first hero + secondary bottom Table preview; /sources search works cleanly
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { level: 1, name: /Give them your Taste/ }),
+      page.getByRole("heading", { level: 1, name: /Except how you decide/ }),
     ).toBeVisible();
     await expect(page.getByText("On the Table right now")).toBeVisible();
     await assertCleanSurface(page, "populated /");
