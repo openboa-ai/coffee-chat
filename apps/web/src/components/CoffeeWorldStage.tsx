@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from "react";
 import {
-  mountCoffeeWorldEngine,
-  type CoffeeStageInput,
+  mountCoffeeCinemaEngine,
+  type CoffeeCinemaInput,
   type StageChatPartner,
   type StageRoastMode,
-} from "@/lib/coffee-scene/engine";
+} from "@/lib/coffee-scene/cinemaEngine";
 
 export interface CoffeeWorldStageProps {
   roastMode: StageRoastMode;
@@ -46,7 +46,7 @@ export function CoffeeWorldStage({
   const callbacksRef = useRef({ onActChange, onHoldBurst });
   callbacksRef.current = { onActChange, onHoldBurst };
 
-  const stateRef = useRef<CoffeeStageInput>({
+  const stateRef = useRef<CoffeeCinemaInput>({
     scrollProgress: 0,
     appearance: "light",
     roastMode,
@@ -58,7 +58,6 @@ export function CoffeeWorldStage({
     rippleNonce,
   });
 
-  // Push React interactive state directly into the imperative 3D ref (zero WebGL remounts)
   stateRef.current.roastMode = roastMode;
   stateRef.current.roastConfirmed = roastConfirmed;
   stateRef.current.brewActive = brewActive;
@@ -92,9 +91,7 @@ export function CoffeeWorldStage({
     mql.addEventListener("change", syncAppearance);
 
     const rootEl = document.querySelector(".yg-root");
-    const observer = rootEl
-      ? new MutationObserver(syncAppearance)
-      : null;
+    const observer = rootEl ? new MutationObserver(syncAppearance) : null;
     if (rootEl && observer) {
       observer.observe(rootEl, {
         attributes: true,
@@ -105,7 +102,7 @@ export function CoffeeWorldStage({
     window.addEventListener("scroll", syncScroll, { passive: true });
     window.addEventListener("resize", syncScroll, { passive: true });
 
-    const unmount = mountCoffeeWorldEngine(container, stateRef, {
+    const unmount = mountCoffeeCinemaEngine(container, stateRef, {
       onActChange: (idx) => callbacksRef.current.onActChange?.(idx),
       onHoldBurst: () => callbacksRef.current.onHoldBurst?.(),
     });

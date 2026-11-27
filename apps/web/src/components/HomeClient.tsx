@@ -18,7 +18,7 @@ import type {
 import type {
   StageChatPartner,
   StageRoastMode,
-} from "@/lib/coffee-scene/engine";
+} from "@/lib/coffee-scene/cinemaEngine";
 import { CoffeeWorldStage } from "./CoffeeWorldStage";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
@@ -44,6 +44,52 @@ export interface HomeClientProps {
   initialTag: string;
   initialShelfRefs: HydratedShelfRef[];
   activeGrantCount?: number;
+}
+
+/**
+ * Lightweight word-by-word Agent response stream on interactive switches.
+ * Renders immediately on initial mount and under prefers-reduced-motion.
+ */
+function useStreamingReply(targetText: string): { text: string; streaming: boolean } {
+  const [displayed, setDisplayed] = useState(targetText);
+  const [streaming, setStreaming] = useState(false);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      setDisplayed(targetText);
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setDisplayed(targetText);
+      setStreaming(false);
+      return;
+    }
+
+    const words = targetText.split(" ");
+    let idx = Math.min(3, words.length);
+    setDisplayed(words.slice(0, idx).join(" "));
+    setStreaming(idx < words.length);
+
+    const timer = window.setInterval(() => {
+      idx += 2;
+      if (idx >= words.length) {
+        setDisplayed(targetText);
+        setStreaming(false);
+        window.clearInterval(timer);
+      } else {
+        setDisplayed(words.slice(0, idx).join(" "));
+      }
+    }, 18);
+
+    return () => window.clearInterval(timer);
+  }, [targetText]);
+
+  return { text: displayed, streaming };
 }
 
 const CHAPTERS = [
@@ -93,7 +139,7 @@ const ROAST_SCENARIOS = [
     id: "draft",
     chip: "Draft before polish",
     agentGuess:
-      "Let’s refine onboarding copy and add 3 extra configuration toggles before showing users.",
+      "Let’s polish onboarding copy and add 3 extra configuration settings before showing users.",
     userPushback:
       "No — show an honest draft to 5 real people before polishing.",
     beanTitle: "Show an honest draft to 5 real people before polishing",
@@ -134,7 +180,6 @@ export function HomeClient({
   const scopeRef = useRef<HTMLDivElement>(null);
   const heroHeadingRef = useRef<HTMLHeadingElement>(null);
 
-  // Interactive 3D & Story State
   const [activeAct, setActiveAct] = useState(0);
   const [roastMode, setRoastMode] = useState<StageRoastMode>("growth");
   const [holding, setHolding] = useState(false);
@@ -144,14 +189,14 @@ export function HomeClient({
   const [roastScenarioIdx, setRoastScenarioIdx] = useState(0);
   const [roastConfirmed, setRoastConfirmed] = useState(false);
 
-  // Act 03: Live Brew + Boundary test
+  // Act 03: Live Brew + Boundary Guard
   const [brewActive, setBrewActive] = useState(true);
   const [boundaryTriggered, setBoundaryTriggered] = useState(false);
 
   // Act 04: Two-Cup Coffee Chat
   const [chatPartner, setChatPartner] = useState<StageChatPartner>("claire");
 
-  // Copy prompt state (independent per CTA so only the clicked button flips)
+  // Copy prompt state
   const [copiedHeroPrompt, setCopiedHeroPrompt] = useState(false);
   const [copiedCloserPrompt, setCopiedCloserPrompt] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -177,7 +222,7 @@ export function HomeClient({
         await navigator.clipboard.writeText(startPrompt);
       }
     } catch {
-      // Clipboard may be blocked in headless or restricted browsers.
+      // Clipboard may be blocked in restricted contexts.
     }
     if (source === "hero") {
       setCopiedHeroPrompt(true);
@@ -221,7 +266,7 @@ export function HomeClient({
     };
   }, []);
 
-  // GSAP SplitText hero entrance + scroll-triggered act choreography
+  // GSAP SplitText hero entrance + scroll-triggered reveals
   useGSAP(
     () => {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -244,7 +289,7 @@ export function HomeClient({
 
       gsap.utils.toArray<HTMLElement>("[data-cc-reveal]").forEach((el) => {
         gsap.from(el, {
-          y: 36,
+          y: 34,
           opacity: 0,
           duration: 0.85,
           ease: "power3.out",
@@ -280,8 +325,24 @@ export function HomeClient({
     ROAST_SCENARIOS[roastScenarioIdx] ?? ROAST_SCENARIOS[0];
   const currentChapter = CHAPTERS[activeAct] ?? CHAPTERS[0];
 
+  // Streaming replies for Act 01, Act 03, and Act 04
+  const heroStream = useStreamingReply(activeHero.verdict);
+
+  const brewReplyRaw = !brewActive
+    ? "Both options have trade-offs. Shipping early gives faster feedback, while polishing reduces risk. Consider your team's bandwidth and user expectations."
+    : boundaryTriggered
+      ? "Hold back speed here. Your Bean explicitly stops applying on public billing launches — verify billing edge cases and integrity before releasing."
+      : "Put the labeled draft in front of 5 real beta users today. You prioritize real-world signal over upfront polish, and this is a reversible internal beta.";
+  const brewStream = useStreamingReply(brewReplyRaw);
+
+  const chatReplyRaw =
+    chatPartner === "claire"
+      ? "Put an honest, clearly labeled draft in front of 5 real people this afternoon—polishing the wrong workflow wastes a month."
+      : "Early users forgive a rough layout, never a broken promise around billing or privacy—ship complete where trust compounds.";
+  const chatStream = useStreamingReply(chatReplyRaw);
+
   const liveTelemetry = holding
-    ? "HOLDING · VORTEX"
+    ? "HOLDING · POUR"
     : activeAct === 0
       ? roastMode === "decaf"
         ? "NO BEAN · DECAF"
@@ -291,7 +352,7 @@ export function HomeClient({
       : activeAct === 1
         ? roastConfirmed
           ? "BEAN ROASTED ✓"
-          : "RAW TAKE · UNCONFIRMED"
+          : "DRAFT · UNCONFIRMED"
         : activeAct === 2
           ? boundaryTriggered
             ? "BOUNDARY · HELD BACK"
@@ -300,9 +361,9 @@ export function HomeClient({
               : "PAUSED · TASTE OFF"
           : activeAct === 3
             ? chatPartner === "claire"
-              ? "CUP 01 · @CLAIRE"
+              ? "IVORY CUP · @CLAIRE"
               : chatPartner === "david"
-                ? "CUP 02 · @DAVID"
+                ? "SLATE CUP · @DAVID"
                 : "TWO CUPS · TABLE"
             : "ROASTERY READY";
 
@@ -316,7 +377,7 @@ export function HomeClient({
 
   return (
     <div ref={scopeRef} className="cc-spatial-page">
-      {/* Persistent Full-Viewport PBR 3D Coffee World */}
+      {/* Persistent Full-Viewport Photorealistic GLSL WebGL Coffee Cinema Stage */}
       <CoffeeWorldStage
         roastMode={roastMode}
         roastConfirmed={roastConfirmed}
@@ -329,7 +390,7 @@ export function HomeClient({
         onHoldBurst={handleHoldBurst}
       />
 
-      {/* Frameless Architectural Corner Reticles */}
+      {/* Frameless Architectural Viewport Reticles */}
       <div className="cc-reticles" aria-hidden="true">
         <span className="cc-reticle cc-reticle-tl" />
         <span className="cc-reticle cc-reticle-tr" />
@@ -337,7 +398,7 @@ export function HomeClient({
         <span className="cc-reticle cc-reticle-br" />
       </div>
 
-      {/* Bottom Spatial HUD — Active Chapter + 5-Act Jump Rail + Live Physics Telemetry */}
+      {/* Bottom Spatial Chapter Rail & Telemetry HUD */}
       <aside className="cc-spatial-hud" aria-label="Story progress">
         <div className="cc-hud-chapter">
           <span className="cc-hud-code">{currentChapter.code}</span>
@@ -376,7 +437,7 @@ export function HomeClient({
       </aside>
 
       {/* =====================================================================
-          ACT 01 — THE TASTE GAP (Above the Fold)
+          ACT 01 — THE TASTE GAP (Frameless Editorial + Live Roast Ripple)
           ===================================================================== */}
       <section
         id="act-taste-gap"
@@ -398,17 +459,17 @@ export function HomeClient({
             </h1>
 
             <p className="cc-act-lead">
-              Without your judgment, every Agent hedges. Drop one confirmed
-              Bean into the cup and feel its answer lock onto what you actually
-              put first.
+              Without your judgment, every Agent hedges. Switch the Roast below
+              and watch the coffee—and the Agent’s answer—lock onto what you
+              actually put first.
             </p>
 
-            {/* Live 3D Roast Switcher — physically changes 3D liquid, ripples & Agent answer */}
-            <div className="cc-glass-panel" data-mode={roastMode}>
+            {/* Frameless Editorial Switcher & Streaming Verdict */}
+            <div className="cc-ed-stage">
               <div
                 className="cc-pill-group"
                 role="radiogroup"
-                aria-label="Drop a Bean into the 3D cup"
+                aria-label="Switch Roast Taste"
               >
                 {HERO_MODES.map((m) => (
                   <button
@@ -425,15 +486,20 @@ export function HomeClient({
                 ))}
               </div>
 
-              <div className="cc-verdict-live" key={activeHero.id}>
-                <div className="cc-verdict-meta">
-                  <span>Agent reply</span>
-                  <span className="cc-verdict-chip" data-mode={activeHero.id}>
+              <div className="cc-ed-transcript" data-state={roastMode}>
+                <div className="cc-ed-meta-row">
+                  <span className="cc-mono-tag">AGENT REPLY</span>
+                  <span className="cc-status-pill" data-mode={activeHero.id}>
                     {activeHero.status}
                   </span>
                 </div>
-                <p className="cc-verdict-headline">{activeHero.verdict}</p>
-                <p className="cc-verdict-rule">
+                <p className="cc-ed-verdict">
+                  {heroStream.text}
+                  {heroStream.streaming ? (
+                    <span className="cc-stream-cursor" aria-hidden="true" />
+                  ) : null}
+                </p>
+                <p className="cc-ed-subrule">
                   <strong>{activeHero.rule}</strong> · {activeHero.boundary}
                 </p>
               </div>
@@ -455,7 +521,7 @@ export function HomeClient({
                 type="button"
                 className="cc-hold-control"
                 aria-pressed={holding}
-                aria-label="Hold to swirl beans and pour a fresh Bean into the cup"
+                aria-label="Hold anywhere to ripple and cycle Roast"
                 onPointerDown={(e) => {
                   e.stopPropagation();
                   setHolding(true);
@@ -499,7 +565,7 @@ export function HomeClient({
                   </svg>
                   <span className="cc-hold-core" />
                 </span>
-                <span>{holding ? "Release to pour…" : "Hold to pour"}</span>
+                <span>{holding ? "Release to ripple…" : "Hold anywhere"}</span>
               </button>
             </div>
 
@@ -533,7 +599,7 @@ export function HomeClient({
       </section>
 
       {/* =====================================================================
-          ACT 02 — ROAST A BEAN (Zoom on Macro 3D Roasted Bean)
+          ACT 02 — ROAST A BEAN (Over Macro Roasted Beans & Bronze Spoon)
           ===================================================================== */}
       <section
         id="act-roast"
@@ -551,13 +617,12 @@ export function HomeClient({
             </h2>
 
             <p className="cc-act-lead">
-              A Bean isn’t a messy note or vague vibe. It distills one real
-              call into <strong>what mattered more</strong> and{" "}
-              <strong>when the rule stops applying</strong> — saved privately
-              only when you confirm.
+              A Bean captures one real call as a crisp{" "}
+              <strong>Trade-off</strong> and <strong>Boundary</strong> — never
+              a messy wall of prompt notes, and never saved until you confirm.
             </p>
 
-            <div className="cc-glass-panel">
+            <div className="cc-ed-stage">
               <div
                 className="cc-pill-group"
                 role="tablist"
@@ -582,26 +647,23 @@ export function HomeClient({
                 ))}
               </div>
 
-              <div className="cc-dialogue-stack">
-                <div className="cc-bubble cc-bubble-agent">
-                  <span className="cc-bubble-who">Agent default</span>
+              <div className="cc-ed-dialogue">
+                <div className="cc-ed-line cc-ed-line-muted">
+                  <span className="cc-mono-tag">AGENT DEFAULT</span>
                   <p>{activeScenario.agentGuess}</p>
                 </div>
-                <div className="cc-bubble cc-bubble-user">
-                  <span className="cc-bubble-who">You push back</span>
+                <div className="cc-ed-line cc-ed-line-user">
+                  <span className="cc-mono-tag">YOU PUSH BACK</span>
                   <p>“{activeScenario.userPushback}”</p>
                 </div>
               </div>
 
-              <div
-                className="cc-bean-preview"
-                data-confirmed={roastConfirmed}
-              >
-                <div className="cc-bean-preview-head">
-                  <span className="cc-bean-pill">
+              <div className="cc-ed-ledger" data-confirmed={roastConfirmed}>
+                <div className="cc-ed-meta-row">
+                  <span className="cc-status-pill" data-mode={roastConfirmed ? "growth" : "decaf"}>
                     {roastConfirmed
                       ? "Confirmed Bean · Private"
-                      : "Draft Bean · Waiting for you"}
+                      : "Draft Bean · Waiting for confirmation"}
                   </span>
                   <Button
                     emphasis={roastConfirmed ? "soft" : "filled"}
@@ -616,17 +678,13 @@ export function HomeClient({
                   </Button>
                 </div>
 
-                <p className="cc-bean-preview-title">
-                  {activeScenario.beanTitle}
-                </p>
-
-                <div className="cc-bean-preview-cols">
+                <div className="cc-ed-facts">
                   <div>
-                    <span className="cc-mini-label">What mattered more</span>
+                    <span className="cc-mono-tag">WHAT MATTERED MORE</span>
                     <p>{activeScenario.tradeoff}</p>
                   </div>
                   <div>
-                    <span className="cc-mini-label">Except when</span>
+                    <span className="cc-mono-tag">EXCEPT WHEN</span>
                     <p>{activeScenario.boundary}</p>
                   </div>
                 </div>
@@ -637,7 +695,7 @@ export function HomeClient({
       </section>
 
       {/* =====================================================================
-          ACT 03 — BREW IN YOUR AGENTS (Glossy 3D Espresso Pour + Boundary Test)
+          ACT 03 — BREW IN YOUR AGENTS (Over Ink-Blue Gooseneck Pour)
           ===================================================================== */}
       <section
         id="act-brew"
@@ -657,15 +715,15 @@ export function HomeClient({
             </h2>
 
             <p className="cc-act-lead">
-              Your confirmed Beans travel across every MCP-compatible Agent you
-              use — applying your trade-offs when they fit, and stepping back
-              automatically when a boundary triggers.
+              Your confirmed Beans travel across every MCP-compatible Agent —
+              shaping decisions when they fit, and holding back automatically
+              when a boundary stops them.
             </p>
 
-            <div className="cc-glass-panel">
-              <div className="cc-brew-controls">
+            <div className="cc-ed-stage">
+              <div className="cc-ed-toggles">
                 <div className="cc-control-cluster">
-                  <span className="cc-mini-label">Your Taste</span>
+                  <span className="cc-mono-tag">TASTE</span>
                   <div className="cc-pill-group">
                     <button
                       type="button"
@@ -693,7 +751,7 @@ export function HomeClient({
                 </div>
 
                 <div className="cc-control-cluster">
-                  <span className="cc-mini-label">Test the Boundary</span>
+                  <span className="cc-mono-tag">TEST BOUNDARY</span>
                   <div className="cc-pill-group">
                     <button
                       type="button"
@@ -723,9 +781,9 @@ export function HomeClient({
                 </div>
               </div>
 
-              <div className="cc-dialogue-stack">
-                <div className="cc-bubble cc-bubble-user">
-                  <span className="cc-bubble-who">You ask your Agent</span>
+              <div className="cc-ed-dialogue">
+                <div className="cc-ed-line cc-ed-line-user">
+                  <span className="cc-mono-tag">YOU ASK YOUR AGENT</span>
                   <p>
                     {boundaryTriggered
                       ? "Should we ship the new public billing launch early to gather feedback fast?"
@@ -734,18 +792,27 @@ export function HomeClient({
                 </div>
 
                 <div
-                  className="cc-bubble cc-bubble-agent"
+                  className="cc-ed-transcript"
                   data-state={
                     !brewActive
-                      ? "off"
+                      ? "decaf"
                       : boundaryTriggered
                         ? "boundary"
-                        : "brewed"
+                        : "growth"
                   }
                 >
-                  <div className="cc-bubble-head">
-                    <span className="cc-bubble-who">Your Agent</span>
-                    <span className="cc-citation-tag">
+                  <div className="cc-ed-meta-row">
+                    <span className="cc-mono-tag">YOUR AGENT</span>
+                    <span
+                      className="cc-status-pill"
+                      data-mode={
+                        !brewActive
+                          ? "decaf"
+                          : boundaryTriggered
+                            ? "boundary"
+                            : "growth"
+                      }
+                    >
                       {!brewActive
                         ? "No Bean loaded"
                         : boundaryTriggered
@@ -753,12 +820,11 @@ export function HomeClient({
                           : "Brewed · Draft before polish"}
                     </span>
                   </div>
-                  <p>
-                    {!brewActive
-                      ? "Both options have trade-offs. Shipping early gives faster feedback, while polishing reduces risk. Consider your team's capacity and user expectations."
-                      : boundaryTriggered
-                        ? "Hold back speed here. Your Bean explicitly stops applying on public billing launches — verify edge cases and billing integrity before releasing."
-                        : "Put the labeled draft in front of 5 real beta users today. You prioritize real-world signal over upfront polish, and this is a reversible internal beta."}
+                  <p className="cc-ed-reply-body">
+                    {brewStream.text}
+                    {brewStream.streaming ? (
+                      <span className="cc-stream-cursor" aria-hidden="true" />
+                    ) : null}
                   </p>
                 </div>
               </div>
@@ -768,7 +834,7 @@ export function HomeClient({
       </section>
 
       {/* =====================================================================
-          ACT 04 — TWO-CUP COFFEE CHAT (Two 3D Cups Across One Shared Table)
+          ACT 04 — TWO-CUP COFFEE CHAT (Over Two Artisanal Cups Facing Across Table)
           ===================================================================== */}
       <section
         id="act-coffee-chat"
@@ -786,12 +852,12 @@ export function HomeClient({
             </h2>
 
             <p className="cc-act-lead">
-              When people put a Bean On the Table, your Agent can sit across
-              from their confirmed Taste — comparing what each person puts
-              first with clear attribution and zero fake impersonation.
+              When someone puts a Bean On the Table, your Agent can sit across
+              from their confirmed Taste — weighing contrasting trade-offs with
+              clear attribution and zero impersonation.
             </p>
 
-            <div className="cc-glass-panel">
+            <div className="cc-ed-stage">
               <div
                 className="cc-pill-group"
                 role="radiogroup"
@@ -838,70 +904,66 @@ export function HomeClient({
                 </button>
               </div>
 
-              {chatPartner === "claire" ? (
-                <div className="cc-chat-perspective" key="claire">
-                  <div className="cc-perspective-head">
-                    <span className="cc-cup-badge cc-cup-warm">
-                      Ivory Cup · @claire
-                    </span>
-                    <span className="cc-citation-tag">
-                      Based on @claire’s Beans
-                    </span>
-                  </div>
-                  <p className="cc-perspective-quote">
-                    “Put an honest, clearly labeled draft in front of 5 real
-                    people this afternoon—polishing the wrong workflow wastes a
-                    month.”
-                  </p>
-                  <p className="cc-verdict-rule">
-                    <strong>Speed &amp; signal &gt; upfront polish</strong> ·
-                    Stops at public brand launches
-                  </p>
-                </div>
-              ) : chatPartner === "david" ? (
-                <div className="cc-chat-perspective" key="david">
-                  <div className="cc-perspective-head">
-                    <span className="cc-cup-badge cc-cup-ink">
-                      Slate Cup · @david
-                    </span>
-                    <span className="cc-citation-tag">
-                      Based on @david’s Beans
-                    </span>
-                  </div>
-                  <p className="cc-perspective-quote">
-                    “Early users forgive a rough layout, never a broken promise
-                    around billing or privacy—ship complete where trust
-                    compounds.”
-                  </p>
-                  <p className="cc-verdict-rule">
-                    <strong>Durable day-1 trust &gt; fast demos</strong> ·
-                    Stops at throwaway sample-data prototypes
-                  </p>
-                </div>
-              ) : (
-                <div className="cc-dual-compare" key="both">
-                  <div className="cc-dual-col">
-                    <span className="cc-cup-badge cc-cup-warm">@claire</span>
+              {chatPartner === "both" ? (
+                <div className="cc-ed-facts">
+                  <div>
+                    <span className="cc-mono-tag">IVORY CUP · @CLAIRE</span>
                     <p>
                       Based on @claire’s Beans: optimize learning rate on
-                      reversible drafts.
+                      reversible drafts before polishing.
                     </p>
                   </div>
-                  <div className="cc-dual-col">
-                    <span className="cc-cup-badge cc-cup-ink">@david</span>
+                  <div>
+                    <span className="cc-mono-tag">SLATE CUP · @DAVID</span>
                     <p>
-                      Based on @david’s Beans: protect trust anywhere money or
+                      Based on @david’s Beans: protect trust anywhere billing or
                       privacy lives.
                     </p>
                   </div>
                 </div>
+              ) : (
+                <div
+                  className="cc-ed-transcript"
+                  data-state={chatPartner === "david" ? "craft" : "growth"}
+                >
+                  <div className="cc-ed-meta-row">
+                    <span className="cc-mono-tag">
+                      {chatPartner === "claire"
+                        ? "IVORY CUP · @CLAIRE"
+                        : "SLATE CUP · @DAVID"}
+                    </span>
+                    <span className="cc-status-pill" data-mode="growth">
+                      {chatPartner === "claire"
+                        ? "Based on @claire’s Beans"
+                        : "Based on @david’s Beans"}
+                    </span>
+                  </div>
+                  <p className="cc-ed-reply-body">
+                    “{chatStream.text}”
+                    {chatStream.streaming ? (
+                      <span className="cc-stream-cursor" aria-hidden="true" />
+                    ) : null}
+                  </p>
+                  <p className="cc-ed-subrule">
+                    {chatPartner === "claire" ? (
+                      <>
+                        <strong>Speed &amp; signal &gt; upfront polish</strong>{" "}
+                        · Stops at public brand launches
+                      </>
+                    ) : (
+                      <>
+                        <strong>Durable day-1 trust &gt; fast demos</strong> ·
+                        Stops at throwaway sample-data prototypes
+                      </>
+                    )}
+                  </p>
+                </div>
               )}
 
-              {/* Live DB-backed Table preview strip */}
               {totalCorpusPublicCount > 0 && featuredTable ? (
                 <div className="cc-live-table-strip">
                   <div>
-                    <span className="cc-mini-label">On the Table right now</span>
+                    <span className="cc-mono-tag">On the Table right now</span>
                     <p className="cc-live-table-title">
                       {featuredTitle} ·{" "}
                       <span>
